@@ -41,6 +41,7 @@ STAGES = {
         'reads': config.REPL_OUT / 'fib.ir',
         'writes': config.REPL_OUT / 'fib.zig',
         'label': 'IR -> zig source (bin/zigemit)',
+        'skip_prelude': True,
     },
 }
 
@@ -62,7 +63,7 @@ def provenance():
         return 'no natives installed -- run ops/refresh_natives.sh'
 
 
-def preview(path, pretty=False):
+def preview(path, pretty=False, skip_prelude=False):
     try:
         text = path.read_text(errors='replace')
     except OSError:
@@ -70,6 +71,14 @@ def preview(path, pretty=False):
     if pretty and len(text) <= PRETTY_CAP:
         text = pretty_sexp(text)
     lines = text.splitlines(keepends=True)
+    if skip_prelude:
+        # Every emitted program shares one runtime prelude, all of it in
+        # cx_*/Cx* names; the program's own defs come after it. Show those.
+        for i, line in enumerate(lines):
+            if line.startswith('fn ') and not line.startswith(('fn cx_', 'fn Cx')):
+                lines = [f'... (runtime prelude, {i} lines shared by every '
+                         f'program, hidden; see full)\n\n'] + lines[i:]
+                break
     if len(lines) > PREVIEW_LINES:
         lines = lines[:PREVIEW_LINES] + [f'... ({len(lines) - PREVIEW_LINES} more lines; see full)']
     return ''.join(lines)
@@ -171,7 +180,8 @@ def run_stage(stage):
         spec['writes'].write_bytes(r.stderr)
         return jsonify(stage=stage, seconds=round(seconds, 2),
                        bytes=len(r.stderr), out=spec['writes'].name,
-                       preview=preview(spec['writes'], pretty=spec.get('pretty', False)))
+                       preview=preview(spec['writes'], pretty=spec.get('pretty', False),
+                                       skip_prelude=spec.get('skip_prelude', False)))
     except subprocess.TimeoutExpired:
         return jsonify(error=f'stage {stage} exceeded {config.REPL_TIMEOUT}s'), 500
     finally:
@@ -195,11 +205,10 @@ def repl_page():
     src_bytes = config.REPL_SUBJECT.stat().st_size if subject_ready else 0
     panes.append(_pane('source', 'The fib program (fib.codex)',
                        src_preview, src_bytes, 'fib.codex'))
+    # The stage panes always load empty: compiling is the page's whole
+    # act, and a cached artifact would rob the button of its reveal.
     for stage, spec in STAGES.items():
-        out = spec['writes']
-        text = preview(out, pretty=spec.get('pretty', False)) if out.is_file() else ''
-        size = out.stat().st_size if out.is_file() else 0
-        panes.append(_pane(stage, spec['label'], text, size, out.name))
+        panes.append(_pane(stage, spec['label'], '', 0, spec['writes'].name))
     body = (
         '<h1>REPL</h1>'
         '<p class="sub">Version one: a sixteen-line fib program -- recursion, '
@@ -210,14 +219,14 @@ def repl_page():
         f'<pre class="prov">{html.escape(provenance())}</pre>'
         + (f'<p><button id="go">Compile fib</button> '
            f'<span id="status" class="muted"></span></p>' if user else
-           '<p class="muted"><a href="/login?next=/repl">Log in</a> to run the '
-           'compiler; the panes below show the last run.</p>')
+           '<p class="muted"><a href="/login?next=/repl">Log in</a> to run '
+           'the compiler.</p>')
         + ''.join(panes) + REPL_JS)
     return page('REPL', user, body)
 
 
 def _pane(key, label, text, size, rawname):
-    shown = html.escape(text) if text else '<span class="muted">(not run yet)</span>'
+    shown = html.escape(text) if text else '<span class="muted">(awaiting a run)</span>'
     meta = f'{size:,} bytes · <a href="/repl/raw/{rawname}">full</a>' if size else ''
     return (f'<h2>{html.escape(label)}</h2>'
             f'<div class="pane" id="pane-{key}"><div class="meta" id="meta-{key}">{meta}</div>'
