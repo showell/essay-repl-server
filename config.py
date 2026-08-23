@@ -16,9 +16,14 @@ COLLECTIONS = {
     'notes': REPO / 'notes',
 }
 
-# The REPL's executables and subject, installed by ops/refresh_natives.sh.
+# The REPL's executables (installed by ops/refresh_natives.sh) and the
+# programs a visitor may choose between. Server-side files only: nothing
+# a user types ever becomes a subject.
 REPL_BIN = REPO / 'bin'
-REPL_SUBJECT = REPO / 'subjects' / 'fib.codex'
+REPL_SUBJECTS = {
+    'fib': REPO / 'subjects' / 'fib.codex',
+    'queens': REPO / 'subjects' / 'queens.codex',
+}
 REPL_OUT = DATA / 'repl'
 REPL_MEMORY_MAX = '6G'   # the ladder's zig-arm resident bound
 REPL_TIMEOUT = 120       # seconds per stage; fib is expected in single digits

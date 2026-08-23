@@ -1,12 +1,13 @@
-"""The online REPL: watch the fib rung get compiled, then watch it run.
+"""The online REPL: watch a Codex program get compiled, then watch it run.
 
-Four stages, the ladder's native loop with the QEMU taken out, ending
-where a compiler pipeline should -- at the program's own output:
+The visitor picks the subject (fib, or eight queens); four stages, the
+ladder's native loop with the QEMU taken out, ending where a compiler
+pipeline should -- at the program's own output:
 
-    stage ir    bin/codexir     fib-subject.codex on stdin -> IR on stderr
+    stage ir    bin/codexir     the subject on stdin -> IR on stderr
     stage zig   bin/zigemit     the IR on stdin -> zig source on stderr
-    stage exe   zig build-exe   fib.zig -> a native binary
-    stage run   ./fib           the binary runs; its output is the pane
+    stage exe   zig build-exe   prog.zig -> a native binary
+    stage run   ./prog          the binary runs; its output is the pane
 
 Each stage is bounded the way the ladder bounds its own arms
 (systemd-run --user --scope MemoryMax, plus a timeout). The run stage
@@ -30,6 +31,7 @@ Running requires an account; reading results does not. One run at a
 time -- the second clicker gets a 409, not a queue.
 """
 import html
+import json
 import re
 import resource
 import shutil
@@ -47,44 +49,45 @@ bp = Blueprint('repl', __name__)
 
 RUN_LOCK = threading.Lock()
 
-# reads/writes are names inside the run's own directory; the ir stage
-# reads the global subject and MINTS the directory, which is what makes
-# a press of the button one sandboxed use: nothing a stage reads can
-# come from any other run.
+# reads/writes are names inside the run's own directory -- generic on
+# purpose, since the run dir itself is the identity; the ir stage reads
+# the chosen server-side subject and MINTS the directory, which is what
+# makes a press of the button one sandboxed use: nothing a stage reads
+# can come from any other run.
 STAGES = {
     'ir': {
         'kind': 'transform',
         'binary': config.REPL_BIN / 'codexir',
         'reads': None,
-        'writes': 'fib.ir',
+        'writes': 'prog.ir',
         'label': 'Codex source -> IR (bin/codexir)',
         'pretty': True,
     },
     'zig': {
         'kind': 'transform',
         'binary': config.REPL_BIN / 'zigemit',
-        'reads': 'fib.ir',
-        'writes': 'fib.zig',
+        'reads': 'prog.ir',
+        'writes': 'prog.zig',
         'label': 'IR -> zig source (bin/zigemit)',
         'skip_prelude': True,
     },
     'exe': {
         'kind': 'build',
-        'reads': 'fib.zig',
-        'writes': 'fib',
+        'reads': 'prog.zig',
+        'writes': 'prog',
         'label': 'zig source -> native binary (zig build-exe)',
     },
     'run': {
         'kind': 'execute',
-        'reads': 'fib',
-        'writes': 'fib.out',
-        'label': 'The program runs (./fib)',
+        'reads': 'prog',
+        'writes': 'prog.out',
+        'label': 'The program runs (./prog)',
     },
 }
 
 # The artifacts the raw-view route may serve out of a run directory. The
 # binary is not here on purpose: the route says text/plain and means it.
-RAW_NAMES = {'fib.ir', 'fib.zig', 'fib.out'}
+RAW_NAMES = {'prog.ir', 'prog.zig', 'prog.out'}
 
 # Minted by mint_run, so anything else in a URL is someone probing.
 RUN_ID = re.compile(r'^\d{8}T\d{6}Z-\d+$')
@@ -222,8 +225,10 @@ def run_stage(stage):
         return jsonify(error='a run is already in progress'), 409
     try:
         if spec['reads'] is None:
+            rd = config.REPL_SUBJECTS.get(request.args.get('subject', ''))
+            if rd is None or not rd.is_file():
+                return jsonify(error='no such subject'), 404
             d = config.REPL_RUNS / mint_run()
-            rd = config.REPL_SUBJECT
         else:
             d = run_dir(request.args.get('run', ''))
             if d is None:
@@ -320,11 +325,12 @@ def _execute(stage, spec, d, rd):
     return _answer(stage, d, seconds, nbytes, wr.name, preview(wr))
 
 
-@bp.route('/repl/raw/fib.codex')
-def raw_subject():
-    if not config.REPL_SUBJECT.is_file():
+@bp.route('/repl/raw/subject/<name>')
+def raw_subject(name):
+    src = config.REPL_SUBJECTS.get(name)
+    if src is None or not src.is_file():
         abort(404)
-    return Response(config.REPL_SUBJECT.read_bytes(), mimetype='text/plain')
+    return Response(src.read_bytes(), mimetype='text/plain')
 
 
 @bp.route('/repl/raw/<run>/<name>')
@@ -335,39 +341,60 @@ def raw(run, name):
     return Response((d / name).read_bytes(), mimetype='text/plain')
 
 
+# How each subject introduces itself beside its radio button.
+SUBJECT_TITLES = {
+    'fib': 'fib -- recursion, one printed number',
+    'queens': 'eight queens -- recursive backtracking, first solution as a board',
+}
+
+
 @bp.route('/repl')
 def repl_page():
     user = auth.current_user()
-    subject_ready = config.REPL_SUBJECT.is_file()
-    panes = []
-    src_preview = preview(config.REPL_SUBJECT) if subject_ready else ''
-    src_bytes = config.REPL_SUBJECT.stat().st_size if subject_ready else 0
-    panes.append(_pane('source', 'The fib program (fib.codex)',
-                       src_preview, src_bytes, 'fib.codex'))
+    subjects = {name: {'preview': preview(path),
+                       'bytes': path.stat().st_size,
+                       'raw': f'/repl/raw/subject/{name}'}
+                for name, path in config.REPL_SUBJECTS.items() if path.is_file()}
+    default = 'fib' if 'fib' in subjects else next(iter(subjects), '')
+    first = subjects.get(default, {'preview': '', 'bytes': 0, 'raw': ''})
+    panes = [_pane('source', 'The program', first['preview'],
+                   first['bytes'], first['raw'])]
     # The stage panes always load empty: compiling is the page's whole
     # act, and a cached artifact would rob the button of its reveal.
     for stage, spec in STAGES.items():
-        panes.append(_pane(stage, spec['label'], '', 0, spec['writes']))
+        panes.append(_pane(stage, spec['label'], '', 0, ''))
+    radios = ''.join(
+        f'<label class="pick"><input type="radio" name="subject" value="{name}"'
+        f'{" checked" if name == default else ""}> '
+        f'{html.escape(SUBJECT_TITLES.get(name, name))}</label><br>'
+        for name in subjects)
     body = (
         '<h1>REPL</h1>'
-        '<p class="sub">A sixteen-line fib program -- recursion, an entry '
-        'point, one printed answer -- compiled to IR and then to zig by the '
-        'same native executables the ladder banks with, then built into a '
-        'native binary and RUN. The last pane is the program\'s own output. '
-        'No QEMU anywhere. The IR pane is pretty-printed; "full" links serve '
-        'the raw artifact.</p>'
+        '<p class="sub">Pick a small Codex program; it is compiled to IR and '
+        'then to zig by the same native executables the ladder banks with, '
+        'built into a native binary, and RUN. The last pane is the '
+        'program\'s own output. No QEMU anywhere. The IR pane is '
+        'pretty-printed; "full" links serve the raw artifact.</p>'
         f'<pre class="prov">{html.escape(provenance())}</pre>'
-        + (f'<p><button id="go">Compile and run fib</button> '
+        f'<p>{radios}</p>'
+        + (f'<p><button id="go">Compile and run</button> '
            f'<span id="status" class="muted"></span></p>' if user else
            '<p class="muted"><a href="/login?next=/repl">Log in</a> to run '
            'the compiler.</p>')
-        + ''.join(panes) + REPL_JS)
+        + ''.join(panes)
+        + f'<script>var SUBJECTS = {_subjects_json(subjects)};</script>'
+        + REPL_JS)
     return page('REPL', user, body)
 
 
-def _pane(key, label, text, size, rawname):
+def _subjects_json(subjects):
+    # </script> inside a preview would end the tag; < cannot.
+    return json.dumps(subjects).replace('<', '\\u003c')
+
+
+def _pane(key, label, text, size, rawhref):
     shown = html.escape(text) if text else '<span class="muted">(awaiting a run)</span>'
-    meta = f'{size:,} bytes · <a href="/repl/raw/{rawname}">full</a>' if size else ''
+    meta = f'{size:,} bytes · <a href="{rawhref}">full</a>' if size else ''
     return (f'<h2>{html.escape(label)}</h2>'
             f'<div class="pane" id="pane-{key}"><div class="meta" id="meta-{key}">{meta}</div>'
             f'<pre id="pre-{key}">{shown}</pre></div>')
@@ -382,27 +409,48 @@ REPL_JS = r"""
 </style>
 <script>
 (function(){
+  var status = document.getElementById('status');
+  function chosen() {
+    var r = document.querySelector('input[name=subject]:checked');
+    return r ? r.value : '';
+  }
+  function showSource(name) {
+    var s = SUBJECTS[name];
+    if (!s) return;
+    document.getElementById('pre-source').textContent = s.preview;
+    document.getElementById('meta-source').innerHTML =
+      s.bytes.toLocaleString() + ' bytes · <a href="' + s.raw + '">full</a>';
+    // A new subject means the old panes are another program's story.
+    ['ir', 'zig', 'exe', 'run'].forEach(function(st){
+      document.getElementById('pre-' + st).innerHTML =
+        '<span class="muted">(awaiting a run)</span>';
+      document.getElementById('meta-' + st).innerHTML = '';
+    });
+    if (status) status.textContent = '';
+  }
+  document.querySelectorAll('input[name=subject]').forEach(function(r){
+    r.addEventListener('change', function(){ showSource(r.value); });
+  });
   var go = document.getElementById('go');
   if (!go) return;
-  var status = document.getElementById('status');
   function show(stage, data) {
     document.getElementById('pre-' + stage).textContent = data.preview;
     document.getElementById('meta-' + stage).innerHTML =
       data.bytes.toLocaleString() + ' bytes · ' + data.seconds + 's' +
       (data.raw ? ' · <a href="' + data.raw + '">full</a>' : '');
   }
-  function run(stage, runid) {
+  function run(stage, q) {
     status.textContent = 'running ' + stage + '...';
-    return fetch('/repl/run/' + stage + (runid ? '?run=' + runid : ''), {method: 'POST'})
+    return fetch('/repl/run/' + stage + '?' + q, {method: 'POST'})
       .then(function(r){ return r.json().then(function(j){ if (!r.ok) { j.stage = stage; throw j; } return j; }); })
       .then(function(j){ show(stage, j); return j; });
   }
   go.addEventListener('click', function(){
     go.disabled = true;
-    run('ir')
-      .then(function(j){ return run('zig', j.run); })
-      .then(function(j){ return run('exe', j.run); })
-      .then(function(j){ return run('run', j.run); })
+    run('ir', 'subject=' + encodeURIComponent(chosen()))
+      .then(function(j){ return run('zig', 'run=' + j.run); })
+      .then(function(j){ return run('exe', 'run=' + j.run); })
+      .then(function(j){ return run('run', 'run=' + j.run); })
       .then(function(){ status.textContent = 'done'; })
       .catch(function(e){
         status.textContent = (e && e.error) || 'failed';

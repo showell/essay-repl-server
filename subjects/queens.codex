@@ -1,0 +1,70 @@
+Chapter: Queens
+
+ Eight queens, the recursive flavor: place one queen per row, try the
+ columns left to right, and let the recursion do the backtracking -- a
+ dead branch returns the empty list and the caller tries the next
+ column. The first solution found is printed as a board.
+
+Section: Search
+
+ qs holds the column of the queen in each filled row, so row i, column
+ (list-at qs i). A candidate column for the next row (row number
+ list-length qs) is safe when no placed queen shares its column or
+ either diagonal; sharing a diagonal is a column gap equal to the row
+ gap.
+
+  safe : List Integer, Integer, Integer -> Boolean
+  safe (qs) (col) (i) =
+   if i >= list-length qs then True
+   else let q = list-at qs i
+   in let rows = list-length qs - i
+   in if q == col then False
+      else if q - col == rows then False
+      else if col - q == rows then False
+      else safe qs col (i + 1)
+
+  place : List Integer -> List Integer
+  place (qs) =
+   if list-length qs == 8 then qs
+   else try qs 0
+
+  try : List Integer, Integer -> List Integer
+  try (qs) (col) =
+   if col >= 8 then []
+   else if safe qs col 0
+        then let sol = place (qs & [col])
+             in if list-length sol == 8 then sol else try qs (col + 1)
+        else try qs (col + 1)
+
+Section: Board
+
+  row-text : Integer, Integer, Text -> Text
+  row-text (q) (c) (acc) =
+   if c >= 8 then acc
+   else row-text q (c + 1) (acc & (if c == q then "Q " else ". "))
+
+  cols-text : List Integer, Integer, Text -> Text
+  cols-text (qs) (i) (acc) =
+   if i >= list-length qs then acc
+   else cols-text qs (i + 1) (acc & integer-to-text (list-at qs i) & " ")
+
+  print-board : List Integer, Integer -> [Console] Nothing
+  print-board (qs) (r) = act
+    if r >= list-length qs then print-line-uni ""
+    else act
+      print-line-uni (row-text (list-at qs r) 0 "")
+      print-board qs (r + 1)
+    end
+  end
+
+Section: Main
+
+  opening : [Console] Nothing = act
+   let sol = place []
+   in if list-length sol == 8
+      then act
+        print-line-uni ("cols: " & cols-text sol 0 "")
+        print-board sol 0
+      end
+      else print-line-uni "no solution"
+  end
