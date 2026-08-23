@@ -1,0 +1,10 @@
+[Unit]
+Description=essay-repl-server (port 9100)
+
+[Service]
+ExecStart=%h/showell_repos/essay-repl-server/serve.sh
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target
