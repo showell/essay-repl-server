@@ -233,7 +233,7 @@ def _pane(key, label, text, size, rawname):
             f'<pre id="pre-{key}">{shown}</pre></div>')
 
 
-REPL_JS = """
+REPL_JS = r"""
 <style>
 .pane pre { max-height: 420px; overflow: auto; }
 .pane .meta { font-size: 12px; color: #666; margin-bottom: 4px; }
