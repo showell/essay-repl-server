@@ -344,7 +344,10 @@ def raw(run, name):
 # How each subject introduces itself beside its radio button.
 SUBJECT_TITLES = {
     'fib': 'fib -- recursion, one printed number',
-    'queens': 'eight queens -- recursive backtracking, first solution as a board',
+    'queens': 'eight queens, recursive -- the call stack holds the search; '
+              'a dead branch returns empty and the caller tries the next column',
+    'queens-bt': 'eight queens, backtracking -- a tail-recursive cursor over one '
+                 'mutable board; retreat resumes right of the parked queen',
 }
 
 

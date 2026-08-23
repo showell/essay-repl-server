@@ -23,6 +23,7 @@ REPL_BIN = REPO / 'bin'
 REPL_SUBJECTS = {
     'fib': REPO / 'subjects' / 'fib.codex',
     'queens': REPO / 'subjects' / 'queens.codex',
+    'queens-bt': REPO / 'subjects' / 'queens-bt.codex',
 }
 REPL_OUT = DATA / 'repl'
 REPL_MEMORY_MAX = '6G'   # the ladder's zig-arm resident bound
