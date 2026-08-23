@@ -1,12 +1,19 @@
-"""The online REPL, version one: watch the fib rung get compiled.
+"""The online REPL: watch the fib rung get compiled, then watch it run.
 
-Two stages, the ladder's native loop with the QEMU taken out:
+Four stages, the ladder's native loop with the QEMU taken out, ending
+where a compiler pipeline should -- at the program's own output:
 
-    stage ir    bin/codexir   fib-subject.codex on stdin -> IR on stderr
-    stage zig   bin/zigemit   the IR on stdin -> zig source on stderr
+    stage ir    bin/codexir     fib-subject.codex on stdin -> IR on stderr
+    stage zig   bin/zigemit     the IR on stdin -> zig source on stderr
+    stage exe   zig build-exe   fib.zig -> a native binary
+    stage run   ./fib           the binary runs; its output is the pane
 
 Each stage is bounded the way the ladder bounds its own arms
-(systemd-run --user --scope MemoryMax, plus a timeout). Nothing here
+(systemd-run --user --scope MemoryMax, plus a timeout). The run stage
+executes GENERATED code, so its scope also carries RuntimeMaxSec:
+systemd kills the whole scope even if our own timeout misses --
+subprocess timeouts kill only the direct child, and an orphaned
+grandchild is exactly the runaway this page must not mint. Nothing here
 touches QEMU, so nothing here needs the box's one-compute-job lock;
 when a QEMU-path stage arrives it will take that lock and users wait.
 
@@ -30,6 +37,7 @@ RUN_LOCK = threading.Lock()
 
 STAGES = {
     'ir': {
+        'kind': 'transform',
         'binary': config.REPL_BIN / 'codexir',
         'reads': config.REPL_SUBJECT,
         'writes': config.REPL_OUT / 'fib.ir',
@@ -37,19 +45,34 @@ STAGES = {
         'pretty': True,
     },
     'zig': {
+        'kind': 'transform',
         'binary': config.REPL_BIN / 'zigemit',
         'reads': config.REPL_OUT / 'fib.ir',
         'writes': config.REPL_OUT / 'fib.zig',
         'label': 'IR -> zig source (bin/zigemit)',
         'skip_prelude': True,
     },
+    'exe': {
+        'kind': 'build',
+        'reads': config.REPL_OUT / 'fib.zig',
+        'writes': config.REPL_OUT / 'fib',
+        'label': 'zig source -> native binary (zig build-exe)',
+    },
+    'run': {
+        'kind': 'execute',
+        'reads': config.REPL_OUT / 'fib',
+        'writes': config.REPL_OUT / 'fib.out',
+        'label': 'The program runs (./fib)',
+    },
 }
 
-# The outputs the raw-view route may serve, by name.
+# The outputs the raw-view route may serve, by name. The binary is not
+# here on purpose: this route says text/plain and means it.
 RAW = {
     'fib.codex': lambda: config.REPL_SUBJECT,
     'fib.ir': lambda: config.REPL_OUT / 'fib.ir',
     'fib.zig': lambda: config.REPL_OUT / 'fib.zig',
+    'fib.out': lambda: config.REPL_OUT / 'fib.out',
 }
 
 PREVIEW_LINES = 500
@@ -157,35 +180,89 @@ def run_stage(stage):
     spec = STAGES.get(stage)
     if spec is None:
         abort(404)
-    if not spec['binary'].is_file():
-        return jsonify(error='no natives installed -- run ops/refresh_natives.sh'), 503
+    tool = spec['binary'] if spec['kind'] == 'transform' else (
+        config.REPL_ZIG if spec['kind'] == 'build' else spec['reads'])
+    if not tool.is_file():
+        missing = ('no natives installed -- run ops/refresh_natives.sh'
+                   if spec['kind'] == 'transform' else f'missing {tool}')
+        return jsonify(error=missing), 503
     if not spec['reads'].is_file():
         return jsonify(error=f'missing input {spec["reads"].name} -- run the prior stage'), 409
     if not RUN_LOCK.acquire(blocking=False):
         return jsonify(error='a run is already in progress'), 409
     try:
         config.REPL_OUT.mkdir(parents=True, exist_ok=True)
-        started = time.monotonic()
-        r = subprocess.run(
-            ['systemd-run', '--user', '--scope', '--quiet',
-             '-p', f'MemoryMax={config.REPL_MEMORY_MAX}', str(spec['binary'])],
-            stdin=open(spec['reads'], 'rb'), capture_output=True,
-            timeout=config.REPL_TIMEOUT)
-        seconds = time.monotonic() - started
-        # The natives speak the pipeline's convention: product on stderr,
-        # progress chatter on stdout.
-        if r.returncode != 0 or not r.stderr:
-            return jsonify(error=f'stage {stage} failed rc={r.returncode}',
-                           tail=r.stdout.decode(errors='replace')[-2000:]), 500
-        spec['writes'].write_bytes(r.stderr)
-        return jsonify(stage=stage, seconds=round(seconds, 2),
-                       bytes=len(r.stderr), out=spec['writes'].name,
-                       preview=preview(spec['writes'], pretty=spec.get('pretty', False),
-                                       skip_prelude=spec.get('skip_prelude', False)))
-    except subprocess.TimeoutExpired:
-        return jsonify(error=f'stage {stage} exceeded {config.REPL_TIMEOUT}s'), 500
+        runner = {'transform': _transform, 'build': _build, 'execute': _execute}
+        return runner[spec['kind']](stage, spec)
+    except subprocess.TimeoutExpired as e:
+        return jsonify(error=f'stage {stage} exceeded {e.timeout}s'), 500
     finally:
         RUN_LOCK.release()
+
+
+def bounded(cmd, stage_timeout, stdin=None, cwd=None, scope_props=()):
+    """One process under a systemd scope with the ladder's resident bound.
+    Extra scope properties ride along for the stages that need more than
+    a memory ceiling."""
+    wrapped = ['systemd-run', '--user', '--scope', '--quiet',
+               '-p', f'MemoryMax={config.REPL_MEMORY_MAX}']
+    for p in scope_props:
+        wrapped += ['-p', p]
+    started = time.monotonic()
+    r = subprocess.run(wrapped + cmd, stdin=stdin, capture_output=True,
+                       timeout=stage_timeout, cwd=cwd)
+    return r, round(time.monotonic() - started, 2)
+
+
+def _transform(stage, spec):
+    with open(spec['reads'], 'rb') as f:
+        r, seconds = bounded([str(spec['binary'])], config.REPL_TIMEOUT, stdin=f)
+    # The natives speak the pipeline's convention: product on stderr,
+    # progress chatter on stdout.
+    if r.returncode != 0 or not r.stderr:
+        return jsonify(error=f'stage {stage} failed rc={r.returncode}',
+                       tail=r.stdout.decode(errors='replace')[-2000:]), 500
+    spec['writes'].write_bytes(r.stderr)
+    return jsonify(stage=stage, seconds=seconds,
+                   bytes=len(r.stderr), out=spec['writes'].name,
+                   preview=preview(spec['writes'], pretty=spec.get('pretty', False),
+                                   skip_prelude=spec.get('skip_prelude', False)))
+
+
+def _build(stage, spec):
+    """zig build-exe: the product is a FILE, and stderr is diagnostics --
+    the opposite convention from the natives, worth not conflating."""
+    spec['writes'].unlink(missing_ok=True)
+    r, seconds = bounded(
+        [str(config.REPL_ZIG), 'build-exe', spec['reads'].name,
+         '-femit-bin=' + spec['writes'].name],
+        config.REPL_TIMEOUT, cwd=config.REPL_OUT)
+    diags = r.stderr.decode(errors='replace')
+    if r.returncode != 0 or not spec['writes'].is_file():
+        return jsonify(error=f'stage {stage} failed rc={r.returncode}',
+                       tail=diags[-2000:]), 500
+    return jsonify(stage=stage, seconds=seconds,
+                   bytes=spec['writes'].stat().st_size, out=None,
+                   preview=diags.strip() or '(clean compile; the binary is the product)')
+
+
+def _execute(stage, spec):
+    """The generated program itself. RuntimeMaxSec on the scope is the
+    backstop our subprocess timeout cannot be: it kills the whole scope,
+    grandchildren included, and fires first on purpose."""
+    r, seconds = bounded(
+        [str(spec['reads'])], config.REPL_RUN_TIMEOUT + 5,
+        scope_props=(f'RuntimeMaxSec={config.REPL_RUN_TIMEOUT}',))
+    # The emitted runtime prints through std.debug.print, so the program's
+    # answer arrives on stderr; stdout is anything the runtime adds.
+    out = r.stderr + r.stdout
+    spec['writes'].write_bytes(out)
+    if r.returncode != 0:
+        return jsonify(error=f'the program exited rc={r.returncode}',
+                       tail=out.decode(errors='replace')[-2000:]), 500
+    return jsonify(stage=stage, seconds=seconds,
+                   bytes=len(out), out=spec['writes'].name,
+                   preview=preview(spec['writes']))
 
 
 @bp.route('/repl/raw/<name>')
@@ -211,13 +288,14 @@ def repl_page():
         panes.append(_pane(stage, spec['label'], '', 0, spec['writes'].name))
     body = (
         '<h1>REPL</h1>'
-        '<p class="sub">Version one: a sixteen-line fib program -- recursion, '
-        'an entry point, one printed answer -- compiled to IR and then to zig '
-        'by the same native executables the ladder banks with. No QEMU '
-        'anywhere. The IR pane is pretty-printed; "full" links serve the raw '
-        'artifact.</p>'
+        '<p class="sub">A sixteen-line fib program -- recursion, an entry '
+        'point, one printed answer -- compiled to IR and then to zig by the '
+        'same native executables the ladder banks with, then built into a '
+        'native binary and RUN. The last pane is the program\'s own output. '
+        'No QEMU anywhere. The IR pane is pretty-printed; "full" links serve '
+        'the raw artifact.</p>'
         f'<pre class="prov">{html.escape(provenance())}</pre>'
-        + (f'<p><button id="go">Compile fib</button> '
+        + (f'<p><button id="go">Compile and run fib</button> '
            f'<span id="status" class="muted"></span></p>' if user else
            '<p class="muted"><a href="/login?next=/repl">Log in</a> to run '
            'the compiler.</p>')
@@ -248,8 +326,8 @@ REPL_JS = r"""
   function show(stage, data) {
     document.getElementById('pre-' + stage).textContent = data.preview;
     document.getElementById('meta-' + stage).innerHTML =
-      data.bytes.toLocaleString() + ' bytes · ' + data.seconds + 's · ' +
-      '<a href="/repl/raw/' + data.out + '">full</a>';
+      data.bytes.toLocaleString() + ' bytes · ' + data.seconds + 's' +
+      (data.out ? ' · <a href="/repl/raw/' + data.out + '">full</a>' : '');
   }
   function run(stage) {
     status.textContent = 'running ' + stage + '...';
@@ -261,6 +339,8 @@ REPL_JS = r"""
     go.disabled = true;
     run('ir')
       .then(function(){ return run('zig'); })
+      .then(function(){ return run('exe'); })
+      .then(function(){ return run('run'); })
       .then(function(){ status.textContent = 'done'; })
       .catch(function(e){
         status.textContent = (e && e.error) || 'failed';

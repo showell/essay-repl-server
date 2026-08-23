@@ -23,6 +23,11 @@ REPL_OUT = DATA / 'repl'
 REPL_MEMORY_MAX = '6G'   # the ladder's zig-arm resident bound
 REPL_TIMEOUT = 120       # seconds per stage; fib is expected in single digits
 
+# The zig that compiles what zigemit wrote. Absolute because the systemd
+# --user service's PATH is not the shell's.
+REPL_ZIG = pathlib.Path.home() / 'zig-0.16.0' / 'zig'
+REPL_RUN_TIMEOUT = 30    # seconds for the compiled program itself; fib is ~instant
+
 BLURBS = {
     'essays': 'Published essays on working with Claude. Log in to leave '
               'paragraph-anchored notes.',
