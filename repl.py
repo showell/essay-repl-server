@@ -17,10 +17,22 @@ grandchild is exactly the runaway this page must not mint. Nothing here
 touches QEMU, so nothing here needs the box's one-compute-job lock;
 when a QEMU-path stage arrives it will take that lock and users wait.
 
+Every press of the button is one sandboxed use: the ir stage mints a
+directory under data/repl/runs/ and every later stage reads and writes
+only inside it, so a stage can never answer from another run's artifact
+-- the ladder's stale-artifact rule, applied to the web. Old runs are
+pruned to the newest few. The subject is still the server's own
+fib.codex; when user-submitted programs arrive, this per-run directory
+is where their isolation story starts, and it will need more than
+directories (the scope has no PrivateNetwork under a user manager).
+
 Running requires an account; reading results does not. One run at a
 time -- the second clicker gets a 409, not a queue.
 """
 import html
+import re
+import resource
+import shutil
 import subprocess
 import threading
 import time
@@ -35,45 +47,67 @@ bp = Blueprint('repl', __name__)
 
 RUN_LOCK = threading.Lock()
 
+# reads/writes are names inside the run's own directory; the ir stage
+# reads the global subject and MINTS the directory, which is what makes
+# a press of the button one sandboxed use: nothing a stage reads can
+# come from any other run.
 STAGES = {
     'ir': {
         'kind': 'transform',
         'binary': config.REPL_BIN / 'codexir',
-        'reads': config.REPL_SUBJECT,
-        'writes': config.REPL_OUT / 'fib.ir',
+        'reads': None,
+        'writes': 'fib.ir',
         'label': 'Codex source -> IR (bin/codexir)',
         'pretty': True,
     },
     'zig': {
         'kind': 'transform',
         'binary': config.REPL_BIN / 'zigemit',
-        'reads': config.REPL_OUT / 'fib.ir',
-        'writes': config.REPL_OUT / 'fib.zig',
+        'reads': 'fib.ir',
+        'writes': 'fib.zig',
         'label': 'IR -> zig source (bin/zigemit)',
         'skip_prelude': True,
     },
     'exe': {
         'kind': 'build',
-        'reads': config.REPL_OUT / 'fib.zig',
-        'writes': config.REPL_OUT / 'fib',
+        'reads': 'fib.zig',
+        'writes': 'fib',
         'label': 'zig source -> native binary (zig build-exe)',
     },
     'run': {
         'kind': 'execute',
-        'reads': config.REPL_OUT / 'fib',
-        'writes': config.REPL_OUT / 'fib.out',
+        'reads': 'fib',
+        'writes': 'fib.out',
         'label': 'The program runs (./fib)',
     },
 }
 
-# The outputs the raw-view route may serve, by name. The binary is not
-# here on purpose: this route says text/plain and means it.
-RAW = {
-    'fib.codex': lambda: config.REPL_SUBJECT,
-    'fib.ir': lambda: config.REPL_OUT / 'fib.ir',
-    'fib.zig': lambda: config.REPL_OUT / 'fib.zig',
-    'fib.out': lambda: config.REPL_OUT / 'fib.out',
-}
+# The artifacts the raw-view route may serve out of a run directory. The
+# binary is not here on purpose: the route says text/plain and means it.
+RAW_NAMES = {'fib.ir', 'fib.zig', 'fib.out'}
+
+# Minted by mint_run, so anything else in a URL is someone probing.
+RUN_ID = re.compile(r'^\d{8}T\d{6}Z-\d+$')
+_run_serial = 0
+
+
+def mint_run():
+    """A fresh directory per use, pruned to the newest REPL_KEEP_RUNS.
+    The serial disambiguates two presses inside one second."""
+    global _run_serial
+    _run_serial += 1
+    run = f'{time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())}-{_run_serial}'
+    (config.REPL_RUNS / run).mkdir(parents=True)
+    for stale in sorted(config.REPL_RUNS.iterdir())[:-config.REPL_KEEP_RUNS]:
+        shutil.rmtree(stale, ignore_errors=True)
+    return run
+
+
+def run_dir(run):
+    if not run or not RUN_ID.match(run):
+        return None
+    d = config.REPL_RUNS / run
+    return d if d.is_dir() else None
 
 PREVIEW_LINES = 500
 PRETTY_CAP = 512 * 1024   # pretty-print IR only under this size; raw past it
@@ -180,97 +214,125 @@ def run_stage(stage):
     spec = STAGES.get(stage)
     if spec is None:
         abort(404)
-    tool = spec['binary'] if spec['kind'] == 'transform' else (
-        config.REPL_ZIG if spec['kind'] == 'build' else spec['reads'])
-    if not tool.is_file():
-        missing = ('no natives installed -- run ops/refresh_natives.sh'
-                   if spec['kind'] == 'transform' else f'missing {tool}')
-        return jsonify(error=missing), 503
-    if not spec['reads'].is_file():
-        return jsonify(error=f'missing input {spec["reads"].name} -- run the prior stage'), 409
+    if spec['kind'] == 'transform' and not spec['binary'].is_file():
+        return jsonify(error='no natives installed -- run ops/refresh_natives.sh'), 503
+    if spec['kind'] == 'build' and not config.REPL_ZIG.is_file():
+        return jsonify(error=f'missing {config.REPL_ZIG}'), 503
     if not RUN_LOCK.acquire(blocking=False):
         return jsonify(error='a run is already in progress'), 409
     try:
-        config.REPL_OUT.mkdir(parents=True, exist_ok=True)
+        if spec['reads'] is None:
+            d = config.REPL_RUNS / mint_run()
+            rd = config.REPL_SUBJECT
+        else:
+            d = run_dir(request.args.get('run', ''))
+            if d is None:
+                return jsonify(error='no such run -- start from the top'), 409
+            rd = d / spec['reads']
+            if not rd.is_file():
+                return jsonify(error=f'missing input {rd.name} -- run the prior stage'), 409
         runner = {'transform': _transform, 'build': _build, 'execute': _execute}
-        return runner[spec['kind']](stage, spec)
+        return runner[spec['kind']](stage, spec, d, rd)
     except subprocess.TimeoutExpired as e:
         return jsonify(error=f'stage {stage} exceeded {e.timeout}s'), 500
     finally:
         RUN_LOCK.release()
 
 
-def bounded(cmd, stage_timeout, stdin=None, cwd=None, scope_props=()):
+def bounded(cmd, stage_timeout, stdin=None, cwd=None, scope_props=(),
+            stdout=None, stderr=None, fsize=None):
     """One process under a systemd scope with the ladder's resident bound.
-    Extra scope properties ride along for the stages that need more than
-    a memory ceiling."""
+    Extra scope properties ride along for the stages that need more than a
+    memory ceiling. `fsize` sets RLIMIT_FSIZE before exec -- a scope unit
+    cannot carry Limit* properties (systemd never forks its processes), so
+    the rlimit is set here and inherited through systemd-run."""
     wrapped = ['systemd-run', '--user', '--scope', '--quiet',
                '-p', f'MemoryMax={config.REPL_MEMORY_MAX}']
     for p in scope_props:
         wrapped += ['-p', p]
+    pre = (lambda: resource.setrlimit(resource.RLIMIT_FSIZE, (fsize, fsize))) if fsize else None
     started = time.monotonic()
-    r = subprocess.run(wrapped + cmd, stdin=stdin, capture_output=True,
-                       timeout=stage_timeout, cwd=cwd)
+    r = subprocess.run(wrapped + cmd, stdin=stdin, cwd=cwd,
+                       stdout=stdout or subprocess.PIPE,
+                       stderr=stderr or subprocess.PIPE,
+                       timeout=stage_timeout, preexec_fn=pre)
     return r, round(time.monotonic() - started, 2)
 
 
-def _transform(stage, spec):
-    with open(spec['reads'], 'rb') as f:
+def _answer(stage, d, seconds, nbytes, artifact, preview_text):
+    return jsonify(stage=stage, run=d.name, seconds=seconds, bytes=nbytes,
+                   raw=f'/repl/raw/{d.name}/{artifact}' if artifact else None,
+                   preview=preview_text)
+
+
+def _transform(stage, spec, d, rd):
+    with open(rd, 'rb') as f:
         r, seconds = bounded([str(spec['binary'])], config.REPL_TIMEOUT, stdin=f)
     # The natives speak the pipeline's convention: product on stderr,
     # progress chatter on stdout.
     if r.returncode != 0 or not r.stderr:
         return jsonify(error=f'stage {stage} failed rc={r.returncode}',
                        tail=r.stdout.decode(errors='replace')[-2000:]), 500
-    spec['writes'].write_bytes(r.stderr)
-    return jsonify(stage=stage, seconds=seconds,
-                   bytes=len(r.stderr), out=spec['writes'].name,
-                   preview=preview(spec['writes'], pretty=spec.get('pretty', False),
-                                   skip_prelude=spec.get('skip_prelude', False)))
+    wr = d / spec['writes']
+    wr.write_bytes(r.stderr)
+    return _answer(stage, d, seconds, len(r.stderr), wr.name,
+                   preview(wr, pretty=spec.get('pretty', False),
+                           skip_prelude=spec.get('skip_prelude', False)))
 
 
-def _build(stage, spec):
+def _build(stage, spec, d, rd):
     """zig build-exe: the product is a FILE, and stderr is diagnostics --
-    the opposite convention from the natives, worth not conflating."""
-    spec['writes'].unlink(missing_ok=True)
+    the opposite convention from the natives, worth not conflating. The
+    CPU quota keeps a compile from pegging the box the ladder shares."""
+    wr = d / spec['writes']
     r, seconds = bounded(
-        [str(config.REPL_ZIG), 'build-exe', spec['reads'].name,
-         '-femit-bin=' + spec['writes'].name],
-        config.REPL_TIMEOUT, cwd=config.REPL_OUT)
+        [str(config.REPL_ZIG), 'build-exe', rd.name, '-femit-bin=' + wr.name],
+        config.REPL_TIMEOUT, cwd=d,
+        scope_props=(f'CPUQuota={config.REPL_CPU_QUOTA}',))
     diags = r.stderr.decode(errors='replace')
-    if r.returncode != 0 or not spec['writes'].is_file():
+    if r.returncode != 0 or not wr.is_file():
         return jsonify(error=f'stage {stage} failed rc={r.returncode}',
                        tail=diags[-2000:]), 500
-    return jsonify(stage=stage, seconds=seconds,
-                   bytes=spec['writes'].stat().st_size, out=None,
-                   preview=diags.strip() or '(clean compile; the binary is the product)')
+    return _answer(stage, d, seconds, wr.stat().st_size, None,
+                   diags.strip() or '(clean compile; the binary is the product)')
 
 
-def _execute(stage, spec):
-    """The generated program itself. RuntimeMaxSec on the scope is the
-    backstop our subprocess timeout cannot be: it kills the whole scope,
-    grandchildren included, and fires first on purpose."""
-    r, seconds = bounded(
-        [str(spec['reads'])], config.REPL_RUN_TIMEOUT + 5,
-        scope_props=(f'RuntimeMaxSec={config.REPL_RUN_TIMEOUT}',))
-    # The emitted runtime prints through std.debug.print, so the program's
-    # answer arrives on stderr; stdout is anything the runtime adds.
-    out = r.stderr + r.stdout
-    spec['writes'].write_bytes(out)
+def _execute(stage, spec, d, rd):
+    """The generated program itself, held three ways: RuntimeMaxSec on the
+    scope (kills the whole scope, grandchildren included -- the backstop a
+    subprocess timeout cannot be), a CPU quota, and RLIMIT_FSIZE with the
+    output on a file rather than a pipe, so a print loop dies at the cap
+    instead of filling the disk or this process's memory."""
+    wr = d / spec['writes']
+    with open(wr, 'wb') as out_file:
+        r, seconds = bounded(
+            [str(rd)], config.REPL_RUN_TIMEOUT + 5,
+            scope_props=(f'RuntimeMaxSec={config.REPL_RUN_TIMEOUT}',
+                         f'CPUQuota={config.REPL_CPU_QUOTA}'),
+            # The emitted runtime prints through std.debug.print, so the
+            # answer arrives on stderr; both land in the one file, in order.
+            stdout=out_file, stderr=out_file,
+            fsize=config.REPL_OUTPUT_CAP)
+    nbytes = wr.stat().st_size
     if r.returncode != 0:
-        return jsonify(error=f'the program exited rc={r.returncode}',
-                       tail=out.decode(errors='replace')[-2000:]), 500
-    return jsonify(stage=stage, seconds=seconds,
-                   bytes=len(out), out=spec['writes'].name,
-                   preview=preview(spec['writes']))
+        tail = wr.read_bytes()[-2000:].decode(errors='replace')
+        return jsonify(error=f'the program exited rc={r.returncode}', tail=tail), 500
+    return _answer(stage, d, seconds, nbytes, wr.name, preview(wr))
 
 
-@bp.route('/repl/raw/<name>')
-def raw(name):
-    path_for = RAW.get(name)
-    if path_for is None or not path_for().is_file():
+@bp.route('/repl/raw/fib.codex')
+def raw_subject():
+    if not config.REPL_SUBJECT.is_file():
         abort(404)
-    return Response(path_for().read_bytes(), mimetype='text/plain')
+    return Response(config.REPL_SUBJECT.read_bytes(), mimetype='text/plain')
+
+
+@bp.route('/repl/raw/<run>/<name>')
+def raw(run, name):
+    d = run_dir(run)
+    if d is None or name not in RAW_NAMES or not (d / name).is_file():
+        abort(404)
+    return Response((d / name).read_bytes(), mimetype='text/plain')
 
 
 @bp.route('/repl')
@@ -285,7 +347,7 @@ def repl_page():
     # The stage panes always load empty: compiling is the page's whole
     # act, and a cached artifact would rob the button of its reveal.
     for stage, spec in STAGES.items():
-        panes.append(_pane(stage, spec['label'], '', 0, spec['writes'].name))
+        panes.append(_pane(stage, spec['label'], '', 0, spec['writes']))
     body = (
         '<h1>REPL</h1>'
         '<p class="sub">A sixteen-line fib program -- recursion, an entry '
@@ -327,20 +389,20 @@ REPL_JS = r"""
     document.getElementById('pre-' + stage).textContent = data.preview;
     document.getElementById('meta-' + stage).innerHTML =
       data.bytes.toLocaleString() + ' bytes · ' + data.seconds + 's' +
-      (data.out ? ' · <a href="/repl/raw/' + data.out + '">full</a>' : '');
+      (data.raw ? ' · <a href="' + data.raw + '">full</a>' : '');
   }
-  function run(stage) {
+  function run(stage, runid) {
     status.textContent = 'running ' + stage + '...';
-    return fetch('/repl/run/' + stage, {method: 'POST'})
+    return fetch('/repl/run/' + stage + (runid ? '?run=' + runid : ''), {method: 'POST'})
       .then(function(r){ return r.json().then(function(j){ if (!r.ok) { j.stage = stage; throw j; } return j; }); })
       .then(function(j){ show(stage, j); return j; });
   }
   go.addEventListener('click', function(){
     go.disabled = true;
     run('ir')
-      .then(function(){ return run('zig'); })
-      .then(function(){ return run('exe'); })
-      .then(function(){ return run('run'); })
+      .then(function(j){ return run('zig', j.run); })
+      .then(function(j){ return run('exe', j.run); })
+      .then(function(j){ return run('run', j.run); })
       .then(function(){ status.textContent = 'done'; })
       .catch(function(e){
         status.textContent = (e && e.error) || 'failed';

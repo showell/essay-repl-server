@@ -28,6 +28,14 @@ REPL_TIMEOUT = 120       # seconds per stage; fib is expected in single digits
 REPL_ZIG = pathlib.Path.home() / 'zig-0.16.0' / 'zig'
 REPL_RUN_TIMEOUT = 30    # seconds for the compiled program itself; fib is ~instant
 
+# Every press of the button gets its own directory under here, so a stage
+# can only ever read THIS run's artifacts -- the ladder's stale-artifact
+# rule, applied to the web.
+REPL_RUNS = REPL_OUT / 'runs'
+REPL_KEEP_RUNS = 20          # newest kept; older run dirs are deleted
+REPL_OUTPUT_CAP = 2 * 1024 * 1024  # RLIMIT_FSIZE on the generated program
+REPL_CPU_QUOTA = '100%'      # one core; the box is shared with the ladder
+
 BLURBS = {
     'essays': 'Published essays on working with Claude. Log in to leave '
               'paragraph-anchored notes.',
