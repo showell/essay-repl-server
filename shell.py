@@ -39,7 +39,7 @@ form.auth button { margin-top: 16px; padding: 6px 16px; font-size: 14px; border:
 
 def page_head(title, user):
     links = ''.join(f'<a href="/{html.escape(c)}">{html.escape(c.title())}</a>'
-                    for c in config.COLLECTIONS)
+                    for c in config.COLLECTIONS) + '<a href="/repl">REPL</a>'
     if user:
         who = (f'<span class="who">{html.escape(user)}'
                f' <a href="/logout">log out</a></span>')

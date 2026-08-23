@@ -16,6 +16,13 @@ COLLECTIONS = {
     'notes': REPO / 'notes',
 }
 
+# The REPL's executables and subject, installed by ops/refresh_natives.sh.
+REPL_BIN = REPO / 'bin'
+REPL_SUBJECT = REPO / 'subjects' / 'fib-subject.codex'
+REPL_OUT = DATA / 'repl'
+REPL_MEMORY_MAX = '6G'   # the ladder's zig-arm resident bound
+REPL_TIMEOUT = 120       # seconds per stage; fib is expected in single digits
+
 BLURBS = {
     'essays': 'Published essays on working with Claude. Log in to leave '
               'paragraph-anchored notes.',

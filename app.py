@@ -17,6 +17,7 @@ import auth
 import comments
 import config
 import essays
+import repl
 from shell import page
 
 config.DATA.mkdir(exist_ok=True)
@@ -25,6 +26,7 @@ app = Flask(__name__)
 app.secret_key = auth.secret_key()
 app.register_blueprint(auth.bp)
 app.register_blueprint(comments.bp)
+app.register_blueprint(repl.bp)
 
 
 @app.route('/')
