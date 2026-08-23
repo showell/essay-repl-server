@@ -34,6 +34,7 @@ STAGES = {
         'reads': config.REPL_SUBJECT,
         'writes': config.REPL_OUT / 'fib.ir',
         'label': 'Codex source -> IR (bin/codexir)',
+        'pretty': True,
     },
     'zig': {
         'binary': config.REPL_BIN / 'zigemit',
@@ -45,12 +46,13 @@ STAGES = {
 
 # The outputs the raw-view route may serve, by name.
 RAW = {
-    'fib-subject.codex': lambda: config.REPL_SUBJECT,
+    'fib.codex': lambda: config.REPL_SUBJECT,
     'fib.ir': lambda: config.REPL_OUT / 'fib.ir',
     'fib.zig': lambda: config.REPL_OUT / 'fib.zig',
 }
 
-PREVIEW_LINES = 60
+PREVIEW_LINES = 500
+PRETTY_CAP = 512 * 1024   # pretty-print IR only under this size; raw past it
 
 
 def provenance():
@@ -60,15 +62,83 @@ def provenance():
         return 'no natives installed -- run ops/refresh_natives.sh'
 
 
-def preview(path):
+def preview(path, pretty=False):
     try:
-        with open(path, errors='replace') as f:
-            lines = [next(f) for _ in range(PREVIEW_LINES)]
-    except StopIteration:
-        pass
+        text = path.read_text(errors='replace')
     except OSError:
         return ''
+    if pretty and len(text) <= PRETTY_CAP:
+        text = pretty_sexp(text)
+    lines = text.splitlines(keepends=True)
+    if len(lines) > PREVIEW_LINES:
+        lines = lines[:PREVIEW_LINES] + [f'... ({len(lines) - PREVIEW_LINES} more lines; see full)']
     return ''.join(lines)
+
+
+def pretty_sexp(text, width=100):
+    """Re-indent the IR's s-expressions: a form stays on one line while it
+    fits in `width` columns, else its children stack. Falls back to the
+    raw text on anything unparseable."""
+    try:
+        forms, i = [], 0
+        while True:
+            form, i = _parse_sexp(text, i)
+            if form is None:
+                break
+            forms.append(form)
+        return '\n'.join(_render_sexp(f, 0, width) for f in forms) + '\n'
+    except (ValueError, RecursionError):
+        return text
+
+
+def _parse_sexp(text, i):
+    n = len(text)
+    while i < n and text[i].isspace():
+        i += 1
+    if i >= n:
+        return None, i
+    if text[i] == '(':
+        i += 1
+        children = []
+        while True:
+            while i < n and text[i].isspace():
+                i += 1
+            if i >= n:
+                raise ValueError('unclosed form')
+            if text[i] == ')':
+                return children, i + 1
+            child, i = _parse_sexp(text, i)
+            children.append(child)
+    if text[i] == '"':
+        j = i + 1
+        while j < n:
+            if text[j] == '\\':
+                j += 2
+                continue
+            if text[j] == '"':
+                return text[i:j + 1], j + 1
+            j += 1
+        raise ValueError('unclosed string')
+    j = i
+    while j < n and not text[j].isspace() and text[j] not in '()':
+        j += 1
+    return text[i:j], j
+
+
+def _render_sexp(form, indent, width):
+    if isinstance(form, str):
+        return form
+    flat = '(' + ' '.join(_render_sexp(c, 0, width) for c in form) + ')'
+    if indent + len(flat) <= width:
+        return flat
+    if not form:
+        return '()'
+    head = _render_sexp(form[0], indent, width)
+    lines = ['(' + head]
+    for c in form[1:]:
+        lines.append(' ' * (indent + 2) + _render_sexp(c, indent + 2, width))
+    lines[-1] += ')'
+    return '\n'.join(lines)
 
 
 @bp.route('/repl/run/<stage>', methods=['POST'])
@@ -101,7 +171,7 @@ def run_stage(stage):
         spec['writes'].write_bytes(r.stderr)
         return jsonify(stage=stage, seconds=round(seconds, 2),
                        bytes=len(r.stderr), out=spec['writes'].name,
-                       preview=preview(spec['writes']))
+                       preview=preview(spec['writes'], pretty=spec.get('pretty', False)))
     except subprocess.TimeoutExpired:
         return jsonify(error=f'stage {stage} exceeded {config.REPL_TIMEOUT}s'), 500
     finally:
@@ -123,19 +193,20 @@ def repl_page():
     panes = []
     src_preview = preview(config.REPL_SUBJECT) if subject_ready else ''
     src_bytes = config.REPL_SUBJECT.stat().st_size if subject_ready else 0
-    panes.append(_pane('source', 'The fib subject (fib-subject.codex)',
-                       src_preview, src_bytes, 'fib-subject.codex'))
+    panes.append(_pane('source', 'The fib program (fib.codex)',
+                       src_preview, src_bytes, 'fib.codex'))
     for stage, spec in STAGES.items():
         out = spec['writes']
-        text = preview(out) if out.is_file() else ''
+        text = preview(out, pretty=spec.get('pretty', False)) if out.is_file() else ''
         size = out.stat().st_size if out.is_file() else 0
         panes.append(_pane(stage, spec['label'], text, size, out.name))
     body = (
         '<h1>REPL</h1>'
-        '<p class="sub">Version one: the fib rung -- 1.1 MB of Codex, the '
-        'smallest subject that is still a real program with the whole prelude '
-        'along -- compiled to IR and then to zig by the same native '
-        'executables the ladder banks with. No QEMU anywhere.</p>'
+        '<p class="sub">Version one: a sixteen-line fib program -- recursion, '
+        'an entry point, one printed answer -- compiled to IR and then to zig '
+        'by the same native executables the ladder banks with. No QEMU '
+        'anywhere. The IR pane is pretty-printed; "full" links serve the raw '
+        'artifact.</p>'
         f'<pre class="prov">{html.escape(provenance())}</pre>'
         + (f'<p><button id="go">Compile fib</button> '
            f'<span id="status" class="muted"></span></p>' if user else
@@ -174,7 +245,7 @@ REPL_JS = """
   function run(stage) {
     status.textContent = 'running ' + stage + '...';
     return fetch('/repl/run/' + stage, {method: 'POST'})
-      .then(function(r){ return r.json().then(function(j){ if (!r.ok) throw j; return j; }); })
+      .then(function(r){ return r.json().then(function(j){ if (!r.ok) { j.stage = stage; throw j; } return j; }); })
       .then(function(j){ show(stage, j); return j; });
   }
   go.addEventListener('click', function(){
@@ -182,7 +253,13 @@ REPL_JS = """
     run('ir')
       .then(function(){ return run('zig'); })
       .then(function(){ status.textContent = 'done'; })
-      .catch(function(e){ status.textContent = (e && e.error) || 'failed'; })
+      .catch(function(e){
+        status.textContent = (e && e.error) || 'failed';
+        if (e && e.stage) {
+          document.getElementById('pre-' + e.stage).textContent =
+            (e.error || 'failed') + (e.tail ? '\n\n' + e.tail : '');
+        }
+      })
       .finally(function(){ go.disabled = false; });
   });
 })();
