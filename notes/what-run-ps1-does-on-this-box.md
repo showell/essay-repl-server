@@ -68,25 +68,41 @@ anything.
 `build/plug-run.ps1` hardcodes the same binary at line 49 and, unlike
 `compile.ps1`, has no fallback. The word `qemu` does not appear in the
 file. It dot-sources `vm-config.ps1` — the file that knows how to find a
-QEMU, and that carries a ready-made error for having no host at all
-("no VM host: ...", line 56) — and then ignores all of it and launches
-`tools\codex-vm.exe` directly.
+QEMU — and then launches `tools\codex-vm.exe` directly.
 
     build/plug-run.ps1 -IrInput hello.ir -PlugCdx zig-plug.cdx -MemMB 3072
     [plug-run] IR input: 1481 bytes
+    [plug-run] Plug: codex/plugs/zig/build-output/zig-plug.cdx
     [plug-run] Listening on TCP 9145
     plug-run.ps1: The variable '$proc' cannot be retrieved because it
                   has not been set.
     -> exit 1, one second
 
 That is the failure a Linux user gets: not "no VM host", but a
-PowerShell strict-mode complaint about an unset variable, because
-`Start-Process` on a file that does not exist left `$proc` unset and the
-next line read it. The diagnosis it needs is sitting in the file it
-already sourced.
+PowerShell strict-mode complaint about an unset variable. The path there
+is worth following, because I got it wrong first. `Start-Process` on a
+file that does not exist is a *terminating* error under this script's
+`$ErrorActionPreference = 'Stop'`, so control never reaches the next
+line. It leaves for the `finally` block, which asks whether the VM needs
+stopping — `if (($proc -and (-not $proc.HasExited)))` — and reads a
+variable that was never assigned. Strict mode throws there, and an
+exception raised in a `finally` replaces the one that sent you there. So
+the message names the cleanup, not the launch, and the launch failure is
+never printed at all.
 
-So on Linux, the 38 plugs that route through `plug-run.ps1` cannot be
-run. Not slowly, not partially — at all.
+The file it sourced does carry a "no VM host" error, but it cannot fire
+here either: that error is for having NEITHER host, and this box has a
+QEMU. There is no message anywhere in the tree for what actually
+happened.
+
+**And it is not 38 plugs. It is all 56.** That was the other thing I got
+wrong. Grep every `codex/plugs/*/run.ps1` for `qemu`, `UseCodexVm`,
+`Start-VmRun` or `FallbackVmBin` and you get nothing — not one hit in
+any of them. They divide three ways: 38 delegate to `plug-run.ps1`; 8
+hardcode `tools\codex-vm.exe` themselves; and 10 take
+`$script:CodexVmBin` out of the sourced config while skipping
+`$script:UseCodexVm`, which is the worst of the three, because it looks
+like consultation. On Linux, none of them can start a VM.
 
 ## And the warning's own premise was stale
 
@@ -120,8 +136,11 @@ the codex tree gets run by hand while a sweep is up.
 
 The missing VM host is a different matter, and it is theirs. It is a
 clean gap with a clean consequence — a whole platform, which their own
-comment calls the only host on that platform, cannot run 38 plugs — and
-it fails with a message that names the wrong thing. We also have the
+comment calls the only host on that platform, cannot run any plug — and
+it fails with a message that names the wrong thing. It went over as
+PR 88, with one ask: is Linux a supported host for RUNNING plugs, or
+only for building them? Either answer is a small change, and they are
+different changes. We also have the
 working recipe, because the ladder has been doing this exact transport
 daily for weeks: `plug_run.py` listens on 9145 and lets the guest dial
 out, and `codex_vm.py:43-51` boots the guest with user-mode networking
@@ -141,3 +160,10 @@ claim in a queue survived only because it was written from reading.
 
 Reading tells you what a script would do. It does not tell you what it
 does.
+
+And then the entry I wrote about it made the same mistake twice more. A
+cold read caught both: I had said 38 plugs were affected and the other
+18 took other paths, when none of the 56 consults the host selection;
+and I had blamed the wait loop for a message that comes from the cleanup
+block. The second took four lines of PowerShell to settle for good. Both
+were, again, read rather than run.
