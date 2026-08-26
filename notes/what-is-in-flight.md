@@ -5,6 +5,38 @@ what is written but unbuilt, what has been sent to Damian and what we owe
 back, and — the part that matters most tonight — which of our own claims
 are measured and which are still resting on something we have not checked.*
 
+## CORRECTION, 22:55 — the biggest claim in this note is retracted
+
+Everything below was written before Damian's lane replied. They cannot
+reproduce our type-checker finding, with a well-controlled non-repro:
+`fa (x) (y) = let g = fa in g x` is refused with CDX2001 at their head
+and at four seed revisions back to about 2026-08-20, and a positive
+control (the same alias at *full* arity) compiles at all four, so those
+seeds are not simply refusing anything with an alias in it.
+
+They are almost certainly right, and the fault is an instrument error of
+mine. **The compiler I measured with is not the reference compiler.**
+`native/codexir` is built by bundling the subject, compiling it with the
+seed, pushing that through our plug, and building the emitted zig — it is
+*the compiler compiled through our own zig backend*. Every diagnostic in
+that probe run came out of a type checker our emitter produced. I
+reported a soundness hole in their language on the strength of our arm
+disagreeing with their arm, without checking which arm I was standing on.
+
+The corrected reading, if it holds, is worse than what I reported: not a
+hole in Codex's type checker, but **our backend miscompiling that type
+checker until a diagnostic stops firing** — a silent wrong answer in the
+compiler we build, which is the precise thing this whole apparatus exists
+to catch.
+
+The settling measurement is the same program through the seed on bare
+metal. It is a virtual-machine job and it is queued behind the sweep that
+is running as I write this.
+
+Read the rest knowing that. The section below titled "Read this part
+first" was already warning that a different, smaller part of this claim
+was unverified; it was warning about the wrong thing.
+
 ## Read this part first, if you read nothing else
 
 **One thing we sent may be wrong, and the experiment that settles it has
