@@ -152,25 +152,77 @@ byte-identical. The five comprehension sites in `Lowering.codex` whose
 lifted lambdas produce the failing calls exist, unchanged, at both pins. So
 neither the defect nor the shape that trips it is new.
 
-What changed is that something finally looked. Two of them, both ours, both
-in the twenty-four hours before the gate fired:
+**But something DID change, and it is upstream and exact.** Update 50 edited
+`opening.codex`'s source-emitting path:
 
-- **`codexzig` was built and wired into the ceremony.** It is the first
-  artifact that takes the compiler's own chapter set through the plug and
-  then attempts to *build* the emitted zig. Transpiling had always
-  succeeded; nobody had been compiling the result of this particular path.
-- **A stale `ir-emit-roots` list was corrected the same morning** — we had
-  copied four roots where upstream has six, in both harnesses, so no oracle
-  on either side could see the drift. Fixing it widens what gets emitted at
-  all.
+    -    else let raw-defs = fe.ir.defs
+    +     in let lifted-ir = deck-record (lift-lambdas (fe.ir) lift-ceiling)
+    +     in let raw-defs = lifted-ir.defs
+    -      let ir = ir-prune-unreachable-roots (fe.ir) ir-emit-roots
+    +      let ir = ir-prune-unreachable-roots lifted-ir ir-emit-roots
 
-There is one honest gap in this account and it should stay visible. I have
-established that the *code* and the *trigger source* predate Update 50. I
-have **not** re-run the Update 49 pin through the same gate to watch it
-fail, because that costs a QEMU chain and the box is busy verifying the
-fix. The claim "Update 49 would have failed here too" is inference from two
-identical trees, not a measurement. It is a cheap measurement and it is
-worth taking.
+The file goes from one `lift-lambdas` call to two, and the new one is on the
+path that feeds text plugs. **Before Update 50, a source-emitting plug never
+received a lifted lambda at all.** The release commit message says it in
+four words if you know to look: *"the DDC witness holds after the lambda-lift
+break."*
+
+So the shape of it is: a defect written in Update 44, sitting on a code path
+that no input could reach, until Update 50 started producing that input.
+
+The artifacts agree, and this is the measurement I would keep if I could keep
+only one. Last night's `codexzig.zig` — the build that reached a fixed point,
+written four minutes past midnight — against today's:
+
+                            last night      today
+    lifted lambda defs           0            300
+    generic defs                18             90
+    map_list call sites        106            106
+
+**106 generic call sites, exercised, correct, both times.** The recovery walk
+ran on every one of them and got the right answer every time, because every
+mapped function had a NAME. Last night's testing was not shallow and it was
+not lucky. It could not have found this, because the compiler was not yet
+capable of handing it the input.
+
+That is a more useful answer than "we finally looked." We had looked, hard,
+with a good instrument. What we could not do was manufacture a `__lam_N`,
+because at that point nothing in the toolchain produced one for a plug.
+
+## The part that is now ours
+
+Update 50 turning on the lift has a second consequence we had not noticed,
+and it is the reason the gate is still red after the fix.
+
+`codexzig` checks itself by emitting its own bundle two ways and demanding
+the results be identical: once through seed-plus-ring-plug, and once as a
+single native program. Those two arms do not run the same pipeline. The
+first goes through the driver. The second goes through **our** harness —
+`CodexZigHarness.codex` — and our harness has zero `lift-lambdas` calls,
+because when it was written the driver's text-plug path had none either.
+
+It does now. So the two arms emit different programs: 300 lifted lambdas on
+one side, none on the other. The fixed point fails, and it fails for a
+reason that has nothing to do with the fix above:
+
+    BUILD: ... return __lam_0(p0, p1); ...
+    SELF : ... return emit_negate(_lam3_s, cx_list_at(_lam3_a, 0)); ...
+
+**The fixed point held last night because neither arm lifted anything.** It
+has never been tested against a subject containing a lifted lambda, and the
+first time it was, it failed. That is a weaker property than "codexzig
+reaches a fixed point" sounded like, and the weakness was invisible for
+exactly as long as the two arms happened to agree by both being incomplete
+in the same way.
+
+The same drift explains the blind spot: `native/codexir` runs that harness
+too, so the corpus runner and the whole tier set cannot produce a `__lam_N`
+either. They are not wrong. They are copies of a pipeline that moved.
+
+This is the second copied-thing-that-fell-behind in one day. The first was
+`ir-emit-roots` — four entries where upstream has six, in both harnesses,
+found by a cold read that morning. This one is the same failure one level
+up: not a copied list, a copied pipeline.
 
 ## The sting
 
@@ -197,9 +249,10 @@ class* by a *different route* — those come from typeclass dictionary
 construction, not from a call to a generic definition — and it is still
 open. My fix does not touch them and I am not going to claim it does.
 
-But it means the class had been visible in our own corpus, in our own
-queue, for weeks. It didn't need Update 50 to surface. It needed someone to
-read `T16` as what it says instead of what it looks like.
+But it means the symptom class had been sitting in our own corpus, in our
+own queue, for weeks, under a reading that made it uninteresting. That route
+needed no Update 50 and no lambda lift. It needed someone to read `T16` as
+what it says instead of what it looks like.
 
 ---
 
