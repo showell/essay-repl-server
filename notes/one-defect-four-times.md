@@ -176,3 +176,48 @@ instance is out there. What would find it is not more diagnosis but a
 property: for every expression the checker resolved, does the wire carry the
 answer? That is checkable in one pass over the IR, and PRIORITIES has it
 written down as a standing item nobody has built yet.
+
+---
+
+## Postscript, an hour later
+
+Three things resolved after this was written, and one of them changes the
+argument rather than just updating it.
+
+**The second compiler PR is sent** — [#101][], with the measurement it was
+waiting on: clean 326 to 330 on the corpus, zero regressions, `hamt-test` and
+`kvstore-test` both matching, and `list-test` staying blocked exactly as
+finding 59's "PARTIAL" said it would.
+
+**`roc-fold-empty` is the interesting result**, and it is the one that changes
+the argument above. The empty-list fix works — the program leaves `markers` —
+and it lands immediately on finding 68. So finding 68 is not just a fifth
+instance of the family, it is now the thing standing between a working fix and
+a clean program. The register's claim that this program goes "markers to match"
+was measured on the old base and no longer holds; the difference between those
+two trees is Update 53.
+
+**Finding 68 is filed** as [#102][], with the mechanism traced to the line: the
+call-site name reference carries the lambda's own function type nested inside
+its own return position, because `build-curried-fun-ty` prepended three
+parameters to a type that already had them. Compiler, not plug — the seed
+produces the same wire, so there is nothing plug-side to fix and a plug
+"repair" would mean choosing between two types the compiler asserted in one
+statement.
+
+**And two of the findings I was going to work on next turned out to need
+nothing.** Finding 61 is already fixed in Update 53, from our own issue-94
+report — confirmed by output rather than source, since the emitted zig calls
+`hamt_empty(i64)` against `fn hamt_empty(comptime T58: type)`. Finding 60's
+code was dropped on purpose weeks ago, on the grounds that its rule had been
+wrong twice and the second wrong version shipped a wrong answer into a build.
+Its register entry had not said so in the header, so it was reading as
+unfinished work. It says so now.
+
+That last one is the small lesson of the evening: **a finding whose header does
+not carry its disposition will be picked up again.** Three entries were in that
+state today, and each one cost a few minutes of re-deriving something already
+decided.
+
+[#101]: https://github.com/damiant3/Cobblestone/pull/101
+[#102]: https://github.com/damiant3/Cobblestone/issues/102
