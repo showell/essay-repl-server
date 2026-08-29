@@ -5,6 +5,11 @@ Forty-one ladder commits today, ten in Cobblestone across all branches, one
 new PR. The essay is about why a measurement needs three coordinates and what
 happens when a fourth one leaks in unannounced.*
 
+*Postscript added the same evening: the fix recommended at the bottom was
+built, the census re-banked, and the building turned up a third instance and
+produced two fresh ones. Skip to **What happened next** for the part that
+graded the recommendation.*
+
 ## Four repos, and what each one is allowed to say
 
 It is worth naming the boundaries before describing what crossed them, because
@@ -215,3 +220,127 @@ the item I would put next, ahead of re-banking anything.
 And in the meantime the rule is simply: **two arms, or nothing.** A bank diff
 is not evidence today. It was not evidence yesterday either; we just could not
 see that yet.
+
+---
+
+## What happened next
+
+The recommendation above was taken the same evening, which means it can be
+graded rather than admired. The estimate was "maybe an hour"; the module and
+its verification took about forty-five minutes, and the re-bank fifteen more
+of compute. That is the only part of this postscript where I was right in the
+way I expected to be.
+
+`tool_identity.py` hashes the four inputs `build_one` actually feeds a native:
+the bundled subject, the ring plug bundle that transpiles it, the seed that
+compiles it, the zig that links it. None of them contains a path, which is the
+entire point.
+
+### The list already existed, which is the essay's own thesis biting
+
+`zigc_verify.sh` had been hashing exactly those four inline since 08-25, where
+it turns a seven-minute build into an 8.7-second cache check. It was correct
+there first. What it lacked was a name — so when `corpus_run.py` needed the
+same idea it grew a *second* mechanism, based on binaries, that could not
+work. The abstraction earns its keep on the second user, and the cost of
+noticing the second user late was three broken guards.
+
+### A third site, with an excuse attached
+
+Two instances were named above. Grepping for the pattern found a third:
+`overnight_verify.sh` compared binary shas to check its restore had landed on
+the banked tools, could never match, and printed `NOTE: differs from banked
+meta` under a standing comment explaining that this was expected cross-venue,
+because zig targets the native host CPU.
+
+That explanation is *half true* and entirely load-bearing on nothing. Cross-host
+builds would differ. So would same-host builds in different directories, which
+is the case that was actually occurring, every night. The comment made a
+permanent failure legible enough to stop being alarming. **A rationalisation
+attached to a check is worth more suspicion than a check with no comment at
+all** — someone looked, found the mismatch, explained it, and did not ask
+whether the explanation was the whole cause.
+
+### Three ways of being wrong about a verification
+
+Getting this right needed three distinct checks, and the distinctions are the
+useful part.
+
+The **self-check** — a bank must describe the tree that wrote it — is
+necessary and worthless alone. A fingerprint that quietly encoded its sandbox
+would pass it every single time. That is precisely what the binary shas were
+doing while looking like rigour, so a verification that only does this
+reproduces the bug it is verifying.
+
+The **cross-tree check** is the real one: a second sandbox, same two refs,
+bundled independently with its own pwsh and its own generator, asked whether
+the first tree's bank is about it. `8632b51e/f4a03c87` in both. That is a
+claim no run confined to one tree can make.
+
+The **negative control** closes it: cut at `88daa0a8` instead of `58b08c38`
+and the answer must be *different*. A check that has only ever answered "same"
+has exactly the shape of the guards this essay is about. Running it also
+produced the single most clarifying fact of the evening — `codexir`'s subject
+bundle is **byte-identical** across those two refs, 56,565 lines and 2,659,934
+bytes unchanged, and its fingerprint moved anyway, because the ring plug
+bundle it is transpiled through went 7,122 to 7,157 lines. Which is correct: a
+plug change really does change which `codexir` binary you get. The fingerprint
+knows something the subject alone cannot say.
+
+### I removed three and produced two
+
+This is the part worth writing down, because it is not the tidy ending.
+
+`census_confirm.sh` — the script whose whole job is verifying the new identity
+— printed `NOT CONFIRMED: the identity did not survive the move` on any
+verdict that was not "same". It cannot know that. It is handed a census and a
+tree and is never told whether the two were *meant* to match. When the
+negative control correctly reported a genuinely different tree, the script
+told me the mechanism had failed. It had not; it had just worked. A
+justification naming a cause nothing computed, inside the verifier for the
+mechanism built to stop exactly that.
+
+Then `print_bank_diff` reported a row saying the base had moved, because a
+bank recording `codex_branch: "HEAD"` and a run reporting `None` are the same
+fact — detached, no branch — in the old spelling and the new one. I had fixed
+that at the writing end and reintroduced it at the reading end, in the next
+commit.
+
+Both were caught by *running* the thing rather than reading it. Neither was
+caught by care, and I had a great deal of care available at that point in the
+evening.
+
+### And the docstring that was itself the failure
+
+`current_base`'s docstring had said, since it was written, that "a detached
+worktree has no branch name and says so rather than guessing." The code called
+`rev-parse --abbrev-ref HEAD`, which answers the literal string `HEAD` when
+detached. Every ladder run is detached by design. So the field read like a
+branch named HEAD on every bank ever taken, under a docstring describing the
+behaviour it did not have.
+
+That is the family resemblance to everything else here. The docstring was a
+check that could not fail: it asserted the property instead of testing it, and
+it was *more* convincing than silence would have been. The fix — `symbolic-ref
+--quiet`, plus a `codex_points_at` list naming what actually resolves the
+commit — makes the field answer the question it was invented for. When it
+reads `upstream/master`, the bank is about a release. When it reads one local
+branch, it is about unlanded work. When it is empty, nothing points at that
+commit any more, and you should look before trusting anything measured on it.
+
+### The rule that replaces "two arms, or nothing"
+
+The census is re-banked at plain upstream `58b08c38` — not on our stack, so it
+stays a baseline Damian would recognise — with `built_from` and a real `base`.
+It was confirmed from a tree it had never seen.
+
+So the closing rule above is retired, one day old. A single corpus run against
+this bank is evidence again, which is the eight-minute question instead of the
+thirty-minute one, on every zig-plug PR from here.
+
+What survives is narrower and I think more durable: **identify a measurement
+by its source coordinates, never by its materialised artifacts** — and when
+you build the thing that does it, check that it can say *no*. Everything that
+went wrong today, in the original mechanism and in my two replacements for it,
+was a check that had lost the ability to fail without losing the ability to
+look like a check.
