@@ -255,3 +255,54 @@ by swapping in the candidate compiler and watching the key move.
 Recorded as WASM_FINDINGS 10 and 11. What is left from the pass is the tier-2
 tooling list — the 520 MB unlabelled row, the `--both` refusal that crashes the
 sweep, the failed-candidate GREEN, the deck's 14 MB — and the tier-3 numbers.
+
+
+---
+
+## The rest of it, same day
+
+**The instruments** (safari-codex `f2619c0`). The arm prefix now comes off the
+phase names, so `czg-bset` and `cwm-bset` align instead of folding silently into
+whichever row follows — the `prefix` field had been sitting there unread for
+exactly this, and the largest of those phases was at 55% of the suppression
+threshold. The filter is `max(abs(...))`, so a row where both arms fall is a
+difference again. `deck-adv` prints as "deck-adv (address space)". The deck
+accounting says what it closes: 294 + 398 + 47 + 8 = 747 against 752, where the
+8 is the process baseline I measured (8,448 KB on a five-line input), leaving
+about 5 MB — 0.7% — unexplained rather than "closed". `wasm_arm.py --both` no
+longer dies with a TypeError on a native refusal. An empty `CODEXZIG` is refused
+outright, which is what let a failed candidate build run the whole sweep on the
+base transpiler and print GREEN. And `build_codexzig_try.sh` removes the old
+binary before building and keys on the zig, its version, the build flags and its
+own text.
+
+**The plugs** (cobblestone-safari `15ef1862`). The mask split's stated failure
+mode cannot happen: `cx_shr` masks its shift exactly as `cx_shl` does and the
+reader recomputes the writer's index, so an alias marks *both* parts — a
+superset, which this file's own rule already calls the safe direction. The cost
+is a bloated prelude and a byte diff, caught by the fixed point, not a dropped
+root. The shift constant was off by one. **The 128 ceiling is now a gate**: a
+`@compileError` above it, in the idiom the file already uses, and I showed it
+fire by dropping the threshold to 50 and watching zig refuse a real transpile by
+name. Restored, 27 units emit byte-identical zig and the sweep is GREEN. The
+enumeration is right now — `defs` in, `types-text` out.
+
+**The documents** (safari-codex `073b1cd`). Four stale README counts, and the
+README's recommendation of `node:wasi` — which the document it points at records
+as aborting with SIGSEGV on four of fourteen checks. The `cvttsd2si` citation
+named a range that does not contain it. "About four hundred names" is 484. The
+five-unit peak RSS table is re-measured, so every cell has a run behind it.
+
+Two things I withdrew rather than corrected, which is the part I would defend:
+`cat_draw`'s "10.9 MB before dying" cannot be right — the finished module is
+9,019,347 bytes and the definition it died on begins at 7,743,272 — and the
+pre-fix binary is gone, so it is recorded as unexplained instead of replaced
+with a number I cannot source either. And the "14 of 17 identical" byte
+comparison is marked unreproducible, because `build/` holds only the current
+sweep. A number nobody can re-derive is worth less than the sentence saying so.
+
+**Left undone, deliberately.** `codexzig-safari` is not rebuilt on the zig-plug
+commit. That is `build.py` — nine stages, three QEMU guests, on the box's one
+shared lock — and it is not mine to start unasked. The change is inert
+host-side (27 units byte-identical through a candidate build), so nothing is
+stale in effect; the pin is simply one commit behind.
