@@ -209,3 +209,49 @@ stale-cache defect it was fixing (#5). Corrections are written in the same mode
 that produced the thing being corrected — fast, from the model in your head,
 after the interesting part is over. They deserve the same cold read as the work,
 which is what this pass was.
+
+
+---
+
+## What was fixed, same day
+
+Three items, in the order they mattered.
+
+**FINDINGS 9's prescription, before it was sent.** The entry now says what is
+true: it takes BOTH changes, and each alone is a no-op. Measured rather than
+reasoned this time — three candidate compilers through
+`build_codexzig_try.sh`, host-only, about a minute each. Early return removed
+alone: exit 0, no diagnostic. `stop > entry` alone: exit 0, no diagnostic. Both:
+halts with CDX7. With both, the sweep is GREEN and a control literal emits
+byte-identical zig. The lexer is back to pristine in cobblestone-safari; the
+patch lives in the finding, which is where it belongs until the issue goes.
+
+A detour worth recording: the first repro I wrote was flush-left, and Codex is
+literate — code is indented, column 1 is prose. It still produced a function,
+and its literals came out as `"\x0f"`, which sent me looking for a corrupted
+text encoding that does not exist. `cc-double-quote : Integer = char-code '"'`:
+the language has its own charset, and those numbers are correct. The finding's
+own quoted repro has the same flush-left shape and reproduces identically, so
+nothing in it was wrong — but the shipped instance the finding cites
+(`cwm-halted`, built by `emit_harness.py`) is inside a properly indented
+chapter, and that is the one that matters.
+
+**Both wasm-plug bugs, fixed and probed** (cobblestone-safari `2a53929f`).
+The scrutinee local is now per guard-nesting depth, with unary names (`_s`,
+`_ss`) so the locals collector shifts a guard's names by one and merges instead
+of threading a depth parameter that could drift from the emitter — no fourth
+walker to mirror, which is what produced the last three defects here. And
+`wat-expr-calls-name` asks about the head of an apply spine instead of any
+occurrence. `probe/plug/guardnest.codex` and `probe/plug/blitname.codex` hold
+both. All 17 units come out BYTE-IDENTICAL, which is what an inert fix looks
+like: nothing in the port nests a match in a guard, which is exactly why the
+sweep never saw it.
+
+**Both stale-cache keys** (safari-codex `5343eda`). `mem_probe.py` resolved
+codexzig after its freshness check; `build_codexwasm.sh` resolved it twenty
+lines above a key that never mentioned it. Both now key on both inputs, verified
+by swapping in the candidate compiler and watching the key move.
+
+Recorded as WASM_FINDINGS 10 and 11. What is left from the pass is the tier-2
+tooling list — the 520 MB unlabelled row, the `--both` refusal that crashes the
+sweep, the failed-candidate GREEN, the deck's 14 MB — and the tier-3 numbers.
