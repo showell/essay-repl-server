@@ -306,3 +306,47 @@ commit. That is `build.py` — nine stages, three QEMU guests, on the box's one
 shared lock — and it is not mine to start unasked. The change is inert
 host-side (27 units byte-identical through a candidate build), so nothing is
 stale in effect; the pin is simply one commit behind.
+
+
+---
+
+## And the rebuild, with the guests
+
+`build.py`, nine stages, three QEMU guests, **462s**. The box was free and
+nothing else was queued.
+
+    fixed point   HOLDS, byte-identical, 2,463,047 bytes each way
+    arith.codex   MATCHES, all nine lines
+    checkout      cobblestone-safari 15ef1862, CLEAN -- no +dirty
+
+The emitted compiler grew 1,052 bytes, which is the ceiling check and nothing
+else. The proof that it is inert is not the byte count: **the 27 units emit
+byte-identical zig through the newly shipped binary, compared against the
+compiler from before any of this session's work.** I had checked that through a
+candidate build before spending the guests; this is the same check through the
+thing that actually ships.
+
+Two things the rebuild demonstrated on its own, which is the nicest kind of
+verification:
+
+- `build_codexwasm.sh` and `mem_probe.py` both **rebuilt** instead of saying
+  "already current". That is the stale-cache fix working under exactly the
+  condition it was written for -- the base transpiler moving underneath them.
+  Before this morning, both would have reported current and gone on measuring
+  binaries the old compiler produced.
+- stage 4's guest touched **2469 MB of its 3072 MB cap**, unchanged from the
+  last build that ran guests, but the series across recorded rebuilds is 2445,
+  2465, 2466, 2467, 2469. That guest is `ZigPlugRing` calling
+  `emit-zig-chapter`, which holds every definition at once -- the streaming fix
+  reaches the native binary only. 80% of the cap and drifting up, which is
+  finding 6's ceiling still standing where memory is tightest.
+
+And a pin that was ten commits stale: `PROVENANCE.md` recorded the language head
+as `e8486215` with one "ours" line, while the branch carried fourteen commits,
+eleven of them ours. A pin naming the wrong commit is not a weaker claim than no
+pin -- it is a false one, and that file exists to make the mistake impossible.
+Repinned, both trees, with the whole list.
+
+Final state: three repos clean, `run.sh` GREEN, `wasm_arm.py --native --all`
+GREEN, 9 of 10 plug probes agreeing with `showreal` differing as recorded, no
+guests left running.
