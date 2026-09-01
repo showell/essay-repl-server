@@ -271,10 +271,19 @@ minute regeneration and a `--diff-golds` report that says which programs
 moved and by how much -- but it should be a habit from day one, not a
 reaction.
 
-**6. This competes with the ladder.** Ten PRs are open, and the top ladder
-item is ours: `ast/emit_harness.py` still generates the broken `-halted`
-literal, so no harness of ours builds against a fixed compiler. Worth being
-deliberate about which of the two gets the box.
+**6. This competes with the ladder.** Ten PRs are open and the box is one
+machine. Worth being deliberate about which of the two gets it.
+
+*Correction, same day:* this risk originally said the top ladder item was
+ours -- that `ast/emit_harness.py` still generated the broken `-halted`
+literal. **It does not.** Ladder `fddbf71` fixed the generator last night and
+verified it end to end under a PR-114 compiler; all four repo copies carry
+the fix and both fixed points were rebuilt on it (codexzig-safari `316f9ce`,
+codex-wasm-transpiler `8c8041a`). I had taken the claim from a memory index
+without checking it against the commit. What IS still open is smaller:
+**`codex-zig-transpiler`'s `generated/` is from 08-30 and its harness fix is
+`98f5959` from 09-01**, so that repo alone is one rebuild behind -- about ten
+minutes of `codexzig_build.sh`.
 
 **7. Do not let the Rust compiler become a second oracle by accident.** The
 bare-metal compiler is the oracle. When Rust disagrees with it, the default
