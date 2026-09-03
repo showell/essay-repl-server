@@ -169,17 +169,72 @@ lines.
 
 ---
 
+## f) PR 116 closed, and the seam landed anyway
+
+This is the most useful thing on this page and I found it last.
+
+PR 116 asked upstream to split `Chapter: Opening` so that a program supplying
+its own `opening` could bundle the compiler's phases instead of re-implementing
+them. It was **closed in favour of upstream's smaller cut of the same seam**,
+and that cut is in U55:
+
+```
+codex/compiler/opening.codex     codex-opening : [Console, FileSystem, Device.Block] Nothing = act ...
+codex/compiler/EntryPoint.codex  opening : [Console, FileSystem, Device.Block] Nothing = codex-opening
+```
+
+Fourteen lines, two files, and `Chapter: Opening` is now bundlable. Their own
+prose says why, in our words: *"Two definitions named `opening` in one
+compilation unit collide, so a program that supplies its OWN entry point could
+not bundle Chapter: Opening at all, and therefore could not call the compiler's
+phases."*
+
+They were also right to close ours. Their review caught that 18 of our 891
+moved lines carried **pre-tuple `lower-chapter` text**, so applying PR 116 would
+have reverted landed work and gated green — the degrade-to-plausible shape we
+had spent the day filing, aimed back at us.
+
+**What it changes for us.** The census below is the exposure, measured today:
+
+| call site | count |
+|---|---|
+| `resolve-chapter` | 22 |
+| `scope-achapter` | 17 |
+| `check-chapter` | 10 |
+| `lower-chapter` | 9 |
+| `run-ir-pipeline` | 5 |
+
+Fifty-odd call sites written by us against signatures we do not own, in a
+language where an under-applied call is a value rather than an error. That is
+why five of the last seven Updates broke a harness. Citing the driver replaces
+the whole class with a compile error at a call we did not write.
+
 ## What this says about the next move
 
 The measurement we actually want from a release is narrow: **bare metal and zig
 agree, and nothing obviously regressed.** Everything above is either that
 question or an obstacle to asking it.
 
-The obstacle is one thing, not many: the keep protocol on `lower-chapter`. Six
-harnesses, one contract, and the contract is written down in `opening.codex` in
-two places we can copy. Until that is done the ladder cannot reach a rung that
-compares anything, and the corpus census cannot be transpiled either, because
-the emitter's own subject goes through the same call.
+The obstacle is one thing, not many: the keep protocol on `lower-chapter`. Until
+it is answered the ladder cannot reach a rung that compares anything, and the
+corpus census cannot be transpiled either, because the emitter's own subject
+goes through the same call.
+
+There are two ways to answer it, and they are not the same size.
+
+**Patch the nine call sites.** Copy `lower-keep-base` and
+`lower-keep-base + lower-keep-height` out of `opening.codex`, destructure the
+tuple, done. Fast, and it buys exactly one Update of quiet: this is the third
+consecutive release to move this signature.
+
+**Or cite the driver, now that U55 lets us.** Stop re-implementing
+`compile-frontend-*` and call it. The harness keeps only what its rung
+genuinely needs to differ in, and the next signature move is a compile error at
+a call we did not write. It is the reason PR 116 existed, and upstream has just
+handed us the version of it that lands on their main.
+
+The first is this afternoon. The second is the one that stops us paying this
+tax, and the ladder's README now points at it.
 
 Nothing else found here is load-bearing. The renumbered backlog rows are an
 annoyance to our PR text; the unreleased seed name is cosmetic; the U54 seed's
