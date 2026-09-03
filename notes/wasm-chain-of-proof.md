@@ -138,6 +138,31 @@ been cashed in.** Running the same Codex source through both and diffing the WAT
 would be a real cross-check, because the two roads share only their source. No
 such comparison has been run today.
 
+## "Vestiges of U53" is the wrong mental model
+
+The question came up whether we want U53 vestiges left in the chain. The framing
+needs inverting: **there are no vestiges, because the chain is U53 in its
+entirety.** One file at the root, `b066ceb5`, and everything else a descendant
+of it. Nothing else is in there to remove.
+
+Which means a U55-rooted chain **shares no artifact with this one**. Different
+seed (`81f9e817`), therefore a different codexzig, a different module, a
+different `build/codexwasm`. It is not a cleanup pass; it is the same three
+chains built again from the top.
+
+**The hazard is a MIXTURE, not a leftover.** Handing the U53 codexzig a U55
+source is the dangerous shape, and it is worth being precise about why the keys
+do not save you: content keys defend against STALENESS -- change an input and
+everything above it is invalidated -- but a mismatched pair produces a key that
+is perfectly valid and an artifact that is wrong. What defends against a mixture
+is naming `COBBLESTONE_ROOT` rather than defaulting it, which every script here
+does, and the tendency of a pre-U55 compiler to refuse U55 source loudly
+(`CDX2071`) rather than miscompile it.
+
+So the two goals are separate, and only one of them is met today: a working
+baseline, which is U53 top to bottom and coherent; and a chain rooted at the
+current release, which is blocked on a plug that cannot emit `peek-32`.
+
 ## The honest ledger
 
 **Proven today, on this box:**
