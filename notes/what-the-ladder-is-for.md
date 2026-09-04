@@ -128,32 +128,114 @@ And nothing at all about hardware.
 That is a clean division of labour, and it is roughly the opposite of how the
 work is currently distributed.
 
-## What a decomposition might look like
+## The progression is the idea, and fourteen is the wrong number
 
-Not a proposal yet — a shape to argue with.
+I called the rungs "a frozen enumeration of points in a space" and that
+undersells the thing worth keeping. A ladder works because **a failure at rung N
+tells you rung N-1 was fine.** Cheapest first, stop at the first red, and the
+red names its own layer. `rebank_all.sh` already says this out loud in its
+header: ordered cheapest first "because finding that out on lex costs minutes
+where finding it out on pingpong costs hours."
 
-**A bare-metal runner.** One job: given a Codex commit and a subject, run it on
-real x86 under QEMU and print what came out. No rungs, no banks, no sandbox
-taxonomy, no naming scheme. The comparison belongs to whoever asked the
-question, and the answer is a file. This is the ladder's irreplaceable
-capability with everything else stripped off.
+That is a real diagnostic instrument and nothing else we have is one. The
+transpilers give a single verdict on a whole artifact. safari gives a verdict on
+a whole frame. The corpus gives a verdict per program. Only the ladder tells you
+*which layer of the compiler* the answer went wrong in, and it does that by
+being a nested sequence rather than a set.
 
-**The front half moves to rust-codex-compiler.** It already has the oracle
-property and already runs the whole corpus. "Does upstream's lexer agree with an
-independent lexer on 1,012 programs" is a question that repo is built to answer
-and the ladder answers slowly, on one subject, with a shared front end.
+Fourteen is extreme. Four layers, each one somewhere a person would genuinely
+stop:
 
-**The fixed points stay where they are.** codex-zig-transpiler and
-codex-wasm-transpiler already do the thing the back half of the ladder gestures
-at — compile the compiler with itself and demand the same artifact — against a
-subject vastly larger than `fib`.
+1. **The text survives.** lex, parse. Subject: a real 659-line compiler chapter.
+2. **The meaning survives.** desugar, scope, check.
+3. **The IR survives.** lower, ir_to_codex, ir_to_wire.
+4. **The machine survives.** the x86 rungs — and here bare metal is the only
+   possible answer.
 
-**The records are not machinery and should not be deleted with it.** 323
-findings files, the outbound queue, `CARRY_FORWARD.md`, the branch topology, the
-corpus of 1,239 programs with `.expected` files. These are the accumulated
-result of two months and none of them need a rung harness to exist. Whatever
-happens to the machinery, this wants a home where it is not entangled with
-scripts that write 343 MB beside themselves.
+Fourteen rungs is that same progression with every historical frontier still
+nailed to it. Each one was the edge of the known world on the day it was built,
+and none has ever been retired.
+
+And the four layers have *different natural answerers*, which the flat list hid:
+
+| layer | who can answer it | cost |
+|---|---|---|
+| 1. text | rust-codex-compiler, independently | milliseconds |
+| 2. meaning | rust-codex-compiler, up to the type checker | milliseconds |
+| 3. IR | Rust for shape; the transpilers' fixed points for the whole artifact | seconds |
+| 4. machine | bare metal, and nothing else | minutes |
+
+## The QEMU knowledge is the asset, not the rungs
+
+I wrote "a bare-metal runner, everything else stripped off" as if the runner
+were the easy part left over. That is backwards, and it is the biggest thing the
+essay had wrong.
+
+**This repo is where we learned to run bare metal under Linux QEMU at all.** The
+rungs are the cheap enumeration; the transport is the expensive knowledge, and
+none of it is reconstructible from the rung list:
+
+- `ring_compile.py` and the ring protocol — feeding a guest through a ring
+  buffer, injecting `wpos` over the gdbstub, verifying the ring head
+- the stall at exactly `RING_SIZE` on the first wrap, which fires **spuriously**
+  and which I reasoned a wrong conclusion from once already
+- `bounded_run` and the memory caps, added after an emitted binary ballooned past
+  3 GB and livelocked the whole host — twice, the second time on the very line
+  that now carries the bound
+- the deck sizing, `codexzig_scale.py`, `stack_probe.py`: how much deck and
+  stack a hosted compiler needs before it dies without a diagnostic
+- `compute_lock.py`: one compute job per host, taken at the door
+- three QEMU drivers nobody ever consolidated, which is itself knowledge about
+  what varies
+
+That is months of ouches encoded as guards. It is the single hardest thing in
+this repo to rebuild and the easiest to lose in a reorganisation, because it
+looks like plumbing.
+
+## A split, concretely
+
+Two new repos, three redistributions, and a large deletion.
+
+**`codex-qemu` — "run Codex on real x86 and tell me what came out."**
+The transport and the operational knowledge above: `codex_vm.py`,
+`ring_compile.py`, `plug_run*.py`, `compute_lock.py`, `stack_probe.py`,
+`deck_census.py`, `bare_expected.py`, the sandbox mechanics, the guards. Plus
+layer 4 of the progression, since it is the only thing that can answer it, and
+the ~50-line driver that climbs the four layers by shelling out to whoever owns
+each one. This is the repo that must not be lost.
+
+**`codex-findings` — "what we found in Damian's compiler, and what we sent."**
+323 findings files, the outbound queue, `CARRY_FORWARD.md`, the branch topology.
+**Pure record, no code.** Today it is 58% of the ladder's tracked files and it
+is entangled with scripts that write 343 MB beside themselves. Separated, it
+cannot rot when the machinery is rewritten, and rewriting the machinery stops
+threatening it.
+
+**The linters fold into rust-codex-compiler.** `check_bundles.py`,
+`check_zig_pages.py`, `dead_typedefs.py`, `bundle_reach.py`, `builtins_probe.py`,
+`charcode_probe.py`, `tier_coverage.py`, `check_builtin_sites.py` — thirteen
+scripts that read Codex source and complain, using regexes. That repo has a real
+parser and already hosts `xref`, `cohesion`, `seams` and `arity`. Moving them is
+not a move, it is an upgrade: they stop guessing at syntax. And it gives that
+repo its stated second job — "linting and bug-hunting come later, on the same
+front end" — which its own README has been promising since it was created.
+
+**The corpus runners go to each arm.** The 1,239 programs are *upstream's*
+`codex/test/`, not ours — a thing I had to check, having half-believed we owned
+them. What is ours is the runner and the classification. rust-codex-compiler
+already has `codexrun sweep`; the zig arm's runner belongs with the zig work;
+the wasm arm's with wasm. The shared part is a hundred lines that says which
+programs are in the population and which are hardware-only.
+
+**The tiers go with the plug.** `tier_run.py`, `tiers_run.py` are unit tests for
+the zig plug, and they are the same shape as safari's `spec/` — small, fast,
+per-feature. They belong beside the artifact they test.
+
+**Deleted outright:** the measurement bookkeeping. `bank_truth.py`,
+`restore_truths.py`, `check_sandbox.py`, `truth_prov.py`, most of
+`seed_identity.py`, `results/` — 900-odd lines and a vocabulary Steve
+correctly said he did not understand, existing to solve a problem the other six
+files created.
 
 ## What I am unsure about
 
@@ -177,6 +259,18 @@ that a sandbox is pinned to the *oracle-relevant* commit — everything outside
 while fixing a naming scheme. It deserves to be a designed rule rather than a
 lucky one.
 
-**And whether any of this should be a repo at all**, versus a directory in
+**Whether `codex-findings` should be a repo or a directory in the qemu one.**
+The argument for separating it is that a record and a machine rot on different
+clocks. The argument against is that two repos for what is currently one
+directory is the kind of tidiness that adds friction and buys nothing. I lean
+towards separating precisely because the machine is about to be rewritten and
+the record must not be in the blast radius — but that is an argument about this
+month, not about the shape.
+
+**And whether `codex-qemu` should be a repo at all**, versus a directory in
 rust-codex-compiler with a QEMU script in it. The ladder became a repo when the
-ladder was the project. It is not obvious that it still is.
+ladder was the project. It is not obvious that it still is — but the transport
+knowledge argues for its own home more strongly than the rungs ever did, because
+it is the one part with no natural owner among the four modern repos. Bare metal
+is not a Rust concern, not a zig concern, not a wasm concern and not safari's.
+It is its own thing, and it always was.
