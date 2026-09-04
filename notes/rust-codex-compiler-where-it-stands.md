@@ -133,11 +133,41 @@ representation second, type-directed dispatch third.** I would be unsurprised
 if scope indices alone were worth 2x and types were worth 15%.
 
 There is also a design question hiding here that I do not think we have faced.
-A tree-walker that consumes resolved scope and checked types is no longer
-really a tree-walker; it is a compiler to closures, and at that point the
-question "should this emit bytecode" becomes live. I do not think we should do
-that yet. But I think we should stop calling it "the interpreter" as though its
-shape were settled.
+A tree-walker that consumes resolved scope and checked types is no longer really
+a tree-walker; it is a compiler to closures, and at that point the question
+"should this emit bytecode" becomes live.
+
+**The right next step is neither, and Steve named it: a one-time preparation
+pass in memory.** Walk the AST once, produce a parallel resolved structure, then
+execute that. What goes in it, ranked by what I expect it to be worth:
+
+1. **Scope resolution to `(depth, index)`.** The string scan dies here. Do this
+   one alone and measure before touching anything else.
+2. **Interned names as `u32` symbols**, so any surviving comparison is integer.
+3. **Operator pre-dispatch** — `Binary(OpAdd)` plus operand types collapses to a
+   concrete `AddInt` once instead of inspecting runtime values every execution.
+   **This is where the checker earns its keep in the interpreter**, and it is
+   the only place type information converts directly into speed.
+4. **Frame layout**: if prep knows a function's binding count, a call allocates
+   one slab instead of pushing bindings one at a time.
+5. **Pre-built literal values**, so an `int-lit` in a loop stops allocating.
+
+What makes this better than going straight to bytecode is not that it is
+smaller. It is that it is **incremental and reversible**. You can do (1),
+measure, and stop. An instruction set is a design commitment that is expensive
+to back out of, and it discards the tree structure that spans, diagnostics and
+the existing code all lean on.
+
+Bytecode's extra win over a prepared tree is cache locality in a flat array and
+the absence of a recursive call per node. Both are real and both are
+second-order next to deleting a hundred million string comparisons — and a
+prepared tree is exactly the artefact that would tell us how large that
+remaining gap actually is. Closures are the strongest form of the same idea and
+should be judged by measurement, not by reputation: they trade an allocation per
+node and an indirect call per step for the win.
+
+So I do not think we should emit bytecode yet. But I think we should stop
+calling it "the interpreter" as though its shape were settled.
 
 ## The IR line is a different project with different economics
 
