@@ -22,8 +22,8 @@ Everything below is opinion built on those three numbers.
 
 ## What this thing is for, in the order I would defend
 
-Steve named four uses: linting, quick arms, code exploration, and the
-interpreter. I would rank them by how much of the value is already banked
+Steve named five uses: linting, quick arms, code exploration, refactoring, and
+the interpreter. I would rank them by how much of the value is already banked
 versus still speculative.
 
 **Code exploration is already the biggest win and nobody planned it that way.**
@@ -36,6 +36,38 @@ found that `check-chapter` had drifted from five parameters to nine at Update 54
 and that nobody had noticed for two Updates. That is not a compiler feature. It
 is a *reading* feature, and it is worth more per hour invested than anything
 else in the repository.
+
+**Refactoring is the one where the parser is not a convenience but a safety
+property**, and I had underrated it until tonight. In a literate language,
+*prose belongs to a definition*. A blank-line splitter or a regex does not know
+that, so it silently reattaches a paragraph to the wrong function — and the
+result compiles, which is the worst possible failure mode for a refactor.
+`cohesion --blocks` hands out byte ranges from the parser's own tree, so a
+definition leaves with the paragraph written above it and a `Section:` header is
+never dragged along behind the definition that precedes it.
+
+The evidence is concrete. `ZigEmitter.codex` was ~4,500 lines and one chapter;
+it is now four pages of that same chapter, 421 definitions in and 421 out, zero
+names defined twice. It was re-cut against Update 55 rather than rebased,
+because U55 edited the very section that moves — and re-cutting takes their text
+as given and never merges. Four definitions nothing reads were removed the same
+way, by block range, after being re-verified dead against the new Update rather
+than on faith.
+
+Two things make this more than a one-off. `extract_chapter.py` **refuses**
+unless every planned name exists exactly once in the source, so an upstream
+rename announces itself instead of silently dropping a definition. And the plan
+files are committed, so the next Update is one loop and a pagination rather than
+an hour of reconstruction — which is what it cost this time, because the first
+split's plans were never saved.
+
+The next target is `opening.codex`: 31 definitions, zero outbound edges, four
+entry points. The collapse algorithm — absorb every single-caller definition
+into its caller to a fixed point, and rank survivors by LINES rather than by
+count — is what finds those, and it finds them in a way reading cannot. I would
+put refactoring second only to exploration in banked value, and I would say the
+two are really one capability: *the parser lets you see the shape, and then it
+lets you change it without breaking the prose.*
 
 **Linting is the same capability wearing a hat, and it compounds.** Three
 checks now run in seconds before any guest: arity, bundle completeness, page
@@ -170,6 +202,11 @@ Scope indices, then value representation. If safari's units drop from 9.3
 seconds to 3, the interpreter stops being a curiosity and becomes the thing you
 reach for. That changes what is cheap, and changing what is cheap is how this
 project has made every one of its real gains.
+
+**1b. Keep refactoring on the parser, and keep the plans.** The ZigEmitter
+split re-cut cleanly against a new Update because the tooling reads the tree
+rather than the text. `opening.codex` is next. This is cheap, it is safe in a
+way hand-editing is not, and every split makes the next Update's diff smaller.
 
 **2. Keep the linter ahead of the Updates.** Every Update so far has needed
 harness changes, and five of the last seven moved a signature we call. The
