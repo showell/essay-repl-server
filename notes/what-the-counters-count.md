@@ -13,14 +13,37 @@ IR** — the intermediate document a compiler emits after it understands a
 program. On the twenty-eight curated test programs we can run that test
 directly: compile with both, `diff`, done.
 
-On 3.4 megabytes of the compiler's own source we can't. Nobody has a frozen
-expected answer for a file that size, and producing one would just move the
-question.
+On 3.4 megabytes of the compiler's own source we can't yet — and the reason is
+worth being precise about, because I first wrote down a wrong one.
 
-So we grade something else. Both compilers, at the end of type checking, print
-four numbers. If two independently written type checkers walk the same 3.4 MB
-and all four numbers land on the same values, they did the same work in the
-same order.
+I claimed nobody has a frozen expected answer for a file that size. That's
+true and irrelevant: `codexir` is a *binary*, not a file, so it produces the
+expected answer for any input on demand. That's exactly how the curated 28 are
+graded — no gold is stored for them either. I checked: pointed at the whole
+3.44 MB unit, it emits **8.1 MB of IR in 38 seconds**, no complaints.
+
+The real obstacle is on our side. Our compiler refuses the same input in 2.7
+seconds:
+
+```
+REFUSED: tco-ensure-temps: the checker recorded no type at `map-list`
+```
+
+That's a named hole in our lowering, not a missing oracle — and a refusal
+rather than a wrong answer, which is the right way for an unfinished front end
+to fail. It's now the next concrete task.
+
+So we grade something else, and it would be worth doing even once the IR
+comparison works. Both compilers, at the end of type checking, print four
+numbers. If two independently written type checkers walk the same 3.4 MB and
+all four numbers land on the same values, they did the same work in the same
+order.
+
+The counters aren't a substitute for the IR diff; they're a **sharper**
+instrument for one layer. An IR comparison mixes the checker, lowering, lambda
+lifting and three optimisation passes into a single verdict. A counter gap
+points at the checker alone — which is why today's ended at a specific
+eleven-line bug instead of at "something in 3.4 megabytes is different."
 
 Here's what each one is.
 
