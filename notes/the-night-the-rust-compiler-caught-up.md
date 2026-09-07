@@ -324,7 +324,7 @@ revealed a third, separate cause underneath. That one's next.
 
 | gate | result |
 |---|---|
-| unit tests | 167 pass |
+| unit tests | 171 pass |
 | curated interpreter (`run.sh`) | 28 / 28 |
 | curated Rust-compiles-Codex (`native.sh`) | 28 agree, 0 differ, 0 refused |
 | curated two-host IR (`ir.sh`) | 28 identical |
