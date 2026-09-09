@@ -1,118 +1,105 @@
-# The Roc programs expose IR type errors — a clean-slate plan
+# The Roc programs expose IR type errors — a clean-slate plan (rev. 2)
 
-## What we actually have
+*Revised after a cold review that corrected the first draft. What the review
+caught is in "Where the first draft was wrong" at the end; the body now reflects
+the corrected picture.*
 
-Six Roc-origin Codex programs compile and run correctly on the Rust
-interpreter and the wasm plug, produce Roc's expected answer on both, and
-**cannot be pushed through the zig plug.** The zig plug is the strict one: it
-demands concrete types and refuses what the other two tolerate. So the six are
-not "zig bugs" in the first instance — they are **type-resolution gaps the zig
-plug is honest enough to surface.**
+## What we have
 
-    roc-iter-map        unresolved type variable T16 of __lam_0
-    roc-iter-keep-if    unresolved type variable ...
-    roc-iter-drop-if    unresolved type variable ...
-    roc-alias-empty     no element type for this empty list
-    roc-alias-original  pointless discard of local constant
-    roc-list-called-twice  pointless discard of local constant
+Six Roc-origin Codex programs compile and run correctly on the Rust interpreter
+and the wasm plug, produce Roc's expected answer on both, and **cannot be
+pushed through the zig plug.** The zig plug is the strict one; its refusal is
+correct — fail-loud is the floor. So the six are real signals, and the corpus
+has done its job. But they are **three different problems**, not one, and none
+is the simple "the checker forgot to resolve a type" story.
 
-## Two different problems wearing one "6 failures" label
+## The three root causes
 
-**Four are IR type errors** — the frontend hands the plug a type it never
-resolved:
+**A. The `__lam` cluster (iter-map, iter-keep-if, iter-drop-if) — a generic
+closure the zig plug cannot monomorphize.** `iter-map : Iter a, (a -> b) ->
+Iter b`. The lifted closure `__lam_0` carries `a` and `b` as its own type
+variables, correctly threaded — the interpreter runs the program to `24` *with
+those variables present*, so they are legitimate generics, not orphans. The zig
+plug says "unresolved type variable T16 of __lam_0" because it needs a concrete
+type to emit and meets a generic one. This is a **monomorphization /
+lambda-lifting-vs-plug** problem, at the plug boundary — not a frontend
+carry-forward bug.
 
-- **The `__lam_0` cluster (3).** A comprehension/closure inside a polymorphic
-  function leaves a type variable unbound in the IR. The checker never pinned
-  it; the plug meets a free variable and cannot emit for it. Our own Rust
-  frontend has the *same* family — I fixed one instance today (`acc & (for x
-  in xs -> ...)` left `map-list`'s result element a free tvar because the `&`
-  arm didn't unify its operands). This is the same shape one layer over.
-- **The empty list (1).** The checker *does* solve the element type (from a
-  parameter one line down), but never files it where lowering can read it, so
-  `lower-empty-list` falls to `IrList [] ErrorTy` and the wire carries
-  `(list error)`.
+This is also the **hardest** of the three. The prior effort reached it and
+stopped on purpose: `bba94d1b` explicitly excludes the `ForExpr` `map-list`
+lambda; `11df612c` tried the sibling instance-method site and `079e21df`
+**reverted it** — "it fixes nothing and is not inert" — relocating the real
+cause to **finding 64** (an instance dictionary's type argument instantiated
+for one instance and not its sibling), which is unaddressed. There is a
+known-failed attempt here, not an easy win.
 
-**Two are not IR type errors at all** — `alias-original` and
-`list-called-twice` are an emitter codegen fault: the zig plug emits `_ = x;`
-to sequence an unused binding, then also uses `x`, and zig rejects the
-pointless discard. That is a plug bug, not a frontend one.
+**B. `alias-empty` — a genuinely unconstrained element type.** `x = [] ; y = x
+; if list-length y == 0 then 42 else 0`. The empty list is only ever measured
+for length, so nothing constrains its element type; both frontends leave it a
+free variable (`(list (tvar 283))`). This is **not** the case the stranded
+`8f1b202a` fixed — that one ("keep the element type the checker solved") was
+measured on `roc-fold-empty`, where a parameter constrains the element type and
+the checker *did* solve it. Here there is nothing to file. The honest answer is
+to **default** a provably-empty list's unobserved element type — a policy call
+(frontend or plug), best made with Damian.
 
-So "the core problem is IR types" is true for four of the six, and the pair
-should be tracked separately.
+**C. The discard pair (alias-original, list-called-twice) — an emitter codegen
+fault.** The zig plug emits `_ = x;` to sequence an unused binding, then also
+uses `x`, and zig rejects the pointless discard. This is purely in
+`ZigEmitter.codex`. The stranded fix (`af119cc5` and three refinements) is
+honest, careful work — iterated openly against a regression tree, each
+narrowing catching a measured regression — and Steve then **deliberately
+dropped it** (`ef359636`) on cost/benefit, banking the rule as knowledge. It is
+the one of the three that is a plausible, self-contained clean fix, if
+re-derived against the current tree with a self-hosting gate.
 
-## Where the fix belongs
+## Why "carry the stranded commits forward" and "fix in the fast Rust arm" are
+both weak here
 
-The zig plug refusing an unresolved type is **correct** — fail-loud is the
-floor. The defect is upstream of it: the checker solves these types (or could)
-and does not **carry the knowledge forward** — it does not file the empty
-list's element type, and it does not pin the closure's type variable. The right
-layer is the checker/lowering boundary: resolve the type and file it under a
-span so the IR, and therefore *every* plug, gets a concrete type. Fixing the
-plug to swallow an unresolved variable would be the paper-over.
+- **The stranded commits are rigorous, not paper-overs.** Read against the
+  suspicion, they hold up: canaries, matrix measurements, honest scoping, and a
+  revert of a change that "fixes nothing." They are a reliable *diagnosis* to
+  read from — but they sit on a pre-U56 tree, one built-broken on u58 (cause
+  unattributed: fix, 21% ZigEmitter drift, or a build flake), and they encode
+  problems the effort itself judged "wait for an instrument."
+- **The fast Rust arm cannot reproduce these failures.** The Rust tree has *no
+  zig plug* — only `irdump`/`codexrun`. The failure is "the zig plug refuses,"
+  which `irdump` cannot show; inspecting whether a tvar survives in IR text is a
+  weak proxy, and the interpreter is *happy* with those tvars. The one
+  genuinely transferable frontend fix — lambda spans — is already done in both
+  trees. So iterating in Rust does not settle A, B, or C.
 
-## Why the stranded commits are a trap, not a shortcut
+## The honest plan
 
-We have ~14 commits on `roc-ports-type-recovery` (and one on
-`roc-corpus-ports`) that Steve wrote a week ago against these exact programs,
-on a pre-U56 base, never sent. They map onto the findings by subject line. But:
+1. **The corpus and arms are the deliverable already landed** — five arms, and
+   `run-zig` is what surfaced all six. That value is banked.
+2. **Cat C (discard) is the one shippable clean fix.** Re-derive it against the
+   current `ZigEmitter`, verify it pushes `alias-original` and
+   `list-called-twice` through, and gate on the native fixed point (the broken
+   rebuild is a warning). One codexzig build, at the end, not per commit.
+3. **Cat A (monomorphization) and Cat B (empty-list default) are upstream
+   design questions, not bugs to "solve" locally.** Raise them with Damian,
+   backed by the existing evidence — findings 60/64 and COMPILER-30 already did
+   the hard diagnosis. A is the plug/monomorphization boundary; B is a
+   defaulting policy. Neither is a fast-loop fix, and A has a known-failed
+   attempt.
+4. **First settle the attribution that is cheap:** was the broken u58 codexzig
+   the fix or the drift? One clean-u58 sandbox rebuild (no fix) answers it
+   without touching the fix logic.
 
-- **Low confidence they fix at the right layer; fair confidence at least some
-  paper over.** The discard fix alone is a base commit plus three refinements
-  ("only for a LOCAL", "only if read elsewhere", "correct the prose") — a shape
-  that says the first rule was wrong and got narrowed by trial.
-- **Verifying them is expensive and fragile.** Testing one commit means
-  rebuilding codexzig through QEMU guest stages — ~7 minutes. And the one build
-  we ran (the discard fix on u58) **produced a broken codexzig**: it failed the
-  native fixed-point check and core-dumps on every input. Whether the fix
-  breaks self-transpilation or the fixed point is just delicate, carrying these
-  commits blind — and shipping them to Damian — is the opposite of careful.
+## Where the first draft was wrong (for the record)
 
-## The asymmetry to exploit: two frontends, one fast
-
-The IR type errors live in the **frontend**, and we have two:
-
-- **Upstream's** (`codexir`/`codexzig`) — iterating it means QEMU guest builds,
-  minutes each, fragile, and it is the one bound for Damian.
-- **Ours** (`irdump`/`codexrun`, the Rust reimplementation) — `cargo build`,
-  seconds, no guest, and I already fixed a member of the `__lam` family in it
-  today.
-
-`ir-irdump` already tells us both frontends share these gaps: for
-`alias-empty` the two agree — on the *same wrong* `(list error)`; for the iter
-cluster they differ only in how they spell the unresolved variable. So the Rust
-frontend reproduces the core problem and can be fixed and re-tested in seconds.
-
-## The plan
-
-1. **Solve the IR type errors in the Rust frontend first**, at the right layer
-   (checker resolves and files the type). Use `irdump` on the four IR-type
-   programs as the fast loop; success is IR with no free type variable and no
-   `error` type, checked in seconds. This is where we understand the root cause
-   without paying QEMU per iteration.
-2. **Port each understood fix to upstream's Codex source as one clean commit
-   per root cause** — not the stack of refinements — and only then pay for one
-   codexzig rebuild to confirm the program pushes through and self-hosting still
-   holds.
-3. **Treat the discard pair (Cat 3) separately** as a plug codegen fix, small
-   and self-contained, but with the self-hosting check as a gate given the
-   broken rebuild we just saw.
-4. **Time-box.** The `__lam` type-variable resolution covers three of the six
-   and is the same family as today's Rust fix — highest leverage, start there.
-5. **Keep the old commits as a reference, not a source.** They point at the
-   right programs and the right files; read them for the diagnosis, re-derive
-   the fix cleanly. Do not cherry-pick them into a PR.
-
-## Open questions (worth a second pair of eyes)
-
-- Are these type errors real Codex-language bugs, or artifacts of the ports'
-  adaptations (the `Iter`/`Step` encoding, the ignored thunk argument)? Worth
-  reproducing the `__lam` gap in idiomatic Codex before calling it upstream's.
-- Is the empty-list case genuinely "solved but not filed," or is there no
-  constraint at all in some of these (a truly phantom element type that no
-  layer can resolve, where defaulting is the only honest answer)?
-- The Rust frontend and upstream's diverge on the iter cluster's spelling. If
-  we fix ours, do we fix it the way upstream should, or just a way that
-  happens to satisfy `irdump`'s own lowering?
-- Is fixing the Rust frontend actually on the critical path to an upstream PR,
-  or a detour? The deliverable Damian needs is a Codex-source fix; the Rust arm
-  is the lab, not the product.
+- Claimed the `__lam` tvars were an unresolved type the checker "never pinned."
+  They are `iter-map`'s legitimate generics; the interpreter runs with them.
+  The layer is monomorphization/plug, not checker carry-forward.
+- Claimed `irdump` proves "our frontend is correct, upstream's is wrong." The
+  Rust tree has no zig plug, so this was never tested; the tvar-count difference
+  is not evidence the zig plug would accept our IR.
+- Stated `(list error)` as current behavior for `alias-empty`. Stale — both
+  frontends emit `(list (tvar 283))` now; `(list error)` was pre-`8f1b202a`.
+- Called `8f1b202a` the fix for `alias-empty`. It fixed `fold-empty`; it does
+  not transfer.
+- Framed the stranded commits as likely paper-overs. On reading, they are
+  disciplined root-cause work.
+- Said "start with `__lam` — highest leverage." Backwards: it is the hardest
+  residue with a reverted prior attempt.
