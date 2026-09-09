@@ -1,6 +1,7 @@
 # The happy path through an Update
 
-Drafted 2026-09-08, the day Update 56 landed.
+Drafted 2026-09-08, the day Update 56 landed. Revised 2026-09-09 after the
+first Update walk that leaned on it, and after adding the Firefox/WGSL arm.
 
 Suppose the Update is a good one. Suppose the two patches it needs are already
 written and the rest of it is a genuine step forward. What is the *right order*
@@ -31,6 +32,16 @@ named.
 
 So the rule underneath everything below is: **never let a stage consume an
 artifact whose pin it cannot state.**
+
+And a pin is the most dangerous copy of all, because a second copy of a pin
+drifts in silence. This bit twice on the first walk. A safari-only Cobblestone
+pin sat two Updates behind the transpilers it was grading against; a curated
+set's units were cut one Update behind the oracle they were checked against.
+Both were green, both were wrong, and neither said so until someone read the
+pin. The fix each time was the same as for any stale copy: derive the pin from
+the borrowed artifact's own provenance rather than name it a second time, so the
+two cannot disagree. A stage that borrows an executable should read that
+executable's recorded pin, not a number we keep beside it.
 
 ## Four coordinates
 
@@ -266,6 +277,23 @@ or embarrasses you. A safari result is keyed by what BUILT the binary, not by
 the checkout sitting next to it. Its resolver already fingerprints the
 transpiler's emitted zig, because this went wrong before.
 
+**The WGSL kernels are the Firefox arm, and naga is their oracle.** They are
+generated compute shaders, and Firefox validates WGSL with naga while Chrome
+uses the more permissive Tint — so a kernel that renders in Chrome and is
+rejected in Firefox is the expected direction, and naga run offline is the only
+way to see it without the browser. `cobblestone-qemu/wgsl/check.sh` runs naga
+over every committed `.wgsl` in under a second — the per-Update gate — and
+`regen.sh` rebuilds a red one from the checkout's own plug under QEMU, which
+doubles as proof that a candidate's plug changes did not break the shaders. A
+generated kernel goes stale the way any copy does: `GlobeKernels.wgsl` sat
+naga-red from Update 55 to 58 because the emitter fix at U56 regenerated
+`apps/gpushow` and missed `apps/globe`, and nothing said so until naga was run
+over the whole tree. The eye test itself needs a secure context, so it is
+served on loopback and reached over an ssh tunnel — and the server must send
+`no-store`, or the browser hands you back a kernel you already fixed. The
+tunnel command and the pages to open live in `cobblestone-qemu/wgsl/README.md`;
+this essay does not repeat them.
+
 ## What we still have not proven
 
 Even with every stage green, an honest summary has to say what is *not*
@@ -278,6 +306,9 @@ covered:
 - The curated 28 are 28 programs. The corpus is over a thousand.
 - Bare metal is authoritative about memory and identity, and we run one small
   program there routinely because the large ones are expensive.
+- naga is Firefox's front end, but the naga we run offline is a pinned version
+  and a given Firefox ships its own. A naga-clean kernel is Firefox-clean only
+  to the precision of that version match, which we have not established.
 
 Saying that out loud is not hedging. It is the difference between "the Update
 is fine" and "here is precisely what we checked, and here is what would have to
