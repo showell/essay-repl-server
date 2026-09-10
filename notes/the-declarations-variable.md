@@ -17,7 +17,7 @@ digraph {
   edge [color="#b0a890" arrowsize=0.7 fontname="Helvetica" fontsize=10];
   subgraph cluster_d { label="the DECLARATION   Box (a) = record { get : Integer -> a }" fontname="Helvetica" fontsize=11 color="#c9bfa7" style="rounded";
     a2 [label="a  =  tvar 2\nbound by the record type;\nmeaningful only inside its declaration" fillcolor="#fbe9e0"]; }
-  subgraph cluster_f { label="the DEFINITION   wrap : b -> Box b ;  wrap (x) = Box { get = \\\\i -> x }" fontname="Helvetica" fontsize=11 color="#c9bfa7" style="rounded";
+  subgraph cluster_f { label="the DEFINITION   wrap : b -> Box b ;  wrap (x) = Box { get = \\i -> x }" fontname="Helvetica" fontsize=11 color="#c9bfa7" style="rounded";
     b3 [label="b  =  tvar 3\nquantified by wrap's signature;\nthe plug knows it as a comptime parameter" fillcolor="#e3efe0"]; }
 }
 ```
@@ -39,10 +39,10 @@ digraph {
   rankdir=TB; bgcolor="transparent"; pad=0.2; nodesep=0.3; ranksep=0.35;
   node [shape=box style="rounded,filled" fillcolor="#f4f0e4" color="#c9bfa7" fontname="Helvetica" fontsize=12];
   edge [color="#b0a890" arrowsize=0.7 fontname="Helvetica" fontsize=10];
-  lr  [label="lower-record  Box { get = \\\\i -> x }\nexpected from context: Box (tvar 3)"];
+  lr  [label="lower-record  Box { get = \\i -> x }\nexpected from context: Box (tvar 3)"];
   rt  [label="record-ty, from the constructor:\nRecordTy Box (tvar 2) { get : Integer -> tvar 2 }" fillcolor="#fbe9e0"];
   fe  [label="field-expected = lookup-record-field\n= Integer -> tvar 2" fillcolor="#fbe9e0"];
-  ll  [label="lower-lambda  \\\\i -> x\nbody lowers to  (name x (tvar 3))"];
+  ll  [label="lower-lambda  \\i -> x\nbody lowers to  (name x (tvar 3))"];
   lrt [label="lambda-recorded-ty declared-ret body-ty expected\n\nbody-ty has variables  ->  answer the EXPECTATION" fillcolor="#fbe9e0"];
   wire [label="on the wire:  (fn int-default (tvar 2))\n\nrefine-record-ty-from-fields fixes the RECORD's type afterwards,\nbut the lambda node already carries 2" fillcolor="#fbe9e0"];
   lr -> rt -> fe -> ll -> lrt -> wire;
@@ -74,11 +74,11 @@ digraph {
   rankdir=TB; bgcolor="transparent"; pad=0.2; nodesep=0.3; ranksep=0.35;
   node [shape=box style="rounded,filled" fillcolor="#f4f0e4" color="#c9bfa7" fontname="Helvetica" fontsize=12];
   edge [color="#b0a890" arrowsize=0.7 fontname="Helvetica" fontsize=10];
-  lr  [label="lower-record  Box { get = \\\\i -> x }\nexpected from context: Box (tvar 3)"];
+  lr  [label="lower-record  Box { get = \\i -> x }\nexpected from context: Box (tvar 3)"];
   rt  [label="record-ty:  RecordTy Box (tvar 2) { get : Integer -> tvar 2 }"];
   ap  [label="applied-ty = prefer-applied-record-ty expected record-ty\n= RecordTy Box (tvar 3) { .. }" fillcolor="#e3efe0"];
   fe  [label="field-expected = subst-type-vars-from-arg record-ty applied-ty (Integer -> tvar 2)\n= Integer -> tvar 3" fillcolor="#e3efe0"];
-  ll  [label="lower-lambda  \\\\i -> x   against  Integer -> tvar 3"];
+  ll  [label="lower-lambda  \\i -> x   against  Integer -> tvar 3"];
   wire [label="on the wire:  (fn int-default (tvar 3))\n\nthe definition's own b; the plug builds it" fillcolor="#e3efe0"];
   lr -> rt -> ap -> fe -> ll -> wire;
 }
