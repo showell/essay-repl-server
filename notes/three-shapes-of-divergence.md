@@ -100,3 +100,22 @@ was built on. The next move is not more probes; it is to teach the checker the
 one distinction it never needed before: between what it cannot decide and what
 the program got wrong. Everything else — the phases, the frontier, the
 reference — is downstream of that.
+
+## Update: the distinction, made
+
+Shape three is fixed, and the way it went is the whole method in one move. A
+`unify` failure between two FULLY CONCRETE types with different head
+constructors — Integer meeting Text, no variable on either side — now raises
+`CDX2001`; every other failure stays the gap it was. The danger was obvious:
+`check-errors` is byte-graded against the oracle, so a fix that reported one
+spurious error on well-typed code would break the self-host. So I did not reason
+about whether it was safe — I measured it. An env-gated log of every cross-head
+concrete conflict, run over the self-host (3,222 defs), the curated 28, and the
+29 Roc ports: the first cut fired on well-typed code, all of it Integers of
+different ranges — a byte meeting the full i64 — which is the checker's range
+handling, not a conflict. Exclude same-head numeric mismatches and the count
+fell to zero everywhere, while `Integer vs Text` still fired. Then promote the
+log to a diagnostic and run the real gate: counters exact on all five, wire
+identical 2,869 of 2,869. The checker now says NO to `n + "hello"` and stays
+byte-for-byte the reference on every program that was already right. The
+measurement was the fix; the code change was three lines and a guard.
