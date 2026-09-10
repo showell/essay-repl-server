@@ -51,6 +51,11 @@ monomorphic function handed the wrong type, and for an undeclared function used
 at two incompatible types — in every case our checker waves the program through
 and lets something downstream discover it is broken.
 
+The measurement is stark. `checkdump check` on `n + "hello"` prints
+`check-errors 0` — the exact number graded against the oracle — for a program
+whose two operands are Integer and Text. The checker does not miscount the
+error; it does not see one.
+
 The cause is written plainly in our own source: "a `false` out of a partial
 unifier is our ignorance and not the program's fault." That is a true and
 reasonable thing to believe — as long as every program you ever check is
