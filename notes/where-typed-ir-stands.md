@@ -90,8 +90,11 @@ Honest inventory, because the essays so far have mostly told the other story.
   linear-value misuses, nine parse resyncs, type mismatches, circular proofs,
   a text literal open at end of line. The question that matters for them is
   whether we refuse with the *same diagnostic*, and that is the corpus check
-  gate's number, 1,096 agree and 173 differ at the last run. The 173 are the
-  inventory, not the 217.
+  gate's number: 1,107 agree and 162 differ tonight, from 1,096 and 173 this
+  morning. The 162 are the inventory, not the 217, and they sort by code:
+  thirty-nine are effects (an undeclared effect, an effectful `let`, two rows
+  that cannot reconcile), eighteen are type mismatches we do not raise, nine
+  are parser resyncs, and a long tail of one to six each.
 
 ## Where both may be wrong
 
@@ -176,9 +179,18 @@ None of these is decided. They are the ones I would argue for.
 4. **Generalization.** Probe 03 is the case. Either implement let-polymorphism
    for undeclared definitions, or reject as upstream does. The second is a
    day; the first is the phase the curriculum was written to reach.
-5. **A diagnostics diff over the Roc corpus.** We compare IR and values; we do
-   not yet compare which programs each front end *rejects* and why. The
-   corpus check gate does this for the 1,269; the Roc units are not in it.
+5. **The effects family next.** Thirty-nine of the 162 are one missing piece:
+   a definition's inferred effect row is never compared against its declared
+   signature. The rows are already computed; the comparison is the third axis
+   of the type engine, and it is the largest single cluster left.
+
+   Adding CDX3002 (an undefined name) this evening is the shape to expect: the
+   diagnostic itself was one line, and what it exposed was six places the
+   environment had been silently wrong for weeks, one of them every instance
+   method's own parameter. A diagnostic is an instrument before it is a
+   verdict. The same instrument says the concrete-type-mismatch rule cannot
+   widen past the primitives yet, because the remaining "conflicts" on clean
+   programs are ours: the desk units and the chapter-scoped names.
 6. **Aim a corpus at effects.** Roc has no whetstone for rows. Cobblestone's own
    handler tests are the nearest thing; a curated set of those, run through
    the arms, would put the third axis of the type engine under the same light.
