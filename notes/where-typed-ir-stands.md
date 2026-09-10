@@ -231,3 +231,41 @@ Viz.instance().then(function (viz) {
   });
 }).catch(function (e) { console.error('viz load failed', e); });
 </script>
+
+## Postscript, the next morning
+
+The pile got read. One unattended night, thirteen commits, and the corpus
+check gate went from 1,146 agree / 123 differ to **1,248 / 21**, with the
+counter gate at 1,036 / 16 from 1,022 / 30 and the self-host still exact on
+the wire. The order was the order of the sort above: the effects axis
+(handler discharge, argument-row widening), then the proof normalizer and
+induction by cases, proof acyclicity and grammar, the resolver's rules, the
+literal ranges and lanes, the narrowing lints with a range prover, the small
+rules one unit each, the lexer's and parser's refusals surfaced through
+`checkdump` with upstream's codes, capability scope, pagination, the
+chapter scoper, record completeness, punctuality, the cost model, class
+instances.
+
+Three things are worth keeping from it.
+
+**The census was the only honest instrument.** Twice a rule that was correct
+by upstream's text invented errors on clean programs, and both times the
+cause was ours: a recursive record ran the proof-relevance walk out of fuel,
+and a record where an integer belonged was the chapter-scoping gap. The
+rule got narrowed both times, the gap got fixed once, and the second time
+it was the *scoper* that fixed the desk family -- twenty counter units at
+once. Widening a rule without the census is how a checker learns to lie.
+
+**The parser is now a reporter, not a resync machine.** Its own accounts of
+what it cannot read stay uncoded; the messages that are upstream's refusals
+carry upstream's number and halt the driver, as the lexer's do. A skipped
+line is a verdict only in the two shapes upstream calls one.
+
+**What is left is small and named.** Three `Integer vs Fun` mismatches wait
+on the post-scoper census; two units want a second CDX1071 upstream's
+expression parser emits twice; one punctual and one realtime unit are a
+count each. The counter side's sixteen are mostly the typeclass family:
+upstream synthesises `__show_T` and `__compare_T` from `deriving`, and the
+class-instance rule here reads the clause instead of the synthesis. That
+synthesis is the next counter-parity chunk, and it is a desugarer port, not
+a checker one.
