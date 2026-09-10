@@ -1,6 +1,6 @@
 # The on-ramp
 
-*Draft 2. For a human arriving cold. One section per repository we own, in
+*Draft 3. For a human arriving cold. One section per repository we own, in
 roughly the order they get used when a new Cobblestone Update lands.*
 
 Cobblestone is Damian's self-hosted language, compiler and operating system,
@@ -49,6 +49,26 @@ cannot state.** Every borrowed binary here sits in a bundle beside a provenance
 file naming the checkout it was built from, and every arm prints those lines
 before its numbers. A green run that cannot say what it measured is not
 evidence.
+
+## The subjects
+
+Everything above is run *over* programs, and the programs are chosen for what
+they are about rather than for what we happened to be working on. Each corpus
+is a directory of units, a program beside the output it must produce, and the
+arms take any of them.
+
+| subject | count | where it came from | what it is good at finding |
+|---|---|---|---|
+| the compiler itself | 2,869 defs | Cobblestone's own source, bundled as one file | anything, at scale: the byte-exact self-host is the regression net, and it is nearly all integers, lists and records |
+| curated | 28 | cut from Cobblestone's `codex/test`, frozen with upstream's own `.expected` | the ordinary language, the way its author writes it; agreement with upstream is the baseline |
+| Roc ports | 29 | hand-ported from the Roc language's test suite, Roc's answer as the oracle | deliberately tricky typing: closures that capture and recurse, generic helpers, empty containers, polymorphic records. Roc's tests aim at the type corners, and its answers come from a mature compiler we did not write |
+| safari specs | 54 | Steve's driving screensaver, ported from his original zig, one self-checking spec per chapter | real numbers and real geometry, in volume: the shapes the compiler's own source never contains. Its first outside run found the untyped real literal |
+| fib and arith | 2 | cobblestone-qemu's own smoke tests | the transport: does this Update's compiler run at all on real hardware |
+
+The point of having several is that they are blind in different places. The
+self-host cannot see a real literal; the curated programs cannot see a type
+corner upstream's author never wrote; Roc cannot see geometry. A defect has to
+hide from all of them at once.
 
 ## cobblestone-qemu
 
@@ -227,8 +247,15 @@ from the outside. Because it is full of real numbers where the compiler's own
 source has almost none, it finds what the self-host cannot; the untyped real
 literal of yesterday was its catch.
 
-    ./spec/run.sh          # the edit loop
-    ./spec/export.py       # freeze the specs into units/
+    ./spec/run.sh          # the edit loop: interpreter only, all 54 in seconds
+    ./spec/export.py       # freeze what the loop passed into units/
+
+Those are two different jobs. The edit loop is for changing a chapter or a
+spec: it resolves cites itself, applies each spec's floor (the fewest values
+it must still be grading, so a spec cannot pass by doing nothing), and answers
+before you have looked away. The export writes the resolved program and its
+verdict as a unit, and from there the arms in cobblestone-curated-tests grade
+safari like any other corpus. Edit loop, export, arms.
 
 There is also a browser build: Codex to zig to wasm32, driven by this project's
 own fork of the original blitter, served on :9200.
