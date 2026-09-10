@@ -79,10 +79,14 @@ Honest inventory, because the essays so far have mostly told the other story.
   Update, and still parked.
 - **Constructs we do not lower at all.** `Lazy`, vector patterns. Three of
   1,269 corpus programs.
-- **Two hundred and seventeen programs both front ends refuse.** That number
-  has not moved all week. Nobody has read what they are. They are probably the
-  apps-shaped programs that cite hardware, and "probably" is the word to be
-  suspicious of.
+- **Two hundred and seventeen programs both front ends refuse**, and that is
+  the right answer: read this evening, they are upstream's negative tests,
+  programs the compiler must reject. Fifteen undeclared effects, thirty-odd
+  linear-value misuses, nine parse resyncs, type mismatches, circular proofs,
+  a text literal open at end of line. The question that matters for them is
+  whether we refuse with the *same diagnostic*, and that is the corpus check
+  gate's number, 1,096 agree and 173 differ at the last run. The 173 are the
+  inventory, not the 217.
 
 ## Where both may be wrong
 
@@ -160,9 +164,10 @@ None of these is decided. They are the ones I would argue for.
 2. **Adopt the fall-through rule for units.** A unit that exercises a `when`,
    a guard-like `if`, or a literal pattern carries an input the arm must
    reject. Cheap to add now to the 46; cheaper still to require at port time.
-3. **Read the 217.** One afternoon with `grep` and the refusal reasons. If they
-   are all hardware-citing apps, say so in a file and stop counting them. If
-   they are not, that is the largest unread pile we have.
+3. **Read the 173 diagnostic disagreements**, by code. The 217 turned out to be
+   an afternoon of one minute: negative tests, refused on purpose. The pile
+   worth reading is the programs where both sides refuse and name a different
+   defect, or where one refuses and the other compiles.
 4. **Generalization.** Probe 03 is the case. Either implement let-polymorphism
    for undeclared definitions, or reject as upstream does. The second is a
    day; the first is the phase the curriculum was written to reach.
