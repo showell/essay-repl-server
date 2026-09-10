@@ -130,6 +130,8 @@ digraph {
   fix needs the check phase's mint-provenance carried forward, or the expected
   type flowed down into the inlined body — not a blunt sweep. Naming why the easy
   fix is wrong is itself progress.
+  *Closed the same day:* the site's type was already the answer, and the inliner
+  now reads it — [the call site already knew](/notes/the-call-site-already-knew.md).
 
 ## The safety net, in numbers
 
@@ -155,10 +157,10 @@ you owe a behavioral test in its place.
 
 The decision is not a state, it is an obligation, and it has a to-do list.
 
-- **Shape 2, properly.** Carry the checker's mint-provenance past the pipeline,
-  or make inlining type-aware by flowing the expected type down. Either puts us
-  ahead the way shape 1 already is, on a case where the whole language currently
-  stops.
+- **Shape 2, properly.** ~~Carry the checker's mint-provenance past the
+  pipeline, or make inlining type-aware by flowing the expected type down.~~
+  Done, the second way, in [the call site already knew](/notes/the-call-site-already-knew.md):
+  we are ahead there now, upstream still stops.
 - **The remaining phases.** Bidirectional checking and generalization/
   monomorphization are still ad-hoc where they exist. The curriculum orders the
   Roc files by which phase each one forces; the next break tells us which to make
