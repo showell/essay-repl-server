@@ -1,40 +1,54 @@
 # The on-ramp
 
-*Draft 1. For a human arriving cold. One section per repository we own, in
+*Draft 2. For a human arriving cold. One section per repository we own, in
 roughly the order they get used when a new Cobblestone Update lands.*
 
 Cobblestone is Damian's self-hosted language, compiler and operating system,
 written in its own language, Codex. Its canonical artifact is a bootable binary,
 `seed/Codex.cdx`, that compiles Codex on bare metal with no host underneath it.
-Every few days a new **Update** arrives as one large commit. Everything below
-exists to answer one question about that Update quickly, from several
-independent directions, and to send back what we find.
+Every few days a new **Update** arrives as one large commit.
+
+Validating an Update is the system's standing job, and it is why the sections
+below come in the order they do. It is not the only job. The same repositories
+are how we improve our own compiler until it is the reference for well-typed
+IR, how we find and fix defects in the plugs we maintain, and how we port
+programs into the language and keep them honest. Each of those has its own
+essay; this page is the map. [The happy path through an
+Update](/notes/the-happy-path-through-an-update.md) is the walk, stage by
+stage, with what each stage proves and what it cannot.
+
+## The ladder of trust
+
+The repositories are not a menu. Each one's *output* is the next one's
+*instrument*, which is why the order is forced rather than a matter of taste:
+a defect at one rung silently poisons every measurement above it, because the
+later rungs borrow the earlier rung's binaries.
 
 ```dot
 digraph {
-  rankdir=LR; bgcolor="transparent"; pad=0.2; nodesep=0.35;
+  rankdir=TB; bgcolor="transparent"; pad=0.2; nodesep=0.3; ranksep=0.35;
   node [shape=box style="rounded,filled" fillcolor="#f4f0e4" color="#c9bfa7" fontname="Helvetica" fontsize=12];
   edge [color="#b0a890" arrowsize=0.7 fontname="Helvetica" fontsize=10];
-  upd  [label="Update N\n(Damian's tree)" fillcolor="#e8e2d0"];
-  qemu [label="cobblestone-qemu\nboot the seed, get native tools"];
-  zig  [label="codex-zig-transpiler\ncodexzig, and its fixed point"];
-  wasm [label="codex-wasm-transpiler\ncodexwasm, and its fixed point"];
-  rust [label="rust-codex-compiler\nour own front end"];
-  arms [label="cobblestone-curated-tests\nthe arms, over every corpus"];
-  saf  [label="safari-codex\nthe demanding customer"];
-  out  [label="PRs and issues\nback to Damian" fillcolor="#e8e2d0"];
-  upd -> qemu -> zig -> wasm;
-  zig -> arms; wasm -> arms; rust -> arms; saf -> arms;
-  qemu -> rust [style=dashed label="oracles"];
-  arms -> out;
+  seed [label="the Update's checkout, and its seed" fillcolor="#e8e2d0"];
+  qemu [label="cobblestone-qemu\nboots the seed; fib first, then the compiler"];
+  nat  [label="codexir  ·  zigemit\nnative tools, built through bare metal" fillcolor="#fbf7ea"];
+  zig  [label="codex-zig-transpiler\nthe emitter compiles itself; two passes must agree"];
+  ora  [label="codexzig  ·  codexir  ·  codexcheck\nthe oracles, bundled with their pin" fillcolor="#fbf7ea"];
+  wasm [label="codex-wasm-transpiler\nthe same claim through a second emitter"];
+  rust [label="rust-codex-compiler\nan independent front end, graded against the oracles"];
+  arms [label="cobblestone-curated-tests\nthe arms: every tool above, over programs with known answers"];
+  subj [label="the subjects: 28 curated  ·  29 Roc ports  ·  54 safari specs" fillcolor="#fbf7ea"];
+  seed -> qemu -> nat -> zig -> ora -> rust -> arms;
+  ora -> wasm -> arms;
+  subj -> arms;
 }
 ```
 
-The shape to keep in mind: the seed is the root of trust, QEMU turns it into
-native tools, the transpilers each prove themselves by a fixed point, and then
-everything is run through the *arms* against small programs whose answers we
-already know. A disagreement between two arms is a finding. A finding goes
-upstream as a pull request.
+The rule underneath it: **never let a rung consume an artifact whose pin it
+cannot state.** Every borrowed binary here sits in a bundle beside a provenance
+file naming the checkout it was built from, and every arm prints those lines
+before its numbers. A green run that cannot say what it measured is not
+evidence.
 
 ## cobblestone-qemu
 
@@ -68,7 +82,10 @@ digraph {
 
 What comes out are *native* tools: `codexir` is the whole front end stopped at
 the IR wire, `zigemit` is the zig plug reading IR. Every later repository
-borrows one or both.
+borrows one or both. The check that matters at this rung is not the printed
+number: it is the diff of the IR bare metal produced against the IR the native
+tool produced from the same bytes, two roads that share a source and nothing
+else.
 
 ## codex-zig-transpiler
 
@@ -215,6 +232,17 @@ literal of yesterday was its catch.
 
 There is also a browser build: Codex to zig to wasm32, driven by this project's
 own fork of the original blitter, served on :9200.
+
+## What the ladder cannot see
+
+Each rung is blind to something, and saying so is part of the report.
+
+| rung | proves | cannot see |
+|---|---|---|
+| bare metal | memory, the deck, `address-of` are real | anything large, at routine cost |
+| the fixed points | the emitter agrees with itself | a front-end defect both passes share |
+| the Rust arm | an independent reading of every construct it implements | a construct it refuses |
+| the arms | a program's answer, on every road | a program not in a corpus |
 
 ## codex-zig-ladder (retired)
 
