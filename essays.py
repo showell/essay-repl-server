@@ -13,6 +13,10 @@ import config
 MD_EXTENSIONS = ['fenced_code', 'tables', 'sane_lists']
 FRONT_MATTER_RE = re.compile(r'\A---\n.*?\n---\n', re.DOTALL)
 IMAGE_SUFFIXES = {'.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico'}
+# A note may lean on a vendored library or stylesheet living beside it --
+# the graphviz renderer an AST-diagram essay embeds, say. Served verbatim,
+# like an image; the server hosts our own files, not a user's.
+ASSET_SUFFIXES = {'.js', '.css', '.wasm', '.woff', '.woff2'}
 
 
 def collection_dir(collection):
@@ -25,6 +29,10 @@ def safe_name(name):
 
 def is_image(name):
     return pathlib.PurePath(name).suffix.lower() in IMAGE_SUFFIXES
+
+
+def is_asset(name):
+    return pathlib.PurePath(name).suffix.lower() in ASSET_SUFFIXES
 
 
 def render_markdown(text):

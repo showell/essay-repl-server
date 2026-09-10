@@ -34,6 +34,15 @@ def index():
     return redirect('/essays')
 
 
+@app.route('/assets/<name>')
+def asset(name):
+    if not essays.safe_name(name) or not essays.is_asset(name):
+        abort(404)
+    if not (config.ASSETS / name).is_file():
+        abort(404)
+    return send_from_directory(config.ASSETS, name)
+
+
 @app.route('/<collection>')
 def listing(collection):
     if essays.collection_dir(collection) is None:

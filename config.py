@@ -7,6 +7,11 @@ PORT = 9100
 REPO = pathlib.Path(__file__).resolve().parent
 DATA = REPO / 'data'
 
+# Vendored front-end libraries a note may embed (e.g. the graphviz renderer
+# an AST-diagram essay uses). Served verbatim from /assets/<file>; kept out
+# of notes/ so that directory stays pure Markdown.
+ASSETS = REPO / 'assets'
+
 # Collections: URL prefix -> directory of *.md files. claude-collab's
 # published essays seed the public shelf; notes/ is this box's own
 # drafting space (session essays, REPL design notes, whatever wants a
