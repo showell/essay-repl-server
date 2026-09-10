@@ -14,20 +14,25 @@ digraph {
   node [shape=box style="rounded,filled" fillcolor="#f4f0e4" color="#c9bfa7" fontname="Helvetica" fontsize=12];
   edge [color="#b0a890" arrowsize=0.7 fontname="Helvetica" fontsize=10];
   src [label="a program" fillcolor="#e8e2d0"];
-  interp [label="the interpreter\n(type-erasing; the VALUE oracle)"];
+  interp [label="the interpreter\n(type-erasing)"];
   rust [label="Rust IR" fillcolor="#e3efe0"];
   up [label="codexir IR"];
   zig [label="zig plug\n(the TYPE oracle: refuses a hole)"];
   wasm [label="wasm plug"];
   metal [label="bare metal\n(erases types; the MEMORY oracle)"];
+  out [label="OUTPUT\nvs .expected, the VALUE oracle" shape=note fillcolor="#fbf7ea"];
   src -> interp; src -> rust; src -> up;
   rust -> zig [label="ir-zig"]; up -> zig [label="run-zig"]; up -> wasm [label="run-wasm"]; up -> metal [style=dashed label="rarely"];
   rust -> up [dir=none style=dotted label="ir-diff"];
+  interp -> out [label="run-interp"]; zig -> out; wasm -> out; metal -> out [style=dashed];
 }
 ```
 
 Every arrow is a comparison we can run in seconds, and no single one is an
-oracle for everything. The interpreter grades values and cannot see a type.
+oracle for everything. Four roads end at the same output node, and that is
+the closing of the loop: a value the interpreter, the zig plug and the wasm
+plug all print, from one text, has been computed three different ways. The
+interpreter grades values and cannot see a type.
 The zig plug grades types and, we learned this evening, has holes of its own
 below the IR. Bare metal is authoritative about memory and identity and erases
 the very thing we are asking about. Agreement between Rust and codexir is a
