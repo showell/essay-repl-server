@@ -70,3 +70,26 @@ diffs our IR against `codexir`, which cannot see a hole both front ends share;
 the interpreter erases types. The new `ir-zig.sh` in both curated directories
 is the type oracle the reference is graded by, and it reads the plug from a
 bundle that has to carry its provenance. First run: 29 of 29 and 28 of 28.
+
+## Upstream, the same afternoon
+
+The same fix went to Cobblestone as [PR 139](https://github.com/damiant3/Cobblestone/pull/139),
+expressed in their `once-apply-site`: the candidate carries `il-rty`, the site
+pairs it with `ir-expr-type e`, and the guard reads the whole signature. Building
+a `codexzig` from that tree and running probe 04 through it taught something the
+Rust side could not: **upstream's plug still refuses the program.** Their checker
+has no zonk-and-default, so the site's own variable is never resolved either; the
+copy now carries the *site's* hole instead of the *helper's*, which is the honest
+state of a def that agrees with itself and still has no answer. Two holes, one
+fix. The second is the checker's missing finalization, and the PR registers it
+as COMPILER-74 with the specimen rather than pretending the inliner closed it.
+
+What the fix *does* do upstream is visible only on the IR wire, so the pin is an
+`ir-fidelity` case rather than a test unit: `list-push (make-empty 0) "a"`
+against `list-push (make-empty 0) 1`, whose inlined literal read the helper's
+`(tvar 2)` in both programs before and `text` / `int-default` after, with the
+mixed program refused on CDX2001. And the census of all 1,269 corpus programs
+through a `codexir` carrying the fix: **zero bytes move.** The shape does not
+occur in the corpus, the compiler's own source included, which is why the fixed
+point held in one round and why the change is safe to land ahead of the checker
+work that will make it matter.
