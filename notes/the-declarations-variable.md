@@ -147,3 +147,18 @@ Viz.instance().then(function (viz) {
   });
 }).catch(function (e) { console.error('viz load failed', e); });
 </script>
+
+## Sent, and widened first
+
+A cold reviewer caught that the fix as drawn above covered a literal only when
+its *context* supplied the record's type: bind the same literal with a `let`
+first and the expectation is empty, the applied type falls back to the
+declared one, and the parameter leaks again. The widening is one call:
+`expected-or-recorded-ty`, upstream's own helper, which takes the checker's
+recorded type for the literal when the context has none. It went out as
+[PR 140](https://github.com/damiant3/Cobblestone/pull/140). The census of all
+1,269 corpus programs moved six: the three iterator ports, an empty-list field
+in `queue-test`, and the class dictionaries of `typeclass-poly` and
+`typeclass-smoke`, which are polymorphic record literals with lambda fields
+and had been carrying the declaration's variable for as long as anyone had
+looked at them.
