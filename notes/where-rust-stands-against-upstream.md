@@ -183,3 +183,5 @@ Viz.instance().then(function (viz) {
       pre.appendChild(err);
     }
   });
+}).catch(function (e) { console.error('viz load failed', e); });
+</script>
