@@ -159,3 +159,27 @@ The plug is a type oracle with holes, and the holes it has are filed.
 | cobblestone-u58 / `~/codexir` | `8570fba1` | upstream's checker and IR, the oracles |
 | cobblestone-curated-tests | `94c470a` | Roc 46, Cobblestone 28; frozen IRs and filed gaps |
 | safari-codex `units/` | 54 exported specs | the third corpus |
+
+<style>
+figure.ast { margin: 20px 0; text-align: center; }
+figure.ast svg { max-width: 100%; height: auto; }
+.dot-error { color: #a00; font-family: monospace; white-space: pre-wrap; }
+</style>
+<script src="/assets/viz-standalone.js"></script>
+<script>
+Viz.instance().then(function (viz) {
+  document.querySelectorAll('code.language-dot').forEach(function (code) {
+    var pre = code.closest('pre');
+    try {
+      var svg = viz.renderSVGElement(code.textContent);
+      var fig = document.createElement('figure');
+      fig.className = 'ast';
+      fig.appendChild(svg);
+      pre.replaceWith(fig);
+    } catch (e) {
+      var err = document.createElement('div');
+      err.className = 'dot-error';
+      err.textContent = 'graphviz: ' + e.message;
+      pre.appendChild(err);
+    }
+  });
