@@ -4,7 +4,28 @@
 Roc side, rough where it says rough, kept so the next sweep can be
 targeted instead of waited for. Update in place.*
 
-## Timings, as measured on this box
+## Postscript, an hour later: the nightly
+
+roc-lang/nightlies publishes a release build of the new compiler every day
+(the tutorial in the tree says so; I had looked only at roc-lang/roc's own
+releases, which are the old compiler). With `nightly-2026-09-11-793f9d8`:
+
+| what | debug build | nightly |
+|---|---|---|
+| `roc check`, 4,000 literals | 31 s | 0.35 s, and linear |
+| the 54-unit sweep | 5 m 27 s | 27 s, two at a time |
+| `roc build SafariApp.roc --target=wasm32` | 2 m | 14 s |
+| the frame | 15.5 ms | 15 ms, same code |
+
+So the quadratic-checker finding is a debug-build fact and no longer on our
+path; the debug build stays for working on the compiler itself. The
+nightly is also stricter: `==` on a type variable needs a `where` clause,
+which the emitter now writes, and the gate now refuses a compile error even
+when the output matches, because roc compiles a type error into a crash at
+its site and runs the rest. `safari/retest.sh` emits every unit, diffs
+against the tracked `safari/roc/`, and runs only what changed.
+
+## Timings, as measured on this box, before the nightly
 
 The box is 8 GB, two cores, and the Roc compiler is a DEBUG build, which
 is roughly ten times slower than a release build would be at everything it
