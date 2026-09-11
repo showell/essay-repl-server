@@ -140,3 +140,28 @@ over a def list that already passes.
 | roc-apps | 9cae655 | hand ports, `emitted.sh`, the subset doc |
 | rust-codex-compiler | 8fe6596 | `rocemit` and `lower_chapter` |
 | safari-codex | units as of 2026-09-10 | the 54 units and their verdicts |
+
+## Postscript, later the same evening
+
+**The tally.** 54 of 54, in both layouts. Single file: five minutes for
+the sweep once the stills were baked. One type module per chapter, the
+spec as an app importing them: 54 of 54 in five minutes eighteen, after
+two more Roc facts. A module named Cat that declares a type Cat sees a
+bare `Cat` as its own void type, so every type reference is now qualified,
+even at home. And a lifted lambda needed its enclosing definition's
+chapter to have a module at all.
+
+**The superlinear checker was the debug build.** A profile of `roc check`
+on the 2k-element file put 64% of samples under
+`Check.finalizeLiteralDispatchResolutions`, whose loop over the literal
+dispatch plans re-fetches the plan list each iteration through
+`NodeStore.literalDispatchPlans()`. In Debug mode that function asserts
+over every plan, with a string-to-enum lookup per plan, so each literal
+pays for all of them. In ReleaseFast the assertion block compiles out.
+The fix is to use the slice the function already took, one line at
+`src/check/Check.zig:34522`. Not yet verified by rebuilding, and not
+reported upstream, both at Steve's call.
+
+So the stills baker is a workaround for the compiler we happen to be
+running, not for Roc, and the Rust-side generalisation of it can wait
+until the rebuild says whether it is needed.
