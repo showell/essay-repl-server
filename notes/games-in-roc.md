@@ -73,7 +73,7 @@ game's:
 - **`list-set-at`**, the mutating set, as `List.set`. They agree wherever
   the program uses the answer, which every typed use does; a program that
   sets and then reads the old name would diverge silently, and only a
-  grader would catch it. Fifty-six chapters were waiting on this one.
+  grader would catch it. Most of the chapters were waiting on this one.
 - **Instance names.** `==` on a list is lowered as upstream's x86 emitter
   spells it, `__eq_ConsList@<keys>`, one name per element type; the
   derived definition is one function whose `where` clause dispatches the
