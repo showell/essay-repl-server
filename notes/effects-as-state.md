@@ -128,10 +128,11 @@ Candidates, by how much they would teach:
   installs an effect handler and reads text. It would force the question
   the Device work sidestepped: a handler is a function from an effect's
   operations to a state, and its Roc spelling is a record of closures
-  around the same threading. None of the 91 curated units installs one;
-  in Cobblestone's own tree the word `handle` appears in some two hundred
-  of its 3,775 chapters, prose included, and `try` in over a hundred, so
-  the subject would have to come from there.
+  around the same threading. None of the 91 curated units installs one.
+  In Cobblestone's own tree the form is `with Effect body` followed by
+  clauses `op (args) (resume) = ...`; twenty-four chapters use it and five
+  use `trying`, most of them the compiler's own tests under `codex/test`,
+  which is also where 597 programs sit beside an `.expected` verdict.
 - **Safari's sibling, the night walk.** Same shape as safari, so cheap, and
   a second screensaver on the same platform is what makes the shared
   platform real. It teaches the emitter little.
