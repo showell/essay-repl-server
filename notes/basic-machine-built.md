@@ -138,9 +138,31 @@ Moving the program out of the machine record did not matter (20,038).
 | print (10,000) | 10,084 | 50,009 | 260 | 615 |
 | string-growth (10,000) | 10,054 | 20,021 | 241 | 281 |
 
-The new interpreter's times are its dev build, measured while the gate was
-running on the same two cores. They are not a comparison with the old
-interpreter's speed build; speed numbers follow.
+The new interpreter's dev-build times above were measured while the gate was
+running on the same two cores. Its speed build (commit `3167c82`), with the box
+otherwise idle:
+
+| program | mmap | new, speed: ms | old, speed: ms |
+|---|---|---|---|
+| x-plus-one | 74 | 366 | 2,080 |
+| for-next | 59 | 57 | 85 |
+| goto-loop | 65 | 624 | 3,059 |
+| if-false | 62 | 293 | 938 |
+| many-vars | 1,542 | 166 | 1,942 |
+| gosub-deep | 1,077 | 24 | 68 |
+| nested-for | 30,384 | 871 | 1,152 |
+| big-array | 220,442 | 4,022 | 7,525 |
+| poke | 402,478 | 6,137 | 14,814 |
+| print | 10,083 | 139 | 615 |
+| string-growth | 10,053 | 174 | 281 |
+
+Faster than the old interpreter on every program, and still not fast enough.
+
+- `IF` and `GOTO` cost about 3 to 6 µs a statement. FOR/NEXT costs 0.6 µs.
+- big-array and poke are over a second, and they are exactly the copying
+  statements.
+- With no allocation, the 3 µs for `X=X+1` is tree walking, record building
+  and the dispatch. None of it is attributed yet.
 
 ## What still copies
 
@@ -185,8 +207,9 @@ around a mechanism I cannot see. Each remaining copy is bounded: a path of
 - **Speed:** the first build failed after about 8 minutes, unable to write its
   static data object under `/tmp/roc`. Dev builds were running in the same
   temp directory at the time, which is the likely cause.
-- **Speed, second attempt:** it has run for more than 7 minutes, where the old
-  interpreter took 67 s (61 s of it LLVM). It is not attributed yet.
+- **Speed, second attempt:** it built in **694 s**, where the old interpreter
+  takes 67 s (61 s of it LLVM Optimize + Emit). Its log carries no phase times;
+  a build with `--timings` is running to attribute them.
 
 ## Open
 
