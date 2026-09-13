@@ -212,6 +212,63 @@ went from 11.4 to 6.7 µs. **So the effects record was the largest single cost
 in a statement,** larger than the machine record's copies and larger than the
 array read.
 
+## The fast path, checked for good
+
+The fast path answers a LET, an IF or an array store without the effects
+record, and hands anything else to the full evaluator. It is right only if
+every answer it gives is the one the full evaluator would give. That was
+checked once, by a scratch patch. **It is now a tool.**
+
+`basic-check` (`basic/roc/BasicCheck.roc`) is basic-run with a run loop of its
+own, so basic-run's loop is untouched. Wherever the fast path answers, the
+statement runs both ways from the same machine, and the two machines are
+compared on everything such a statement can write: where the program goes
+next, whether and why it stopped, the random number state, the arrays made,
+the output, the stacks, and the variable or cells it names, a number by its
+bits. A difference stops the program with `fast differs on line N` and both
+machines. `basic/check-fast.sh` runs every corpus program and every control
+through basic-check and basic-run. It reports how many fast answers it
+compared, the programs where fast differed, and any transcript that is not
+basic-run's.
+
+**Broken on purpose first.** `quick` refuses a value past the largest number,
+so the full evaluator can report the overflow. It was changed to pass
+everything. Of 836,228 fast answers compared, the check stopped four NBS
+programs, each at the statement: P029 line 260, P030 line 360, P035 line 250
+and P122 line 250, the overflow tests. It listed the same four transcripts as
+unlike basic-run's.
+
+**Its first version cost ten times a statement.** It built each machine's
+summary as text for every statement. Both runs also started from a machine
+still referred to, so each copied the path it wrote. P134 did not finish in
+120 s. Three changes brought the cost down:
+
+- the summaries are records of numbers, turned into text only when they differ;
+- the full evaluator's run gets the machine last, so it writes in place;
+- only the fast path's run still copies, once, because two machines have to exist.
+
+Dev backend, 100,000 iterations, best of two, each pair from one job:
+
+| | basic-run | basic-check, text | basic-run | basic-check, records |
+|---|---|---|---|---|
+| `LET X=1` | 4.50 µs, 0 mmap | 84.32 µs, 8 | 4.38, 0 | 32.01, 2 |
+| `IF I<0 THEN` | 4.80, 0 | 52.29, 4 | 4.88, 0 | 12.05, 0 |
+| `A(5)=I` | 6.97, 0 | 135.28, 12 | 6.97, 0 | 53.62, 3 |
+| `IF P(5)<=P(6) THEN` | 6.65, 0 | 63.83, 4 | 6.72, 0 | 19.78, 0 |
+
+**Unbroken, it agrees everywhere.** 2,011,762 fast answers were compared over
+230 programs, corpus and controls. No program differed, every transcript was
+basic-run's, and nothing timed out. P134 compared 1,175,337 of its 1,742,747
+statements and took 47.7 s, against basic-run's 7.8 s. The whole check, both
+executables over both corpora and the controls, takes 145 s.
+
+To take the check apart, `run_measured` became three pieces that basic-run
+and basic-check share: `loaded` (the listing checked and parsed), `started`
+(the machine before its first statement) and `ended` (the transcript). The
+command-line cleaning moved to `CommandLine`. basic-run's transcripts are
+byte-identical to the committed build's on all 208 NBS and 99 games programs.
+The ladder is 0 off.
+
 ## P134, statement by statement
 
 A scratch build counted every statement index P134 executes. By section of
