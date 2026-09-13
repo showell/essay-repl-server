@@ -64,6 +64,85 @@ the functions a line calls, it gives 27% to `dim_one` and 8 to 9% each to
 put generated code under the wrong lines, so no claim here rests on them. The
 ladder's rungs are the instrument instead (next section).
 
+## Skipping `settle` when there is nothing to apply
+
+`settle` applies what an evaluation did (its reports, a stop, arrays it made,
+random numbers it drew) and rebuilds the machine record, after every
+evaluation, whether there is anything to apply or not. In P134, IF (40% of its
+statements) and LET (17%) always went through it. Array stores already skipped
+it.
+
+Two versions, measured against the committed build on the dev backend. Each
+rung is 100,000 iterations, best of three; P134 is best of two.
+
+| | committed | quiet | plain | quiet2 |
+|---|---|---|---|---|
+| `LET X=1` | 6.07 µs | 5.28 | 5.47 | 5.32 |
+| `X=X+1` | 7.51 | 6.58 | 7.05 | 6.87 |
+| `IF I<0 THEN` (false) | 7.93 | 7.06 | 7.09 | 7.19 |
+| `IF I>0 THEN` (true) | 8.24 | 7.59 | 7.78 | 7.65 |
+| `IF P(5)<>3 THEN` | 10.11 | 9.47 | 9.46 | 9.74 |
+| `IF P(5)<=P(6) THEN` | 12.30 | 11.57 | 11.91 | 11.75 |
+| `LET X1=INT(1100*0.5)` | 8.10 | 7.38 | 7.52 | 7.87 |
+| `X=RND(1)` | 8.37 µs, 0 allocations | **29.50 µs, 2 allocations** | **29.87 µs, 2 allocations** | 7.43 µs, 0 allocations |
+| P134 | 12,690 ms | 11,957 ms | 13,029 ms | 12,192 ms |
+
+- **quiet:** IF and LET write the machine they were given when the evaluation
+  reported nothing, stopped nothing, made no array and drew no Twister
+  number; LET writes the new LCG seed in the same record update.
+- **plain:** the same, but a LET whose seed changed goes through `settle`.
+- **quiet2:** quiet, and a LET that drew from the Twister writes the Twister's
+  state in the same record update, so only a report, a stop or a new array
+  goes through `settle`.
+
+A LET or an IF gets 0.6 to 0.9 µs cheaper, and P134 6% faster (quiet). But
+**a LET that draws from the Twister now copies the path of `nums` on every
+execution** in both versions, although its slow path is the code it had
+before; only the fast branch beside it is new. That is the shape sensitivity
+in `findings/helper-arg-copy`, and the ladder caught it on its first run.
+
+**quiet2 is the one kept.** The ladder shows no rung off, RND is cheaper than
+before (8.37 to 7.43 µs), and each LET or IF is 0.4 to 0.8 µs cheaper. P134 is
+4% faster: 12,690 to 12,192 ms. Between runs of the same build, P134 varies by
+about 2%, which is why quiet (11,957) and quiet2 cannot be told apart on it.
+**This is a small step.** A statement is still 7 µs, so the evaluation's
+scaffolding was not most of it.
+
+## P134, statement by statement
+
+A scratch build counted every statement index P134 executes. By section of
+the program:
+
+| section | lines | statements | share |
+|---|---|---|---|
+| bubble-sort each group, back and forth | 740–920 | 741,416 | 42.5% |
+| place 1,000 RND values, probing outward for a free slot | 380–590 | 573,104 | 32.9% |
+| K+ and K− on the sorted data | 1000–1170 | 152,114 | 8.7% |
+| compress out the empty slots | 930–990 | 126,024 | 7.2% |
+| find the groups | 600–730 | 80,393 | 4.6% |
+| mark 1,100 slots empty | 330–370 | 66,061 | 3.8% |
+| the summary test on the 30 results | 1180–1770 | 3,602 | 0.2% |
+
+The busiest lines:
+
+| line | executed | |
+|---|---|---|
+| 800 | 232,332 | `IF P(J1)<=P(J1+1) THEN 850` |
+| 850 | 232,332 | `NEXT J1` |
+| 470 | 70,285 | `IF X1-J<1 THEN 510` |
+| 480 | 68,349 | `IF P(X1-J)<>3 THEN 510` |
+| 510 | 62,132 | `IF X1+J>N8 THEN 550` |
+| 520 | 61,965 | `IF P(X1+J)<>3 THEN 550` |
+| 810–840 | 58,876 each | the swap: `A3=9`, `W=P(J1)`, `P(J1)=P(J1+1)`, `P(J1+1)=W` |
+| 550 | 56,648 | `NEXT J` |
+
+**So P134 is doing exactly its own work.** The sort within groups is
+quadratic, and the probe walks outward from each value's slot. Together those
+are 75% of the statements. The program's result is real: all 30 statistics
+and both summary tests fall inside its bounds, and it prints `*** TEST PASSED
+***`. Making P134 faster means making those four IFs, one NEXT and four LETs
+cheaper, which is making every statement cheaper.
+
 ## A statement's cost, rung by rung
 
 The ladder's rungs are one-statement programs, so timing them gives each kind
