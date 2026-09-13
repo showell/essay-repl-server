@@ -229,6 +229,82 @@ with no pass lost. Three do not pass, each for a named reason:
   still owes;
 - `manifest-pin` wants a disk compiled at test time, so it is skipped.
 
+## Step 4: a real device
+
+**The same emitted program, on a real disk.** `fat16-write`, emitted by
+rocemit, runs on a native platform whose block device is the host's:
+
+```
+$ machine/native/run.sh fat16-write.codex -disk copy.img
+wrote True
+exists True
+readback Hello, disk!
+size 12
+wrote-bin True
+bin 1 2 3 254
+absent False
+```
+
+That is its verdict, and the file on the host changed under it (its checksum
+went from `3e67e1fca739` to `8c85b2cccb23`). A second process, `fat16-list`
+on the same file, finds what the first one wrote:
+
+```
+rootfile CODEX.CDX
+rootfile HELLO.TXT
+rootfile BIN.DAT
+rootfile end
+```
+
+And a reader that shares nothing with Codex agrees: `fsck.fat` over the
+image's FAT partition checks `/HELLO.TXT` and `/BIN.DAT`, and leaves the
+filesystem unchanged.
+
+```dot
+digraph seam {
+  rankdir=LR; bgcolor="transparent";
+  node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=10 fillcolor="#ffffff"];
+  edge [fontname="Helvetica" fontsize=9 color="#666666"];
+
+  prog   [label="fat16-write, emitted\nForeword--Fat16" fillcolor="#fff8e6"];
+  door   [label="Machine.block_read_sector!\n(machine, lba)" fillcolor="#e6f4e6"];
+  model  [label="MachineDisk (roc/)\nthe model: images imported,\nwrites in an overlay" fillcolor="#e6f4e6"];
+  hosted [label="MachineDisk (native/)\nDrive.read!(position, lba)" fillcolor="#e6f4e6"];
+  echo   [label="Echo platform\nthe ladder" fillcolor="#eef3fb"];
+  native [label="native platform\nhost.zig: pread · pwrite" fillcolor="#eef3fb"];
+  file   [label="copy.img\non the host" shape=note fillcolor="#fde9d9"];
+
+  prog -> door;
+  door -> model  [label="modelled"];
+  door -> hosted [label="real"];
+  model -> echo;
+  hosted -> native -> file;
+}
+```
+
+**What keeps it one program.** The block doors are effects in both builds,
+because a door the host may answer is one: `block_read_sector!`. The modelled
+disk's doors are effects with pure bodies, which Roc accepts, and the page,
+which is pure, calls the model's pure functions beneath them. rocemit gives
+every machine-threaded definition `=>` and a `!` name. The two `MachineDisk`
+modules are the only difference between a ladder run and a real one.
+
+**The platform.** Echo's shape (a command line in, lines out) with a hosted
+`Drive`: `open!`, `sector_count!`, `read!` and `write!`, by position. Its host
+is a static library for x86_64-linux-musl, built against the Roc checkout's
+builtins, which `roc run` links with the musl runtime from Roc's own fx test
+platform. An emitted app has no header, so `run.sh` prepends the wiring Roc
+gives a headerless app, pointed at this platform instead of Echo. Two things
+the link needed: `std.debug`'s I/O is Roc's minimal shim, since zig's threaded
+I/O calls into things this musl lacks, and compiler_rt is bundled.
+
+**A lead, not a finding.** `fsck.fat` also says the image's two FATs differ.
+They differ before the write too: the fixture's second FAT holds zeros in the
+two reserved entries where the first holds `0xfff8` and `0xffff`, and the
+write moved both copies in step (4,889 clusters in use in each before, 4,891
+after). Whatever writes upstream's fixture leaves those entries of the second
+FAT empty.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -313,7 +389,7 @@ digraph modes {
   subgraph cluster_batch {
     label="batch: how a test runs"; fontname="Helvetica"; fontsize=10; color="#7fb27f";
     side [label="sidecars\n.vmargs · .disk · .disk2 now · .keys" shape=note fillcolor="#fff8e6"];
-    b1 [label="Machine.boot(args)"];
+    b1 [label="Machine.boot!(args)"];
     b2 [label="run the program\nto the end"];
     b3 [label="console\n→ the verdict" fillcolor="#e6f4e6"];
     side -> b1 -> b2 -> b3;
@@ -372,10 +448,10 @@ digraph demo {
   a [label="1. hand-written Roc app  ✓\nscans the PCI table, reads sector 0,\nechoes keys to the console" fillcolor="#e6f4e6"];
   b [label="2. an emitted Codex unit, batch  ✓\npci-bridge-cap and five more\n(count=10 bus1=2 ... truncated=yes)" fillcolor="#e6f4e6"];
   c [label="3. fat16-list over its committed image  ✓\n(rootfile CODEX.CDX, bootfile BOOTX64.EFI)" fillcolor="#e6f4e6"];
-  d [label="4. a real device behind the platform\n(a host file as the disk)" fillcolor="#f4f4f4" style="rounded,dashed"];
+  d [label="4. a real device behind the platform  ✓\n(fat16-write onto a host file)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
-  c -> d [label="the seam holds" style=dashed];
+  c -> d [label="the seam holds"];
 }
 ```
 
@@ -384,8 +460,9 @@ digraph demo {
   needed a run-time crash for hardware builtins: rocemit threads the machine
   through the units that reach a device, and the builtins it does not answer
   yet still refuse the unit by name.
-- **Step 4 is the "real device" half:** the same doors, answered by the host.
-  It is still a Roc program on a host, not bare metal.
+- **Step 4 is the "real device" half:** the same doors, answered by the host,
+  and the file on the host is what changed. It is still a Roc program on a
+  host, not bare metal.
 
 ## Where it lives
 
@@ -396,7 +473,12 @@ digraph demo {
     refuses a chapter spelled like one.
   - `wasm/platform/`, with `host.zig` written fresh.
   - `web/machine.html`, previewed on `:9203/machine/`.
-- **Batch runs are the ladder:** `tests/ladder.sh fat16-list`.
-- **Configuration:** a batch run's machine is `Machine.boot(args)`. `.vmargs`
-  is the command line, and `.disk` and `.disk2` are imported by the
-  `MachineMedia.roc` the ladder writes. `.keys` comes later.
+  - `native/`: the native platform (`platform/`, a hosted `Drive` and its
+    host), the host's `MachineDisk`, and `run.sh`.
+- **Batch runs are the ladder:** `tests/ladder.sh fat16-list`, on the modelled
+  disk.
+- **A real run:** `machine/native/run.sh fat16-write.codex -disk copy.img`.
+- **Configuration:** a machine is `Machine.boot!(args)`, and `.vmargs` is the
+  command line. On the ladder `.disk` and `.disk2` are imported by the
+  `MachineMedia.roc` it writes; on the native platform `-disk` and `-disk2`
+  name files. `.keys` comes later.
