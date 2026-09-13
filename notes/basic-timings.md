@@ -269,6 +269,47 @@ command-line cleaning moved to `CommandLine`. basic-run's transcripts are
 byte-identical to the committed build's on all 208 NBS and 99 games programs.
 The ladder is 0 off.
 
+## A step's cost is the machine record's width
+
+Before a statement does its own work, the step pays for the machine record:
+the run loop builds a fresh one for `fuel` and `steps`, and the statement
+builds another. `perf` puts 22% of a bare FOR/NEXT loop in list reference
+counting.
+
+**The run loop's fresh record is load-bearing.** Two loops that hand the step
+`$m` itself make every statement's store copy. One has no fuel and the other
+counts fuel in a local. The cost is 2 allocations a NEXT, and P134 goes from
+7.4 s to 37 s. The loop keeps its record update, with a comment saying why
+(d0318fd).
+
+**What the record costs, found by padding it.** Fifteen fields are added to
+the machine record, and nothing reads or writes them. Dev backend, 100,000
+iterations, best of three, one job; no variant allocates.
+
+| | committed | + 15 lists | + 15 lists behind one reference | + 15 lists in a nested record |
+|---|---|---|---|---|
+| bare FOR/NEXT | 2.15 µs | 2.76 | 2.24 | 2.74 |
+| `LET X=1` | 4.46 | 6.24 | 4.39 | 5.62 |
+| `IF I<0 THEN` | 4.98 | 6.74 | 4.98 | 6.75 |
+| `A(5)=I` | 6.95 | 9.30 | 7.32 | 9.47 |
+| P134 | 7,443 ms | 10,010 | 7,498 | 9,564 |
+
+In an earlier job, fifteen integers made P134 8,289 ms against 7,329, and the
+same rungs 0.3 to 1.1 µs slower.
+
+- Each list in the record costs about 60 ns a statement, about three times
+  what an integer costs.
+- **Behind one reference** (a one-element list of a record), fifteen lists
+  cost nothing measurable. **In a nested record** held inline, they cost as
+  much as loose fields.
+- The machine record holds 15 lists and vectors today, and about 20 integers
+  and flags.
+
+**The plan:** split the machine into the state statements change every time
+and the rest, behind one reference: the screen, memory, output, input and the
+Twister's table. The padding predicts most of 60 ns a statement for each list
+that moves. That is a prediction, not a measurement.
+
 ## P134, statement by statement
 
 A scratch build counted every statement index P134 executes. By section of
@@ -471,7 +512,7 @@ P134: 12,904.8 ms, 1,742,747 statements run, 7.40 µs a statement, 45,676 mmap, 
 
 ## Next
 
-- A statement's own cost: the dispatch, and the run loop rebuilding the
-  machine record for `fuel` and `steps` before every statement.
+- Split the machine record: the state statements change, and the rest behind
+  one reference.
 - The load: ECMA-55's line checks turn a keyword into bytes for every
   comparison, 37,243 of P095's 39,335 allocations.
