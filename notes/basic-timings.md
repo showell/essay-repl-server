@@ -37,6 +37,49 @@ the microcomputer dialect, which skips ECMA-55's load-time checks (`Listing`,
 Best of three each. So the checks cost 150 to 370 ms a program, and parsing
 and running are the other 15 to 30. What in the checks costs that is next.
 
+## P134, looked at closer
+
+**What it executes.** An instrumented build (scratch only) counted P134's
+statements by kind:
+
+| statement | executed | share |
+|---|---|---|
+| IF … THEN line | 691,970 | 39.7% |
+| NEXT | 446,028 | 25.6% |
+| LET of a number | 301,701 | 17.3% |
+| an array element stored | 211,666 | 12.1% |
+| REM, GOTO, FOR, GOSUB, RETURN, PRINT | 91,382 | 5.2% |
+
+It is a sort. Its IFs compare array elements (`IF P(J1)<=P(J1+1) THEN 850`)
+and its stores swap them.
+
+**Where a statement's 7.4 µs goes, as far as it can be seen.** `perf` on a dev
+build with debug info, by symbol: 18% in the run loop's compiled code, and
+**29% in list reference counting** (`list_incref` 15%, `list_decref` 14%): the
+machine record and the evaluation's effects being copied and counted up and
+down. **By source line the profile cannot be trusted:** counting time spent in
+the functions a line calls, it gives 27% to `dim_one` and 8 to 9% each to
+`Parse.resolve` and `Parse.text_of`. All three run once, at load, in a
+13-second run whose load is a few milliseconds. The dev backend's line tables
+put generated code under the wrong lines, so no claim here rests on them. The
+ladder's rungs are the instrument instead (next section).
+
+## The load, found
+
+**ECMA-55's checks turn keywords into byte lists, one allocation per keyword
+tried.** P095 makes 39,335 allocations in the ECMA-55 dialect and 909 in the
+microcomputer dialect. `strace -k`, counted by `basic/stacks.py`, puts 37,243
+of the 39,335 in `Str.to_utf8`. Reading the check shows why:
+
+- `Listing.starts(b, i, w)` is `starts_from(b, i, Str.to_utf8(w), 0)`: every
+  word it tries becomes a new list.
+- `Listing.first_kw` tries up to 25 keywords for each statement.
+- `Program.tokens` tries up to 50 known words for every word in the program.
+
+About 200 conversions a statement, each an `mmap` and a `munmap` on this
+platform, is 150 to 370 ms before the first statement runs. The fix is to
+compare the text without converting it; its measurement is to come.
+
 ## How it was measured
 
 - **The interpreter:** `basic-run`, built once by the Roc compiler with the
