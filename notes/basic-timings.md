@@ -108,6 +108,59 @@ about 2%, which is why quiet (11,957) and quiet2 cannot be told apart on it.
 **This is a small step.** A statement is still 7 µs, so the evaluation's
 scaffolding was not most of it.
 
+## Reading an array element
+
+An array read added about 2.3 µs over the same IF without one, and P134's
+sort does two such reads on every one of its 232,332 comparisons.
+
+**Was taking the array out of its vector load-bearing? For a read, no.** `elem`
+needs the array's width, its cell count and one cell. It took them by
+`Vec.get`-ting the whole array record out of the machine's vector of arrays,
+because in Roc that is how a field of something inside a list is reached.
+That "copy" is small: two integers and a vector handle, with the cells tree's
+reference count going up and back down. No cells are copied. A *store* is
+different: it has to take the array out with `replace` and put it back, or
+the cells tree would be shared and copied. So the take-out is load-bearing on
+the write path and never was on the read path.
+
+Two ways in, each measured against the committed build (dev backend, 100,000
+iterations, best of three; P134 best of two):
+
+1. **No fill value.** `Vec.get(m.arrs, slot, Machine.no_arr)` hands `no_arr`,
+   a constant holding a vector, to every call, although the slot is always in
+   range. `Vec.at` takes no fill value.
+2. **One cell space.** Every array's cells live in one machine-wide vector of
+   16,777,216 cells, as POKE's memory does. An array is three integers: width,
+   cell count, and `off`, where its cells start. A new array takes the next
+   stretch from `cells_top`. A read is one walk; a store is one `Vec.set`, with
+   no take-out and no put-back.
+
+| | committed | `Vec.at` | one cell space |
+|---|---|---|---|
+| `IF I<0 THEN` (no array) | 7.42 µs | 7.25 | 7.62 |
+| `X=A(5)` | 7.54 | 7.38 | 8.01 |
+| `A(5)=I` | 9.31 | 9.18 | 9.01 |
+| `IF P(5)<>3 THEN` | 9.78 | 9.41 | 10.32 |
+| `IF P(5)<=P(6) THEN` | 12.03 | 11.59 | 13.04 |
+| `P(5)=P(6)` | 11.20 | 11.18 | 11.50 |
+| P134 | 12,230 ms | 12,005 ms | 12,822 ms |
+
+The fill value was 0.2 to 0.4 µs a read, and P134 moved 1.8%, inside the 2% it
+varies between runs. `Vec.at` is kept: it is a small, clean step, gated and
+committed.
+
+**One cell space reads slower, and is not kept.** Its stores gain a little (9.31
+to 9.01 µs), but its reads lose more (the IF on two elements 12.03 to 13.04 µs),
+and P134 is 5% slower. Not measured, but the likely reason: a read walks five
+levels of a 16-million-cell tree, where before it walked two levels to the array
+and one into its cells. So the array record coming out of its vector was not what
+an array read costs. What is left is the evaluation around it: the subscript's
+own evaluation, the records that carry it, and the tree walks.
+
+**The noise, stated.** The same control, `IF I<0 THEN`, measured 7.93 µs in one
+job and 7.42 µs in another, on the same build. Only a comparison run back to back
+in one job is worth reading, and a difference under a few percent is not.
+
 ## P134, statement by statement
 
 A scratch build counted every statement index P134 executes. By section of
