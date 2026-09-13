@@ -30,6 +30,9 @@ ul.essays a:hover { text-decoration: underline; }
 .wiki-md h2 { margin-top: 28px; }
 .wiki-md blockquote { margin: 0 0 16px; padding: 0 14px; color: #555; border-left: 3px solid #d6d0be; }
 .wiki-md img { max-width: 100%; height: auto; border: 1px solid #e6e0d0; border-radius: 3px; margin: 8px 0; }
+figure.dot { margin: 20px 0; text-align: center; }
+figure.dot svg { max-width: 100%; height: auto; }
+.dot-error { color: #a00; font-family: monospace; white-space: pre-wrap; }
 form.auth { max-width: 320px; }
 form.auth label { display: block; margin: 12px 0 4px; font-size: 14px; }
 form.auth input { width: 100%; padding: 6px 8px; font-size: 14px; border: 1px solid #c9bfa7; border-radius: 3px; box-sizing: border-box; }

@@ -1,0 +1,26 @@
+#!/bin/bash
+# A note whose diagram does not render is refused at commit.
+# Armed by `git config core.hooksPath tools/hooks` (ops/install.sh does it).
+#
+# Only the staged notes are checked -- and staged means their staged bytes,
+# not the working tree's, so what is checked is what is committed.
+set -euo pipefail
+repo="$(git rev-parse --show-toplevel)"
+mapfile -t staged < <(git diff --cached --name-only --diff-filter=ACM -- 'notes/*.md' 'assets/dot.js')
+[ "${#staged[@]}" -eq 0 ] && exit 0
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+checked=()
+for f in "${staged[@]}"; do
+    case "$f" in
+        assets/dot.js) git show ":$f" > "$tmp/dot.js.staged" ;;
+        *) git show ":$f" > "$tmp/$(basename "$f")"; checked+=("$tmp/$(basename "$f")") ;;
+    esac
+done
+# A staged renderer change is checked against every note.
+if [ -f "$tmp/dot.js.staged" ]; then
+    exec node "$repo/tools/check_dot.cjs"
+fi
+[ "${#checked[@]}" -eq 0 ] && exit 0
+exec node "$repo/tools/check_dot.cjs" "${checked[@]}"

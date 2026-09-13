@@ -82,6 +82,16 @@ def listing_body(collection):
             f'<ul class="essays">{"".join(items)}</ul>')
 
 
+# A ```dot fence renders as a diagram. The library is 1.4 MB, so it loads only
+# on a note that has one; assets/dot.js does the rendering.
+DOT_SCRIPTS = ('<script src="/assets/viz-standalone.js"></script>'
+               '<script src="/assets/dot.js"></script>')
+
+
 def view_body(collection, name, text):
-    return (f'<p><a href="/{html.escape(collection)}">&larr; Back</a></p>'
-            f'<div class="wiki-md">{render_markdown(text)}</div>')
+    rendered = render_markdown(text)
+    body = (f'<p><a href="/{html.escape(collection)}">&larr; Back</a></p>'
+            f'<div class="wiki-md">{rendered}</div>')
+    if 'class="language-dot"' in rendered:
+        body += DOT_SCRIPTS
+    return body

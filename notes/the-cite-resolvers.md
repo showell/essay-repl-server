@@ -169,26 +169,3 @@ The decisions it forces, which are yours:
    environment variable that happens to be set.
 4. **What stops existing.** The `load` fallback and `CODEXC_RAW`; `codexrun` and
    `irdump` would take units only, and safari's `run.sh` would bundle first.
-
-<script src="/assets/viz-standalone.js"></script>
-<script>
-Viz.instance().then(function (viz) {
-  document.querySelectorAll('code.language-dot').forEach(function (code) {
-    var pre = code.closest('pre');
-    try {
-      var svg = viz.renderSVGElement(code.textContent);
-      var fig = document.createElement('figure');
-      fig.className = 'ast';
-      fig.appendChild(svg);
-      pre.replaceWith(fig);
-    } catch (e) {
-      var err = document.createElement('div');
-      err.className = 'dot-error';
-      err.textContent = 'graphviz: ' + e.message;
-      pre.appendChild(err);
-    }
-  });
-}).catch(function (e) {
-  console.error('viz load failed', e);
-});
-</script>

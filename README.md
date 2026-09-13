@@ -28,6 +28,26 @@ python3-waitress` (apt). No CLI flags anywhere; configuration is
 - `/register`, `/login`, `/logout` — accounts.
 - `/article-comments` — GET (public) / POST (logged in) for the widget.
 
+## Diagrams in a note
+
+Write graphviz in a fenced block and it renders as a figure:
+
+    ```dot
+    digraph { a -> b }
+    ```
+
+A note needs nothing else: no script, no style. `essays.view_body` adds
+`assets/viz-standalone.js` (viz.js, Graphviz 12.2.0) and `assets/dot.js` to a
+page only when it has a `dot` block. `dot.js` supplies default fonts and a
+transparent background, and the dot source overrides any of them.
+
+    node tools/check_dot.cjs          # render every dot block in notes/
+
+The box has no `dot` binary, so this renders with the same library and
+defaults a browser uses. `tools/hooks/pre-commit` runs it on staged notes and
+refuses a note whose diagram does not render; `ops/install.sh` arms it with
+`git config core.hooksPath tools/hooks`.
+
 ## Data layout (gitignored)
 
 - `data/users.db` — usernames + scrypt password hashes (SQLite).

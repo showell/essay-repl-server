@@ -233,29 +233,3 @@ If we agree on them, these are the lines:
 | rust-codex-compiler | `zonk-and-default` e8b479d | the week's subject |
 | cobblestone-curated-tests | 94c470a | the arms and the filed-gap ledger |
 | safari-codex | units, 54 | the perfect-oracle comparison |
-
-<style>
-figure.ast { margin: 20px 0; text-align: center; }
-figure.ast svg { max-width: 100%; height: auto; }
-.dot-error { color: #a00; font-family: monospace; white-space: pre-wrap; }
-</style>
-<script src="/assets/viz-standalone.js"></script>
-<script>
-Viz.instance().then(function (viz) {
-  document.querySelectorAll('code.language-dot').forEach(function (code) {
-    var pre = code.closest('pre');
-    try {
-      var svg = viz.renderSVGElement(code.textContent);
-      var fig = document.createElement('figure');
-      fig.className = 'ast';
-      fig.appendChild(svg);
-      pre.replaceWith(fig);
-    } catch (e) {
-      var err = document.createElement('div');
-      err.className = 'dot-error';
-      err.textContent = 'graphviz: ' + e.message;
-      pre.appendChild(err);
-    }
-  });
-}).catch(function (e) { console.error('viz load failed', e); });
-</script>

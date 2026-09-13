@@ -206,32 +206,6 @@ The reference decision is holding, and the clearest evidence is still the
 uncomfortable kind: the loop it enabled keeps catching the compiler being
 wrong in directions we were not looking, including the arm we call the oracle.
 
-<style>
-figure.ast { margin: 20px 0; text-align: center; }
-figure.ast svg { max-width: 100%; height: auto; }
-.dot-error { color: #a00; font-family: monospace; white-space: pre-wrap; }
-</style>
-<script src="/assets/viz-standalone.js"></script>
-<script>
-Viz.instance().then(function (viz) {
-  document.querySelectorAll('code.language-dot').forEach(function (code) {
-    var pre = code.closest('pre');
-    try {
-      var svg = viz.renderSVGElement(code.textContent);
-      var fig = document.createElement('figure');
-      fig.className = 'ast';
-      fig.appendChild(svg);
-      pre.replaceWith(fig);
-    } catch (e) {
-      var err = document.createElement('div');
-      err.className = 'dot-error';
-      err.textContent = 'graphviz: ' + e.message;
-      pre.appendChild(err);
-    }
-  });
-}).catch(function (e) { console.error('viz load failed', e); });
-</script>
-
 ## Postscript, the next morning
 
 The pile got read. One unattended night, thirteen commits, and the corpus
