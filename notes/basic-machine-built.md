@@ -243,6 +243,55 @@ wrong, and so was the first count: an awk loop that read ahead into the next
 call's line counted only every other allocation. The parser in `stacks.py`
 assigns every call.
 
+## The copy, reduced, and the last rung fixed
+
+A cold agent reduced the copy behind POKE, from a program that does not copy,
+one ingredient of the machine at a time (154 dev builds, 28 minutes). The
+smallest program is 19 lines and is kept in
+`roc-apps/findings/helper-arg-copy/`, with `run.sh`:
+
+| variant | mmap for 10,000 stores |
+|---|---|
+| `d = settle(m, m.fuel)`, then the store on `d` | 50,006 |
+| `d = settle(m, 0)` | 10 |
+| the store on `m` | 10 |
+
+**The copy needs all four together:**
+
+1. a helper given the record and a second argument read from it;
+2. a caller passing a freshly updated record;
+3. the store in its own function;
+4. the store going through a union of more than one tag holding lists (the
+   vector's tree).
+
+What the helper does is irrelevant: `settle` is `|m, _x| m`. The hypothesis,
+not verified: reading from the record after passing it makes the compiler
+treat it as borrowed across the call.
+
+**That named the last rung.** `enter_for` was given the machine and a frame
+built from `m.pc + 1`. Reading `m.pc` inside instead took "FOR entered again"
+from 2 allocations an iteration to 0. **The ladder now has no rung off**:
+every control allocates nothing an iteration, or exactly its measured reason
+(PRINT's bytes, a string growing, a DEF binding, INPUT's two conversions and a
+list).
+
+## The games' captures, and a harness bug
+
+- **The captures are basic101's.** The games directory came into sehugg's
+  test repository from github.com/wconrad/basic101, a Ruby BASIC-80
+  interpreter, as its expected output. So basic101's source is the
+  microcomputer dialect's specification. It prints an integer's digits and any
+  other number as C's `%.7g`, where this machine had printed ECMA-55's six
+  digits. With that, `rocket` matches its capture, `lem` and `target` come
+  closer, and no game moves away. ECMA-55 keeps six digits; NBS is unchanged.
+- **`banner` was a harness bug.** Its replies end in an empty line (Enter at
+  SET PAGE), and `$(cat file)` drops trailing newlines, so `run.sh` gave it one
+  reply too few. `run.sh` now reads each text with a marker after it and cuts
+  the marker.
+- **The grading ladder runs through `basic-run`.** No Roc app per program:
+  games grade in 4.4 s, NBS in 46 s. NBS 195 PASS, 13 UNJUDGED (reader rows),
+  none failing; games 12 of 99.
+
 ## Where the time goes now
 
 `perf` on P134 (the one corpus program still over ten seconds, dev build):
