@@ -137,6 +137,98 @@ lines:
 
 A port no modelled device claims stops the run by name.
 
+## Step 3: a disk
+
+`fat16-list` reads a 16 MB GPT image through `Foreword--Fat16`, and prints:
+
+```
+exists-present True
+exists-absent False
+rootdir EFI
+rootdir end
+rootfile CODEX.CDX
+rootfile end
+bootfile BOOTX64.EFI
+bootfile end
+extfilter CODEX.CDX
+extfilter end
+extnomatch end
+```
+
+**What it reaches, beyond memory:**
+- `block-read-sector`, which on x86 bump-allocates 512 bytes, reads the sector
+  into them over ATA, and answers the address;
+- `block-sector-count` and `block-select`;
+- `process-get-scope process-get-pid`, because every read checks the path
+  against the running process's scope. x86 answers pid 0 for the boot program
+  and an empty scope, which admits every path;
+- `text-concat-list`, a plain text builtin rocemit had not mapped.
+
+**How the image reaches a Roc program.** A program on the Echo platform reads
+no files, so the image is a Roc file import. The ladder links the test's
+`.disk` and `.disk2` in beside the emitted modules and writes a small module
+that imports them; `Machine.boot` attaches its drives. A 16 MB image imports
+in under a second.
+
+```roc
+import "drive0.disk" as drive0 : List(U8)
+import MachineDisk
+
+MachineMedia :: [].{
+	drives : List(MachineDisk.Drive)
+	drives = [Attached(drive0), Absent]
+}
+```
+
+```dot
+digraph disk {
+  rankdir=LR; bgcolor="transparent";
+  node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=10 fillcolor="#ffffff"];
+  edge [fontname="Helvetica" fontsize=9 color="#666666"];
+
+  side  [label="fat16-list.disk\n16 MB, GPT + FAT16" shape=note fillcolor="#fff8e6"];
+  link  [label="drive0.disk\n(a link)"];
+  media [label="MachineMedia.roc\nimport \"drive0.disk\"" fillcolor="#fde9d9"];
+  boot  [label="Machine.boot(args)\nattaches the drives" fillcolor="#e6f4e6"];
+  read  [label="Machine.block_read_sector\n512 bytes into memory" fillcolor="#e6f4e6"];
+  fat   [label="Foreword--Fat16\npeek-byte over the buffer" fillcolor="#fff8e6"];
+  side -> link -> media -> boot -> read -> fat;
+}
+```
+
+**What `MachineDisk` models, from codex-vm's IDE code:**
+- the primary channel's master and slave. Drive 2 and above is on a channel
+  codex-vm does not claim, so nothing is there;
+- a position with nothing on it identifies as 0 sectors and reads 255 in every
+  byte (`block-select-drives` pins both);
+- on a present drive a read past the end answers zeros, and a write past the
+  end changes nothing;
+- writes land in an overlay of sectors, so a 512-byte write never copies the
+  image.
+
+**What the emitter needed:**
+- the block and process builtins join the machine's doors;
+- an effect the machine answers (`Device.Block`) is not a Roc effect, so a
+  nullary `[Device.Block] T` unwraps to its `T`. A definition that reads the
+  disk and prints still takes `=>`;
+- an opening that declares a FileSystem or Network scope is refused. x86 would
+  hand that scope to the process, and the machine answers the empty one.
+
+**The image moves the answer.** The same emitted program with no drive, or
+with a 128-sector image that holds no FAT, answers `exists-present False` and
+empty listings.
+
+**The family.** Of the units the block builtins held back, 25 now pass: the
+fat16 set, four fat32 units, the Fat16, Fat32 and Gpt forewords,
+`block-select-drives`, `block-sector-count`, `diskfacts-unpack-large`,
+`truetype-render-test` and more. The Roc ladder went from 541 to 566 of 1,032,
+with no pass lost. Three do not pass, each for a named reason:
+- `cap-block-denied` strips the process's capability word and expects -1 from
+  the next block call; the machine does not model capabilities;
+- `fat16-source-cr` reads a byte of 255 back as text, the Text model rocemit
+  still owes;
+- `manifest-pin` wants a disk compiled at test time, so it is skipped.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -152,7 +244,7 @@ digraph layers {
   host [label="wasm host\nnew · step · key · view · drop" fillcolor="#fde9d9"];
   app  [label="the app (hand-written Roc)\nwhat runs on the machine" fillcolor="#fff8e6"];
   mach [label="Machine (one value)\nthe device models" fillcolor="#e6f4e6"];
-  prog [label="a Codex program, emitted\n(pci-bridge-* now; fat16-list next)" fillcolor="#e6f4e6"];
+  prog [label="a Codex program, emitted\n(pci-bridge-*, fat16-list)" fillcolor="#e6f4e6"];
 
   page -> host [label="calls exports"];
   host -> app [label="one boxed model"];
@@ -191,7 +283,7 @@ digraph machine {
     mem  [label="mem\nMem trie (sparse, 2 GB)" fillcolor="#fde8c8"];
     fb   [label="framebuffer window\n(an address range, as BASIC's hires)" fillcolor="#fde8c8"];
     pci  [label="pci\nlatched 0xCF8 + ten-device table" fillcolor="#e6f4e6"];
-    disk [label="drives\nimage bytes · selected drive" fillcolor="#e6f4e6"];
+    disk [label="drives\nmaster · slave · written sectors" fillcolor="#e6f4e6"];
     keys [label="keys\nscancode queue" fillcolor="#e6f4e6"];
     con  [label="console\nunits written" fillcolor="#e6f4e6"];
     clk  [label="clock\nsteps, not wall time" fillcolor="#e6f4e6"];
@@ -220,7 +312,7 @@ digraph modes {
 
   subgraph cluster_batch {
     label="batch: how a test runs"; fontname="Helvetica"; fontsize=10; color="#7fb27f";
-    side [label="sidecars\n.vmargs now · .disk · .keys" shape=note fillcolor="#fff8e6"];
+    side [label="sidecars\n.vmargs · .disk · .disk2 now · .keys" shape=note fillcolor="#fff8e6"];
     b1 [label="Machine.boot(args)"];
     b2 [label="run the program\nto the end"];
     b3 [label="console\n→ the verdict" fillcolor="#e6f4e6"];
@@ -279,7 +371,7 @@ digraph demo {
 
   a [label="1. hand-written Roc app  ✓\nscans the PCI table, reads sector 0,\nechoes keys to the console" fillcolor="#e6f4e6"];
   b [label="2. an emitted Codex unit, batch  ✓\npci-bridge-cap and five more\n(count=10 bus1=2 ... truncated=yes)" fillcolor="#e6f4e6"];
-  c [label="3. fat16-list over its committed image\n(rootfile CODEX.CDX, bootfile BOOTX64.EFI)" fillcolor="#fff8e6"];
+  c [label="3. fat16-list over its committed image  ✓\n(rootfile CODEX.CDX, bootfile BOOTX64.EFI)" fillcolor="#e6f4e6"];
   d [label="4. a real device behind the platform\n(a host file as the disk)" fillcolor="#f4f4f4" style="rounded,dashed"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
@@ -288,10 +380,10 @@ digraph demo {
 ```
 
 - **Step 1 proves the machine and the page.**
-- **Steps 2 and 3 prove the models against upstream's verdicts.** Step 2
-  needed no run-time crash for hardware builtins: rocemit threads the machine
-  through the units that reach a port, and the builtins it does not answer yet
-  still refuse the unit by name.
+- **Steps 2 and 3 prove the models against upstream's verdicts.** Neither
+  needed a run-time crash for hardware builtins: rocemit threads the machine
+  through the units that reach a device, and the builtins it does not answer
+  yet still refuse the unit by name.
 - **Step 4 is the "real device" half:** the same doors, answered by the host.
   It is still a Roc program on a host, not bare metal.
 
@@ -299,10 +391,12 @@ digraph demo {
 
 - **`roc-apps/machine/`**, beside `basic/`:
   - `roc/Machine.roc` and one module per device: `MachineMem`, `MachinePci`,
-    `MachineDisk`. The prefix keeps them apart from the chapter modules rocemit
-    writes, and rocemit refuses a chapter spelled like one.
+    `MachineDisk`, plus `MachineMedia` for the attached images. The prefix
+    keeps them apart from the chapter modules rocemit writes, and rocemit
+    refuses a chapter spelled like one.
   - `wasm/platform/`, with `host.zig` written fresh.
   - `web/machine.html`, previewed on `:9203/machine/`.
-- **Batch runs are the ladder:** `tests/ladder.sh pci-bridge-cap`.
-- **Configuration:** a batch run's machine is `Machine.boot(args)`, and
-  `.vmargs` is the command line. `.disk` and `.keys` come with step 3.
+- **Batch runs are the ladder:** `tests/ladder.sh fat16-list`.
+- **Configuration:** a batch run's machine is `Machine.boot(args)`. `.vmargs`
+  is the command line, and `.disk` and `.disk2` are imported by the
+  `MachineMedia.roc` the ladder writes. `.keys` comes later.
