@@ -446,6 +446,48 @@ moved. The native platform runs the same units with the same flags:
 `machine/native/run.sh e1000-bringup.codex -e1000-inject 1` receives the
 60-byte canned frame, as its verdict says it should.
 
+## Step 7: the address space is what codex-vm backs
+
+**23 units stopped on `read-mmio-32`.** The board HAL (`Foreword--Board`)
+reaches peripheral registers through four MMIO builtins: `read-mmio` and
+`poke-mmio` a byte at a time, `read-mmio-32` and `poke-mmio-32` a word at a
+time. On x86 each one is a load or a store at base plus offset, nothing more,
+so rocemit now emits them as the machine's `load` and `store`.
+
+**The hard part was what answers at the address.** The machine answered every
+address from memory, and two things made that dishonest:
+- **The trie dropped the top address bit.** `MachineMem` had five levels over
+  64-byte leaves, 2^31 bytes, and its index dropped every bit above that.
+  `Stm32L4Board`'s system control block, at 0xE000ED00, would have been
+  memory at 0x6000ED00.
+- **Unmodelled devices read as RAM.** The timer tests read the local APIC and
+  the IOAPIC, which codex-vm models and this machine does not. As memory they
+  read back whatever was last written, and a test could pass on it.
+
+**The machine now answers only what codex-vm backs:**
+
+| address | what answers |
+|---|---|
+| below 3 GB | memory: codex-vm's default guest RAM |
+| 0xD0000000, 0xE0000000, 0xFE000000 windows, under `-board-mmio` | memory, over any device window they cover, as codex-vm maps them |
+| the e1000's window, with the NIC on the bus | `MachineE1000` |
+| 0xFED00000 | `MachineHpet` |
+| anything else | nothing: the run stops and names the address |
+
+A stop names what is there when it knows: "a read at 0xFEE00030, the local
+APIC's registers, which this machine does not model". The trie has six levels
+now, 2^36 bytes.
+
+**10 of the 23 pass:** board-types, the eight `hal-*` units and
+qemu-virt-board. lapic-regs and hpet-interrupt stop at the APICs, by name. The
+other 11 are refused by rocemit before any device: eight need the `Duration`
+unit type, two `port-out-byte`, one a field store. The full ladder went from
+594 to 604 of 1,032, and nothing outside the 23 moved.
+
+**What the sixth level costs.** Built with `--opt=dev`, fat16-write runs in
+0.28 s where five levels took 0.24 s. The full ladder took 1m53s, against
+2m07s for the run before, so the cost does not show at that scale.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -592,11 +634,13 @@ digraph demo {
   d [label="4. a real device behind the platform  ✓\n(fat16-write onto a host file)" fillcolor="#e6f4e6"];
   e [label="5. the capability word  ✓\n(cap-block-denied: denied: -1)" fillcolor="#e6f4e6"];
   f [label="6. a network card and a clock  ✓\n(the 27 e1000 and i219 units)" fillcolor="#e6f4e6"];
+  g [label="7. the address space codex-vm backs  ✓\n(10 board units; the APICs stop by name)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
   d -> e [label="the kernel's rules hold"];
   e -> f [label="time is the machine's"];
+  f -> g [label="no address answers by default"];
 }
 ```
 
