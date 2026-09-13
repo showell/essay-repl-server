@@ -290,7 +290,31 @@ list).
   the marker.
 - **The grading ladder runs through `basic-run`.** No Roc app per program:
   games grade in 4.4 s, NBS in 46 s. NBS 195 PASS, 13 UNJUDGED (reader rows),
-  none failing; games 12 of 99.
+  none failing; games 12 of 99 then, 54 now.
+
+## basic101, copied: the games go from 12 to 54
+
+The games' captures are basic101's expected output, so where basic101 and
+this machine differ in the microcomputer dialect, basic101 is right. Read from
+its source and checked against the captures, one change at a time, each gated
+(NBS 207 identical to the old interpreter, no control off) and committed:
+
+| change | games matching their captures |
+|---|---|
+| numbers to seven digits (`%.7g`) | 11 -> 12 |
+| a run out of replies ends `Error on line N: No more input` | 12 -> 21 |
+| STOP says `Break in line N`; a missing line ends `Error on line N: Undefined line number X` | 21 -> 23 |
+| **RND is the Mersenne Twister of Ruby's `Random.new(0)`** | **23 -> 54** |
+
+An earlier version of this note said a game that calls RND cannot match its
+capture. It can. basic101 draws from `Random.new(0)`, a fixed seed. Ruby is not
+installed here, and the two common ways to seed a Twister with 0 give different
+numbers, so both went in as variants and the captures chose between them:
+`init_genrand(0)` makes 54 games match, and `init_by_array([0])` (Python's
+seeding of 0) makes 24. `Twister.roc` reproduces Python's MT19937 for both
+seedings, to 16 digits, and draws a float from two outputs as Ruby's
+`Random#rand` does. `RND(x)` draws only when `x` is positive, and otherwise
+repeats the last draw, as basic101 does.
 
 ## Where the time goes now
 
