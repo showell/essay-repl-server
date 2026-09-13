@@ -170,6 +170,61 @@ Faster than the old interpreter on every program, and still not fast enough.
   what is copied: the fields no statement writes (the program, its tables,
   DATA, the replies, the dialect) go behind one `Box`.
 
+## The control ladder (Steve: well-behaved programs first)
+
+Pathological programs say that something is slow, not which feature made it
+so. `basic/controls/` is a ladder of the smallest programs, each adding one
+thing to the one before: an empty loop, `LET X=1`, `X=X+1`, an IF, a GOTO, a
+GOSUB, an array read, an array store, PEEK, POKE, READ, and so on.
+`basic/controls.sh` runs each at 1,000 and at 10,000 iterations. What changes
+between the two mmap counts, over the extra 9,000 iterations, is what one
+iteration allocates. Each rung is held to 0, or to a number written beside
+its reason in `controls/expected.txt`. A change that makes a rung start
+allocating names its feature.
+
+Allocations per iteration, dev builds (**no LLVM builds**: the speed backend
+spent 650 s in LLVM, and the problems here are the code's shape, which the dev
+backend shows the same):
+
+| rung | old interpreter | Machine, first gated | now (`50e919b`) |
+|---|---|---|---|
+| FOR/NEXT, LET, X=X+1, IF, GOTO | 0–1 | 0 | 0 |
+| GOSUB | 1 | 1 | **0** |
+| string LET, RND, PEEK, array read | 1 | 0 | 0 |
+| DEF FN call | 2 | 2 | 1 |
+| array store | 2 | 2 | **0** |
+| POKE into memory | 2 | 5 | **0** |
+| POKE into the screen | — | 0 | 0 |
+| READ, READ into an array | 0, 2 | 2, 2 | **0, 0** |
+| FOR entered again inside a loop | 2 | 3 | 2 |
+| PRINT (the bytes it draws) | 5 | 1 | 1 |
+
+What fixed each:
+
+- **The program is not state.** Everything that does not change after the
+  scan (statements, line tables, FOR skips, DEFs, DECLs, DATA, dialect) is
+  `Parse.Program`, passed beside the machine, not kept in it.
+- **POKE, array stores and READ write the machine they were given** when the
+  evaluation had nothing to apply (no report, no stop, no array to make, no
+  random number drawn). Writing the machine `settle` answered made them copy;
+  why is being reduced separately, starting from the smallest program.
+- **An array is taken out of its vector and put back** inside a helper called
+  in the record update, as NEXT writes `nums`.
+- **The return points and the open loops are a list and a depth.** A GOSUB and
+  its RETURN pushed and popped a list back to empty, which allocated every
+  time; popping now lowers the depth and pushing overwrites the entry.
+
+Gate after each: NBS 207 identical (P134 finishes now, the old one never did),
+games 95 identical.
+
+## Where the time goes now
+
+`perf` on P134 (the one corpus program still over ten seconds, dev build):
+14% in the run loop and 25% in `list_incref`/`list_decref`. That traffic is
+the machine record being copied: every copy counts up and down each list and
+vector in it, about fifteen fields. So allocation is no longer most of the
+cost; the width of the machine record is.
+
 ## What still copies
 
 Counted on the dev build, 10,000 iterations each:
