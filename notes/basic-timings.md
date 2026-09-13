@@ -1,4 +1,4 @@
-# Every BASIC program, timed: where P134's 12.9 seconds go
+# Every BASIC program, timed: where P134's 12.9 seconds went
 
 Every corpus program (208 NBS, 99 games) run once through the BASIC
 interpreter with its time, the statements it executed and its allocations
@@ -160,6 +160,57 @@ own evaluation, the records that carry it, and the tree walks.
 **The noise, stated.** The same control, `IF I<0 THEN`, measured 7.93 µs in one
 job and 7.42 µs in another, on the same build. Only a comparison run back to back
 in one job is worth reading, and a difference under a few percent is not.
+
+## Evaluating without the effects record: P134 12.3 s to 7.5 s
+
+Every evaluation carried an effects record through every expression node: the
+seed, the reports printed, why it stopped, the arrays it made, the random
+numbers drawn. Four of those fields are reference-counted, so every node
+counted them up and down. In P134, almost no statement ever has an effect.
+
+**The change is not a smaller record; in the common case there is none.**
+`fast` evaluates a numeric expression (numbers, variables, array elements,
+`+ - * / ^`, a sign, the numeric functions, PEEK) and answers `Got(value)`, or
+`Slow` the moment the full evaluator would have anything to record: an
+overflow or a division by zero to report, a random number, an array used
+before it exists, a subscript out of range, a string, a DEF call. A LET, an
+IF and an array store try `fast` first; on `Slow` they run exactly the code
+they had before. **Evaluating twice is safe because evaluation only reads the
+machine**: nothing was written between the two. The read-only evaluator from
+the design is what makes this possible.
+
+**How it was checked.** A second build ran the full evaluator beside every
+`Got` and crashed on any difference in the value or in its effects. All 208
+NBS programs, all 99 games and every control went through it:
+
+- no difference;
+- no crash or timeout;
+- every transcript identical to the committed ladder's;
+- the allocation ladder still at none off.
+
+Measured back to back against the committed build (dev backend, 100,000
+iterations, best of three; P134 best of two):
+
+| | committed | fast |
+|---|---|---|
+| NEXT (no evaluation) | 2.10 µs | 2.08 |
+| `LET X=1` | 5.23 | 4.42 |
+| `X=X+1` | 6.70 | 5.11 |
+| `IF I<0 THEN` (false) | 7.20 | 4.87 |
+| `IF I>0 THEN` (true) | 7.60 | 4.94 |
+| `X=A(5)` | 7.41 | 5.37 |
+| `A(5)=I` | 9.21 | 6.99 |
+| `IF P(5)<>3 THEN` | 9.58 | 5.75 |
+| `IF P(5)<=P(6) THEN` | 11.40 | 6.65 |
+| `LET X1=INT(1100*0.5)` | 7.32 | 5.32 |
+| `P(5)=P(6)` | 11.07 | 7.72 |
+| `IF I-5<1 THEN` | 8.73 | 5.52 |
+| **P134** | **12,321 ms** | **7,527 ms** |
+
+P134 is 39% faster, and its sort's comparison, the line it runs 232,332 times,
+went from 11.4 to 6.7 µs. **So the effects record was the largest single cost
+in a statement,** larger than the machine record's copies and larger than the
+array read.
 
 ## P134, statement by statement
 
