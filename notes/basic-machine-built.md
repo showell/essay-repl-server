@@ -220,10 +220,23 @@ games 95 identical.
 ## Where the time goes now
 
 `perf` on P134 (the one corpus program still over ten seconds, dev build):
-14% in the run loop and 25% in `list_incref`/`list_decref`. That traffic is
-the machine record being copied: every copy counts up and down each list and
-vector in it, about fifteen fields. So allocation is no longer most of the
-cost; the width of the machine record is.
+14% in the run loop and 25% in `list_incref`/`list_decref`. So allocation is
+no longer most of the cost.
+
+**The width of the machine record is not the rest of it either.** A
+standalone probe times 1,000,000 steps, each storing one number into a
+record's vector, with the record carrying 2 lists and then 16:
+
+| record | dev build |
+|---|---|
+| 2 lists | 365 ms |
+| 16 lists | 434 ms |
+
+Fourteen extra counted fields cost 0.07 µs a step, and a whole minimal step
+costs 0.36 µs. The machine spends about 3.5 µs a statement (x-plus-one: 703 ms
+for 100,000 iterations of two statements). An earlier version of this note
+said the record's width was the cost; this probe says it is at most a fifth of
+it. The rest is being attributed with `perf` on a dev build with debug info.
 
 ## What still copies
 
