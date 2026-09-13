@@ -298,12 +298,97 @@ gives a headerless app, pointed at this platform instead of Echo. Two things
 the link needed: `std.debug`'s I/O is Roc's minimal shim, since zig's threaded
 I/O calls into things this musl lacks, and compiler_rt is bundled.
 
-**A lead, not a finding.** `fsck.fat` also says the image's two FATs differ.
-They differ before the write too: the fixture's second FAT holds zeros in the
-two reserved entries where the first holds `0xfff8` and `0xffff`, and the
-write moved both copies in step (4,889 clusters in use in each before, 4,891
-after). Whatever writes upstream's fixture leaves those entries of the second
-FAT empty.
+**The two FATs.** `fsck.fat` also says the image's two FATs differ, and they
+differ before the write too. In all eleven `fat16-*.disk` fixtures the second
+FAT holds zeros in the two reserved entries where the first holds `0xfff8`
+and `0xffff`. The write moved both copies in step (4,889 clusters in use in
+each before, 4,891 after). Copying those four bytes across is all `fsck.fat`
+needs to call the fixture clean.
+
+Upstream's image builder wrote the reserved entries to the first FAT only
+until Update 35, and has written every entry to both copies since
+(`Set-Fat` in `build/build-img.ps1`). The fixtures all carry the old form,
+including ones committed in August. No verdict can see it: the only reader
+of the second FAT is fat16-alloc, and it reads the clusters it allocates.
+
+## Step 5: the capability word
+
+**cap-block-denied asks the kernel, not the disk.** It reads the block
+device's size, clears its own grant, and asks again:
+
+```
+granted: 0
+stripped: 0
+denied: -1
+```
+
+On x86 every block syscall tests the current process's capability word
+before it drives the device (`emit-block-elev-gate`): bit 10,
+`cap-block-device`, or the filesystem servicer's elevation cell. The word
+is memory, at offset 56 of process 0's entry in the process table at 20480,
+which is address 20536. The boot writes the opening's grant there before the
+program runs, and a program that pokes zeros over it has given the authority
+away.
+
+```dot
+digraph caps {
+  rankdir=LR; bgcolor="transparent";
+  node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=10 fillcolor="#ffffff"];
+  edge [fontname="Helvetica" fontsize=9 color="#666666"];
+
+  opening [label="opening :\n[Console, Device.Block]" fillcolor="#fff8e6"];
+  grant   [label="MachineCaps.grant\nCapability.codex's table" fillcolor="#e6f4e6"];
+  word    [label="capability word\naddress 20536" shape=note fillcolor="#fde9d9"];
+  strip   [label="strip-grant\npoke-32 20536 0 0" fillcolor="#fff8e6"];
+  gate    [label="block doors\nbit 10, or fs-elevated" fillcolor="#e6f4e6"];
+
+  opening -> grant [label="boot!"];
+  grant -> word [label="written at boot"];
+  strip -> word [label="the program's own poke"];
+  word -> gate [label="read first"];
+}
+```
+
+**The machine keeps the word the same way.** rocemit hands `boot!` the
+effects the opening declares, `Machine.boot!(args, ["Console",
+"Device.Block"])`, and `MachineCaps` expands them through
+`Capability.codex`'s table as x86's boot does. `Device.Block` has no row of
+its own, so it takes Device's, which grants the block-device bit and the
+device bit. The block doors read the word first, and a denied door answers
+what x86's helper answers, which is not uniform:
+
+| door | granted | denied |
+|---|---|---|
+| `block-sector-count` | the sectors | -1 |
+| `block-select` | 0 | -1, nothing selected |
+| `block-read-sector` | the buffer, filled | the buffer, empty |
+| `block-write-sector` | 0 | 0, nothing written |
+
+The read helper hands back its buffer whatever the syscall said, and the
+write helper answers 0 after every syscall.
+
+**No new state.** The grant is a poke at boot, and the strip is the
+program's own poke. The ladder moved by exactly this unit, to 567 of 1,032.
+On the native platform with a 16 MB image attached, the same program prints
+`granted: 32768` and then `denied: -1`.
+
+**Two warning classes, gone.** Roc warns on an effectful function whose name
+lacks `!`, and on a variable nothing reads. Both came from rocemit:
+
+- **A `[Console]` definition took `=>` and kept a bare name.** There is one
+  rule now: a definition whose signature takes `=>` is named with `!`, where
+  it is defined and wherever it is referenced. That was 19 warnings in 12
+  units.
+- **A heap mark was read by nothing.** Codex takes a mark with
+  `__heap-save` and hands it to `__heap-restore`. Roc's memory is counted, so
+  the restore is emitted as `0`, and a binder read only by a restore is now
+  `_h`. The same goes for an act's bind that nothing reads
+  (`c <- fat16-write-file ...`).
+
+The warnings left on the ladder are `unconditional condition` and `unused
+branch`, which are Roc's compile-time evaluation reporting what it did not
+take, plus 29 redundant patterns and one pattern variable declared twice
+(db-csv-roundtrip), not yet examined.
 
 ## The layers
 
@@ -449,9 +534,11 @@ digraph demo {
   b [label="2. an emitted Codex unit, batch  ✓\npci-bridge-cap and five more\n(count=10 bus1=2 ... truncated=yes)" fillcolor="#e6f4e6"];
   c [label="3. fat16-list over its committed image  ✓\n(rootfile CODEX.CDX, bootfile BOOTX64.EFI)" fillcolor="#e6f4e6"];
   d [label="4. a real device behind the platform  ✓\n(fat16-write onto a host file)" fillcolor="#e6f4e6"];
+  e [label="5. the capability word  ✓\n(cap-block-denied: denied: -1)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
+  d -> e [label="the kernel's rules hold"];
 }
 ```
 
@@ -463,12 +550,16 @@ digraph demo {
 - **Step 4 is the "real device" half:** the same doors, answered by the host,
   and the file on the host is what changed. It is still a Roc program on a
   host, not bare metal.
+- **Step 5 models the kernel as well as the devices:** the doors answer only
+  a process whose capability word allows it, and the word is memory the
+  program can write.
 
 ## Where it lives
 
 - **`roc-apps/machine/`**, beside `basic/`:
   - `roc/Machine.roc` and one module per device: `MachineMem`, `MachinePci`,
-    `MachineDisk`, plus `MachineMedia` for the attached images. The prefix
+    `MachineDisk`, plus `MachineMedia` for the attached images and
+    `MachineCaps` for the capability word. The prefix
     keeps them apart from the chapter modules rocemit writes, and rocemit
     refuses a chapter spelled like one.
   - `wasm/platform/`, with `host.zig` written fresh.
@@ -478,7 +569,7 @@ digraph demo {
 - **Batch runs are the ladder:** `tests/ladder.sh fat16-list`, on the modelled
   disk.
 - **A real run:** `machine/native/run.sh fat16-write.codex -disk copy.img`.
-- **Configuration:** a machine is `Machine.boot!(args)`, and `.vmargs` is the
-  command line. On the ladder `.disk` and `.disk2` are imported by the
+- **Configuration:** a machine is `Machine.boot!(args, effects)`: `.vmargs`
+  is the command line, and the effects are the ones the opening declares. On the ladder `.disk` and `.disk2` are imported by the
   `MachineMedia.roc` it writes; on the native platform `-disk` and `-disk2`
   name files. `.keys` comes later.
