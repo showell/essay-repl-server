@@ -29,6 +29,24 @@ Three corrections to how you described it:
   LLVM and no optimization. It is the closest Roc has to debug.
 - **The page still runs the old interpreter,** built with LLVM (`--opt=speed`).
 
+## The LLVM build
+
+`basic-run` was built by the Roc compiler with `--opt=speed` (LLVM), native
+x86-64, at d0318fd, and run beside the dev build of the same source.
+
+- **The build takes 24 minutes and peaks at 2.2 GB.** The dev build takes 6 s.
+- **The output is the same:** all 208 NBS and 99 games transcripts are
+  identical.
+- **Statements run 3 to 7 times faster.** P134 goes from 7.3 s to 2.7 s, a LET
+  from 2.3 µs to 0.6, and an IF from 2.8 µs to 0.4.
+- **Allocating is hardly faster.** String growth and DEF FN gain 1.1 to 1.2
+  times, and a load-dominated NBS program gains 15% (P095, 403 ms to 322).
+  The ECMA-55 load checks are allocation, and LLVM does not remove an
+  allocation.
+
+**Your call:** whether LLVM comes back into the loop, at 24 minutes a build, or
+stays for an occasional measurement like this one.
+
 ## Bottlenecks
 
 1. **Done: the fast path is checked for good.** Every program runs both ways,
