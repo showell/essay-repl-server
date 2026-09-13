@@ -390,6 +390,62 @@ branch`, which are Roc's compile-time evaluation reporting what it did not
 take, plus 29 redundant patterns and one pattern variable declared twice
 (db-csv-roundtrip), not yet examined.
 
+## Step 6: a network card and a clock
+
+**26 units crashed on a flag, and one failed on a clock that read zero.**
+Upstream's e1000 and i219 tests run the kernel's driver (`Kernel--E1000e`)
+against codex-vm's model of Intel gigabit Ethernet. Each test sets the model
+up with flags in its `.vmargs`: `-e1000-no-link`, `-i219-swflag`,
+`-e1000-mdio-window`, and others. The machine stopped at every one of them
+with "not a codex-vm flag this machine models". e1000-tx-deadline got further
+and failed: it times a wait with the HPET, the HPET's window was plain
+memory, and so the clock read zero.
+
+**`MachineE1000` is codex-vm's model** (`e1000_read`, `e1000_write`,
+`e1000_mdic_exec`):
+- **The register window** at 0xFE400000, which `peek-32` and `poke-32` reach
+  through `Machine.load` and `Machine.store` while the NIC is on the bus.
+- **The PHY** behind MDIC, with its page register and the three paged
+  registers the model answers: 769.16 slow mode, 770.17 K1, 779.16 ULP.
+- **The semaphore** in EXTCNF_CTRL, under `-i219`.
+- **The rings.** The device reads descriptors out of the machine's memory,
+  and writes frames and done bits back into it.
+- **The PCI entry** at slot 3, `8086:100E`, or `8086:15B8` under `-i219`.
+  Under `-nic-bme-clear` its bus-master bit stays clear.
+- **Every fault flag the tests use.** The two that need the host's network
+  stack, `-e1000-nat` and `-e1000-strict-filter`, still stop the run.
+
+**The clock was the real question.** codex-vm's HPET counts the host's wall
+clock, which is why these verdicts are bands rather than numbers.
+e1000-link-deadline asserts that a bring-up with no link takes more than 7 s
+and less than 15 s. The machine has no wall clock. Its clock moves only when
+the program touches a device register: 100 µs for each read or write in the
+NIC's window or the HPET's, and nothing for memory. `MachineHpet` counts that
+clock.
+
+The verdicts pin the constant from both sides:
+
+| verdict | asks | why 100 µs fits |
+|---|---|---|
+| e1000-tx-deadline, control arm | a million memory reads, timed between two clock readings, in 0–5 ms | memory is free, and the second reading's three register reads are 0.3 ms |
+| e1000-tx-deadline, clocked arm | a 20 ms wait, measured in 10–200 ms | reading the clock is cheap next to the wait, so the wait measures what it asked for |
+| e1000-link-deadline | 3 s of negotiation budget plus 5 s of link budget, in 7–15 s | batches of 4,096 STATUS reads at 100 µs each spend the 5 s in tens of thousands of reads |
+| e1000-mdio-window | 10 ms between CTRL.RST and the first MDIO access | the driver's settle loop reads the clock until 10 ms have passed |
+
+**The first attempt charged the clock read itself, 10 ms a read.** Both
+clocked arms passed and the control arm failed. One `hpet-ticks` reads three
+registers, so two readings with nothing between them were already 30 ms
+apart. The test's premise is that reading a clock is cheap and a batch of
+register reads is not. Charging every register access, and memory nothing,
+is that premise.
+
+**All 37 pass.** That is the 26, e1000-tx-deadline, the three e1000 units that
+passed before, and the PCI, disk and capability units as a regression set.
+The full ladder went from 567 to 594 of 1,032, and nothing but those 27
+moved. The native platform runs the same units with the same flags:
+`machine/native/run.sh e1000-bringup.codex -e1000-inject 1` receives the
+60-byte canned frame, as its verdict says it should.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -535,10 +591,12 @@ digraph demo {
   c [label="3. fat16-list over its committed image  ✓\n(rootfile CODEX.CDX, bootfile BOOTX64.EFI)" fillcolor="#e6f4e6"];
   d [label="4. a real device behind the platform  ✓\n(fat16-write onto a host file)" fillcolor="#e6f4e6"];
   e [label="5. the capability word  ✓\n(cap-block-denied: denied: -1)" fillcolor="#e6f4e6"];
+  f [label="6. a network card and a clock  ✓\n(the 27 e1000 and i219 units)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
   d -> e [label="the kernel's rules hold"];
+  e -> f [label="time is the machine's"];
 }
 ```
 
@@ -558,8 +616,8 @@ digraph demo {
 
 - **`roc-apps/machine/`**, beside `basic/`:
   - `roc/Machine.roc` and one module per device: `MachineMem`, `MachinePci`,
-    `MachineDisk`, plus `MachineMedia` for the attached images and
-    `MachineCaps` for the capability word. The prefix
+    `MachineDisk`, `MachineE1000` and `MachineHpet`, plus `MachineMedia` for
+    the attached images and `MachineCaps` for the capability word. The prefix
     keeps them apart from the chapter modules rocemit writes, and rocemit
     refuses a chapter spelled like one.
   - `wasm/platform/`, with `host.zig` written fresh.
