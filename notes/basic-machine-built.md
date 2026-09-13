@@ -236,7 +236,25 @@ Fourteen extra counted fields cost 0.07 µs a step, and a whole minimal step
 costs 0.36 µs. The machine spends about 3.5 µs a statement (x-plus-one: 703 ms
 for 100,000 iterations of two statements). An earlier version of this note
 said the record's width was the cost; this probe says it is at most a fifth of
-it. The rest is being attributed with `perf` on a dev build with debug info.
+it.
+
+`perf` on a dev build with debug info puts the time on source lines: the run
+loop's `{ ..$m, fuel, steps }` about 7%, `settle` and `emit` about 12%, the
+store in `do_set_num` about 8%, dispatch 4%. Three changes aimed at those,
+measured on the dev build (best of three) and on the ladder:
+
+| variant | x-plus-one | goto-loop | if-false | ladder |
+|---|---|---|---|---|
+| as committed | 703 ms | 1,074 ms | 765 ms | 2 rungs off |
+| A: a variable read skips the empty DEF environment | 723 ms | 1,043 ms | 732 ms | — |
+| A + fuel counted in a local of the run loop | 2,736 ms | 928 ms | 2,832 ms | **every rung 2 an iteration** |
+| + LET, IF and PRINT write the machine they were given | 5,029 ms | 3,122 ms | 2,750 ms | every rung 2–7 |
+
+None is kept. Counting the fuel in the run loop instead of the machine made
+even the bare FOR/NEXT loop copy on every statement. **The ladder named that
+at once, where the timings alone said only "slower".** The shapes that make
+Roc keep the machine's lists unshared are being reduced separately, from the
+smallest program up, before any more reshaping.
 
 ## What still copies
 
