@@ -47,7 +47,7 @@ next major checkpoint.**
 ## Open
 
 - **INPUT allocates 5 times a statement, not 3,** since the devices moved.
-  Nothing else did. Two tries did not find why. Chase it, or accept it?
+  Accepted: the ladder holds it to 5.
 - life, poetry, splat and superstartrek still differ from basic101: that is
   interpreter work, one game at a time.
 
