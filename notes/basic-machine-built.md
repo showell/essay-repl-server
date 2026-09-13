@@ -161,8 +161,14 @@ Faster than the old interpreter on every program, and still not fast enough.
 - `IF` and `GOTO` cost about 3 to 6 µs a statement. FOR/NEXT costs 0.6 µs.
 - big-array and poke are over a second, and they are exactly the copying
   statements.
-- With no allocation, the 3 µs for `X=X+1` is tree walking, record building
-  and the dispatch. None of it is attributed yet.
+- **The 3.7 µs for `X=X+1` is copying the machine.** `perf record` on
+  x-plus-one, speed build: 54% of samples are in `defaultMemcpy` and 7% in
+  `defaultMemset`, called from the run loop and two statement-level procs.
+  Every `memcpy` call in those two procs is passed `0x2d8`, which is 728
+  bytes: the machine record, 45 fields, 16 of them lists. A record update
+  copies all of it, and a statement makes several. The next change shrinks
+  what is copied: the fields no statement writes (the program, its tables,
+  DATA, the replies, the dialect) go behind one `Box`.
 
 ## What still copies
 
