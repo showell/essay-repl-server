@@ -20,12 +20,22 @@ statements is one allocation per 38 statements.
 
 **A second cost: loading.** Many NBS programs run a few hundred statements yet
 take 200 to 400 ms and make 20,000 to 40,000 allocations. P095 runs 184
-statements in 377 ms with 39,357 mmaps. That time is not the statements. The
-games, which run in the microcomputer dialect and skip the ECMA-55 load-time
-checks, finish in tens of milliseconds. **Hypothesis, not yet measured:** the
-cost is the ECMA-55 checks (, ) and the parse, before the
-first statement. The next measurement times the same listings in both dialects
-and profiles P095 by source line.
+statements in 377 ms with 39,357 mmaps. **Measured:** the same listings run in
+the microcomputer dialect, which skips ECMA-55's load-time checks (`Listing`,
+`Program`), take 15 to 29 ms:
+
+| program | ECMA-55 | microcomputer | statements run |
+|---|---|---|---|
+| P095 | 373 ms | 15 ms | 184 |
+| P024 | 290 ms | 20 ms | 396 |
+| P018 | 306 ms | 16 ms | 390 |
+| P019 | 357 ms | 19 ms | 782 |
+| P027 | 385 ms | 29 ms | 1,678 |
+| P151 | 175 ms | 18 ms | 155 |
+| P011 | 184 ms | 16 ms | 183 |
+
+Best of three each. So the checks cost 150 to 370 ms a program, and parsing
+and running are the other 15 to 30. What in the checks costs that is next.
 
 ## How it was measured
 
