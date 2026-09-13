@@ -414,43 +414,7 @@ P134: 12,904.8 ms, 1,742,747 statements run, 7.40 µs a statement, 45,676 mmap, 
 
 ## Next
 
-- P134 by source line, with 
- usage: perf [--version] [--help] [OPTIONS] COMMAND [ARGS]
-
- The most commonly used perf commands are:
-   annotate        Read perf.data (created by perf record) and display annotated code
-   archive         Create archive with object files with build-ids found in perf.data file
-   bench           General framework for benchmark suites
-   buildid-cache   Manage build-id cache.
-   buildid-list    List the buildids in a perf.data file
-   c2c             Shared Data C2C/HITM Analyzer.
-   config          Get and set variables in a configuration file.
-   daemon          Run record sessions on background
-   data            Data file related processing
-   diff            Read perf.data files and display the differential profile
-   evlist          List the event names in a perf.data file
-   ftrace          simple wrapper for kernel's ftrace functionality
-   inject          Filter to augment the events stream with additional information
-   iostat          Show I/O performance metrics
-   kallsyms        Searches running kernel for symbols
-   kvm             Tool to trace/measure kvm guest os
-   list            List all symbolic event types
-   mem             Profile memory accesses
-   record          Run a command and record its profile into perf.data
-   report          Read perf.data (created by perf record) and display the profile
-   script          Read perf.data (created by perf record) and display trace output
-   stat            Run a command and gather performance counter statistics
-   test            Runs sanity tests.
-   top             System profiling tool.
-   version         display the version of perf binary
-   probe           Define new dynamic tracepoints
-   trace           strace inspired tool
-   kmem            Tool to trace/measure kernel memory properties
-   kwork           Tool to trace/measure kernel work properties (latencies)
-   lock            Analyze lock events
-   sched           Tool to trace/measure scheduler properties (latencies)
-   timechart       Tool to visualize total system behavior during a workload
-
- See 'perf help COMMAND' for more information on a specific command. on a dev build with debug info: which parts
-  of a statement's 7.4 µs are the evaluator, the machine record, dispatch.
-- The load: the same listings in both dialects, and P095 by source line.
+- A statement's own cost: the dispatch, and the run loop rebuilding the
+  machine record for `fuel` and `steps` before every statement.
+- The load: ECMA-55's line checks turn a keyword into bytes for every
+  comparison, 37,243 of P095's 39,335 allocations.
