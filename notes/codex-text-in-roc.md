@@ -206,6 +206,31 @@ non-ASCII, and both use tier-0 single units.
    games.
 3. **Then the sweep**, and a count of what moved.
 
+## What emulating x86's printer turned up
+
+Writing x86's print loop out byte for byte (rust-codex-compiler
+`charcode::print_bytes`) shows two places where x86 prints a character
+different from the one that was framed. **Both are read from the code and
+are not measured on bare metal; no verdict in `codex/test` pins either.**
+
+1. **Tier 1 is 64 code points high for codes 128..383.** `utf8-to-cce` frames
+   U+00C0 (`À`) as code 192, units `193 128`, because tier 1 starts at U+0080
+   (`cce-tier1-blocks`, `X86_64State.codex:286`). The print helper decodes
+   `v = code - 128 = 64`, takes slice `v >> 7 = 0`, and adds its base from
+   `tier1-slice-bases`, whose first entry is **192**, not 128
+   (`X86_64State.codex:250`). So it prints U+0100, `Ā`. The zig plug's
+   `cx_cce_to_cp` prints `À`.
+2. **A negative tier-2 delta prints overlong.** `tier2-rodata` holds each
+   slice's delta as four bytes, and several are negative (slice 7:
+   `28 126 255 255`). The helper assembles them with `movzx` and `shl`, and
+   adds them to the code with `add-rr`. All three carry REX.W, so the
+   arithmetic is 64-bit and does not wrap. For `€`, the code point lands at
+   2^32 + 8364, above 65536, so it goes out as the 4-byte `F0 82 82 AC`, an
+   overlong encoding of U+20AC, not `E2 82 AC`.
+
+The interpreter reproduces both, as decided. Both would be worth one
+bare-metal print on cobblestone-qemu before they go upstream as findings.
+
 ## Decided (Steve, 2026-09-13)
 
 1. **Printing follows x86**, including where zig differs (raw `print-text`
