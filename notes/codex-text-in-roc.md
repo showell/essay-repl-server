@@ -206,15 +206,16 @@ non-ASCII, and both use tier-0 single units.
    games.
 3. **Then the sweep**, and a count of what moved.
 
-## What I need from you
+## Decided (Steve, 2026-09-13)
 
-1. **Printing: x86 or zig**, where they differ (raw `print-text`, 4-unit
-   frames). I recommend x86, because it is what the verdicts were captured on.
-2. **`show` of a Char prints the code.** It is what upstream does; I would
-   emulate it unless you want it flagged first.
-3. **`Text` as `List(U8)` in the emitted Roc**, with `Str` only at the
-   edges. Forced by Roc's `Str` invariant, but it changes how every emitted
-   program reads.
+1. **Printing follows x86**, including where zig differs (raw `print-text`
+   and `print-line-raw`, how a 4-unit frame decodes).
+2. **`show` of a Char prints its code**, as upstream does.
+3. **A Text is `List(U8)` in the emitted Roc**, with `Str` only at the edges.
+
+Safari, the program the emitter was built for, prints only ASCII verdict
+lines, and its screensaver modules hold almost no text. So this costs little
+where it would have hurt most.
 
 ---
 
