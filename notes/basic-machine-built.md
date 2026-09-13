@@ -217,6 +217,32 @@ What fixed each:
 Gate after each: NBS 207 identical (P134 finishes now, the old one never did),
 games 95 identical.
 
+## The ladder, grown (fifteen more rungs)
+
+ON GOTO, ON GOSUB, a string comparison, LEFT$, MID$, CHR$, LEN, INT, `^`, `/`,
+TAB in PRINT, nested GOSUB, a DIM passed through again, VAL and INPUT (one
+reply line an iteration). On the committed machine (`7979adf`):
+
+| rung | allocations an iteration | why |
+|---|---|---|
+| all the rest | 0 | |
+| CHR$ | 0, from 1 | it built a one-byte list to make its string; it now indexes a table of the 256 one-character strings |
+| DIM passed through again | 0, from 1 | it built the array's cells before asking whether the array existed |
+| PRINT, PRINT with `;`, PRINT with TAB | 1 | the text is turned into bytes to draw it (`Str.to_utf8`) |
+| string growth | 1 | the string grows |
+| DEF FN call | 1 | the parameter binding appends to a list |
+| INPUT | 3 | two `Str.to_utf8` and one list growing |
+| **FOR entered again** | **2** | **not explained** |
+
+The reasons in `controls/expected.txt` are measured. `basic/stacks.py` reads
+an `strace -f -k` trace and counts each allocation under the first builtin on
+its stack: INPUT's 3,080 allocations over 1,000 iterations are 2,000
+`str_to_utf8` and 1,055 `list_reserve`; DEF FN's 1,056 are 1,027
+`list_reserve`. A first reading of INPUT's three as "three texts drawn" was
+wrong, and so was the first count: an awk loop that read ahead into the next
+call's line counted only every other allocation. The parser in `stacks.py`
+assigns every call.
+
 ## Where the time goes now
 
 `perf` on P134 (the one corpus program still over ten seconds, dev build):
