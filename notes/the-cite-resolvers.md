@@ -95,15 +95,19 @@ digraph {
   }
 
   subgraph cluster_3 {
-    label="R3  Rust bundle.rs"; fontname="Helvetica"; color="#7fb27f";
+    label="R3  Rust bundle.rs (the compiler's scoper rule)"; fontname="Helvetica"; color="#7fb27f";
     c1 [label="cite Q chapter N"];
-    c2 [label="a chapter named N\nunder ANY prefix?" shape=diamond];
+    c2 [label="a Q--N header?" shape=diamond];
     c3 [label="skip" fillcolor="#e6f4e6"];
-    c4 [label="CODEX_ROOT\nset?" shape=diamond];
-    c5 [label="refuse" fillcolor="#f4dede"];
-    c6 [label="add Q/N.codex"];
+    c4 [label="chapters named N\nunder any prefix or none" shape=diamond];
+    c5 [label="skip" fillcolor="#e6f4e6"];
+    c6 [label="refuse:\nambiguous" fillcolor="#f4dede"];
+    c7 [label="a checkout: the file's tree,\nor a quires.tsv line?" shape=diamond];
+    c8 [label="refuse" fillcolor="#f4dede"];
+    c9 [label="add as Q--N"];
     c1 -> c2; c2 -> c3 [label="yes"]; c2 -> c4 [label="no"];
-    c4 -> c5 [label="no"]; c4 -> c6 [label="yes"];
+    c4 -> c5 [label="one"]; c4 -> c6 [label="several"]; c4 -> c7 [label="none"];
+    c7 -> c8 [label="no"]; c7 -> c9 [label="yes"];
   }
 }
 ```
@@ -112,7 +116,7 @@ digraph {
 |---|---|---|---|
 | **R1** plug-build-lib | the bare chapter name, asked FIRST (our PR 69) | no | exit 3 |
 | **R2** quire-map | `Quire--Name` first; the bare name only when the file is missing. The manifest quires `Codex`, `Emit` and `Semantics` ask the bare name first | yes, every unit (Update 36) | throws |
-| **R3** Rust | the bare chapter name | yes, every unit | refuses without `CODEX_ROOT`; with it, a complaint and the unit goes on |
+| **R3** Rust | `Quire--Name` first, then the ONE chapter of that name under any prefix or none; several is refused. The compiler's own rule (ChapterScoper `find-slug-for-cite-name`) | yes, every unit | refuses. The checkout is the file's tree or a `quires.tsv` line, never a variable |
 | **R4** self-bundle | `Quire\|Name` in its own queue, Foreword and Math only | no, though R2 adds them at compile | skips silently |
 
 ## What the disagreement costs, so far
@@ -145,27 +149,47 @@ Pruning keeps type definitions and constructor lists, and the ids the checker
 mints move, so anything keyed on ids or chapter lists sees a difference. The
 QEMU checker was fooled by it once.
 
-**3c. R3's fallback.** A unit short one chapter was silently re-resolved against
-`CODEX_ROOT`, which `~/.bashrc` exported globally at an unrelated tree. The
-export is gone, so the fallback refuses now. Your direction: R3 goes, and Rust
-does all of its own resolution.
+**R3's fallback is gone.** It re-resolved a short unit against `CODEX_ROOT`,
+which `~/.bashrc` exported at an unrelated tree. Both the fallback and the
+export are deleted; see below.
 
-## Why do this together with Rust resolution
+**3c. The scoper's bare-name fallback counts definitions** (read from code, not
+measured). `find-slug-by-bare-name` answers only when exactly one entry
+matches, and its cache holds one entry per DEFINITION. On that reading, a cite
+that reaches its chapter by bare name finds nothing when the chapter defines
+two or more names. `cite-override-quire.codex`'s chapter defines one. A single
+experiment settles it: add a second definition and compile.
 
-Rust owning resolution means writing **one** presence rule deliberately, in one
-place. It then becomes the third opinion we lack today. Run it beside R2 on
-the same inputs, and compare the chapter lists of every curated and safari unit,
-every bundle we build and the corpus. Each disagreement is a 3a-shaped item,
-found by construction rather than by a build breaking. That is the same move as
-the IR agree/disagree comparisons, applied one layer earlier.
+## What Rust resolution settled
 
-The decisions it forces, which are yours:
+R3 is rewritten (rust-codex-compiler `16e88f3`), and the four decisions came out
+this way:
 
-1. **The presence key.** Bare name (R1, R3), quire-qualified (R2's first
-   question), or refuse when one name appears under two prefixes.
-2. **The implicit pair.** Always, to match `compile.ps1` and inherit 3b's
-   clutter, or only when the desugarer actually writes `map-list` or `MkTup`.
-3. **Naming the checkout.** An argument, or a pins file like safari's. Never an
-   environment variable that happens to be set.
-4. **What stops existing.** The `load` fallback and `CODEXC_RAW`; `codexrun` and
-   `irdump` would take units only, and safari's `run.sh` would bundle first.
+1. **The presence key is the compiler's.** A `Quire--Name`-only rule came first
+   and refused too much:
+   - the self-host subject, where `Parsmi--Build Settings` answers
+     `cites Codex chapter Build Settings`;
+   - all 128 curated and safari units, which carry a plain
+     `Chapter: ListUtils`;
+   - `cite-override-quire.codex`, which upstream's battery requires to
+     compile.
+
+   The scoper already had a rule for all three.
+2. **The implicit pair is always added**, as `compile.ps1` adds it, so our
+   headers can match R2's.
+3. **The checkout is the file's own tree**, or a `checkout` line in the nearest
+   `quires.tsv` for a project outside one.
+4. **Gone:** `CODEX_ROOT`, `CODEX_QUIRES`, `CODEXC_RAW`. A file missing nothing
+   is a unit and is read as it is.
+
+Measured at U60, R3 beside R2 (`tools/resolver_agree.py`):
+
+    1,293 programs under codex/test, apps/ out
+      1,291  the same headers, in the same order
+          2  both refuse: errors/missing-cite, errors/unregistered-quire-cite
+    every unit the Rust arms read     unchanged, byte for byte
+    the Roc ladder, 1,032 programs    ledger unchanged, 496 pass
+
+The one case where R3 and R2 must differ is a Foreword chapter carried under
+another prefix, and `codex/test` holds none. The check would list one as
+"different chapters".
