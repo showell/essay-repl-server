@@ -1,15 +1,14 @@
 # BASIC in Roc: where it stands
 
-Branch `basic-machine` in roc-apps. Not merged.
+roc-apps `master`, at 5a6f199. **Parked.** The summary is
+[the essay](roc-basic-interpreter.md).
 
 ## The suites
 
-- **NBS: 195 pass, 0 fail, 13 unjudged** of 208, graded on the current
-  interpreter after refetching the corpus. An unjudged program prints no
-  verdict of its own.
+- **NBS: 195 pass, 0 fail, 13 unjudged** of 208. An unjudged program prints
+  no verdict of its own.
 - **Games: 55 of 99** match basic101's captured output byte for byte. The
-  games now come from basic101's own tests, listings and captures together,
-  and life2 passes because of that.
+  games come from basic101's own tests, listings and captures together.
 - **The fast path agrees with the full evaluator** on every program
   (`basic/check-fast.sh`).
 
@@ -22,33 +21,21 @@ Branch `basic-machine` in roc-apps. Not merged.
 | `basic-check` | the Roc compiler, from `BasicCheck.roc` (`Machine.roc`) | `--opt=dev` | x86-64 | the fast-path check |
 | `basic.wasm`, the page | the Roc compiler, from `BasicApp.roc` (`Machine.roc`) | `--opt=dev` | wasm32 | the browser, preview :9203 |
 
-All three BASIC programs are the same new interpreter. **No LLVM until the
-next major checkpoint.**
+All three are the same interpreter. The old one (`Basic.roc`, `Pages.roc`) is
+deleted. **No LLVM until the next major checkpoint.**
 
-## Done today
+## The machine
 
-- **The machine is split.** What never changes during a run is
-  `Parse.Program`. What a statement changes is `Machine.M`. The devices
-  (terminal, screen, memory, framebuffer) are `Devices.D`, behind one
-  reference. **Every statement is about a quarter cheaper, and P134 went from
-  7.3 s to 5.4 s.** Same transcripts, same fast-path agreement.
-- **The page runs the new interpreter**, built with the dev backend in about
-  5 seconds: http://143.244.172.148:9203/basic/basic.html
+What never changes during a run is `Parse.Program`. What a statement changes
+is `Machine.M`. The devices (terminal, screen, memory, framebuffer) are
+`Devices.D`, behind one reference. INPUT allocates 5 times a statement; the
+ladder holds it there.
 
-## Next
+## When we return
 
-1. **Your look at the page.** I checked that it builds and is served, not
-   that it runs in a browser.
-2. **Delete the old interpreter** (`Basic.roc`, `Pages.roc`) and `gen.py`,
-   once the page is right, and merge the branch.
-3. **The ECMA-55 load checks**, 150 to 370 ms a program, the largest cost left
+1. **Better coverage on the games.** life, poetry, splat and superstartrek are
+   among the 44 that still differ: interpreter work, one game at a time.
+2. **The ECMA-55 load checks**, 150 to 370 ms a program, the largest cost left
    in NBS.
-
-## Open
-
-- **INPUT allocates 5 times a statement, not 3,** since the devices moved.
-  Accepted: the ladder holds it to 5.
-- life, poetry, splat and superstartrek still differ from basic101: that is
-  interpreter work, one game at a time.
 
 Numbers: [basic-timings](basic-timings.md).
