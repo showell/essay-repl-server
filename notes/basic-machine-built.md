@@ -214,8 +214,20 @@ around a mechanism I cannot see. Each remaining copy is bounded: a path of
   static data object under `/tmp/roc`. Dev builds were running in the same
   temp directory at the time, which is the likely cause.
 - **Speed, second attempt:** it built in **694 s**, where the old interpreter
-  takes 67 s (61 s of it LLVM Optimize + Emit). Its log carries no phase times;
-  a build with `--timings` is running to attribute them.
+  takes 67 s. A third build with `--timings` (667 s) attributes it:
+
+  | phase | new interpreter | old interpreter |
+  |---|---|---|
+  | LLVM Optimize + Emit | 650.6 s | 61.2 s |
+  | ARC | 9.9 s | 1.8 s |
+  | Specializing, in all | 14.9 s | 5.7 s |
+  | Type Checking | 0.8 s | 0.2 s |
+  | peak RSS | 1.4 GB | 0.7 GB |
+
+  Nearly all of it is LLVM. Whether the 728-byte machine record copied
+  throughout the generated code is what LLVM spends its time on is not
+  measured yet; shrinking the record will show whether the build time
+  moves with it.
 
 ## Open
 
