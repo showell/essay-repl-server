@@ -64,6 +64,57 @@ the functions a line calls, it gives 27% to `dim_one` and 8 to 9% each to
 put generated code under the wrong lines, so no claim here rests on them. The
 ladder's rungs are the instrument instead (next section).
 
+## A statement's cost, rung by rung
+
+The ladder's rungs are one-statement programs, so timing them gives each kind
+of statement's cost, with no profiler involved. Each ran 100,000 iterations,
+best of three, on the dev build. From each is taken the bare FOR/NEXT loop,
+2.08 µs an iteration (whose one statement is the NEXT). The programs marked
+*P134-shaped* are its own kinds of statement, written as rungs.
+
+| statement | µs |
+|---|---|
+| NEXT (the bare loop) | 2.08 |
+| GOTO | 2.33 |
+| `LET X=1` | 3.96 |
+| GOSUB and RETURN, each | ~2.0 |
+| `LET X=I` | 4.15 |
+| `X=X+1` | 5.42 |
+| `IF I<0 THEN` (false) | 5.79 |
+| `LET X1=INT(1100*0.5)` *P134-shaped* | 6.18 |
+| `IF I>0 THEN` (true, jumps) | 6.19 |
+| `A(5)=I` | 6.96 |
+| `IF I-5<1 THEN` *P134-shaped* | 7.14 |
+| `IF P(5)<>3 THEN` *P134-shaped* | 8.09 |
+| `P(5)=P(6)` *P134-shaped* | 8.73 |
+| `IF P(5)<=P(6) THEN` *P134-shaped* | 10.16 |
+| `A$=A$+"X"` | 54.94 |
+| a DEF FN call | 19.53 |
+
+**Checked against P134.** P134's counts times these costs are about 9.5 s:
+IF 692,000 at about 7.5 µs is 5.2 s; NEXT 446,000 at 2.08 is 0.9 s; LET 302,000
+at about 5 is 1.5 s; array stores 212,000 at about 8 is 1.7 s; the rest 0.2 s.
+It measures 12.9 s. The rungs account for three quarters. The rest is not
+measured; P134's expressions are larger than the rungs' (`P(J1+1)`, `N8*X`),
+which is the likely difference.
+
+**What a statement costs is mostly not the BASIC.** `LET X=1` does less than
+NEXT (NEXT finds its loop, reads and writes the variable, tests the limit), yet
+costs twice as much. What `LET X=1` has that NEXT does not is an evaluation: a
+fresh effects record carried through the evaluator, and `settle` rebuilding the
+machine record after it. That is about 2 µs on every statement that evaluates
+anything, which is 95% of P134's. Each operator, variable read or array access
+then adds 0.5 to 2.5 µs.
+
+So P134's 12.9 s is, in round numbers:
+
+- **a step**, dispatch and the run loop's record update: about 2 µs × 1.74
+  million = 3.6 s;
+- **the evaluation scaffolding**, the effects record and `settle`: about 2 µs ×
+  1.65 million = 3.3 s;
+- **the expressions themselves**, array reads and arithmetic: the rest, about
+  6 s.
+
 ## The load, found
 
 **ECMA-55's checks turn keywords into byte lists, one allocation per keyword
