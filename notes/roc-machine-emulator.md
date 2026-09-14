@@ -589,6 +589,47 @@ since the machine keeps the table those builtins read.
 **The full ladder went from 621 to 627 of 1,032.** Those six units moved,
 and nothing else.
 
+## Step 10: the ports below PCI's
+
+**Nine units stopped on a byte-wide or word-wide port.** On x86,
+`port-out-byte`, `port-in-byte`, `port-out-16` and `port-in-16` are each a
+bare `out` or `in`, with no capability check. What answers depends on the
+port, and codex-vm's I/O handler decides it.
+
+**`MachinePorts` is codex-vm's port map, apart from PCI's two ports:**
+- **Modelled.**
+  - The PIT's three channels, its command register and the latch command.
+    Each channel counts down from its reload value at 1,193,182 Hz, by the
+    machine's clock: twelve HPET ticks make one PIT tick.
+  - The speaker gate at 0x61.
+  - The CMOS index at 0x70, and the CMOS status registers.
+- **Named.** A port that another codex-vm device answers stops the run, and
+  the message says which device. That covers the PICs, the serial ports, the
+  PS/2 controller, the NE2000, VGA, Bochs VBE, the GPU rasterizer, the host's
+  mailboxes, and the CMOS clock's time registers, which read the host's local
+  time.
+- **Nobody's.** On every other port a write is dropped and a read answers
+  0xFF, as codex-vm's handler does.
+
+The 32-bit port builtins reach the same map for any port other than PCI's.
+Every port access now moves the machine's clock by the same 100 µs as a
+register in an MMIO window. The e1000 timing units still land in their bands.
+
+**`atomic-exchange` came along.** It swaps the qword at an address and
+answers the old value, a sibling of step 8's `atomic-load` and
+`atomic-store`, and input-metal needed it.
+
+**What moved:**
+
+| outcome | units |
+|---|---|
+| pass | cap-device-declared, grounds-port and occurrence-check, whose port calls never run; input-metal |
+| stop by name | pit-latch and timer-registers at the local APIC; vbe-mode-set at Bochs VBE; heap-bracket-shape at the CMOS clock |
+| now name the device | gpu-doorbell and gpu-ptx: "port 1056, which no modelled device claims" became "port 0x420, the COM3 mailbox" |
+| refused further on | acpi-parse, act-tco-loop and gop-text-field at `__heap-advance`; cross-port-refused at `gpu-out` |
+
+**The full ladder went from 627 to 631 of 1,032.**
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -738,6 +779,7 @@ digraph demo {
   g [label="7. the address space codex-vm backs  ✓\n(10 board units; the APICs stop by name)" fillcolor="#e6f4e6"];
   h [label="8. keystrokes on the machine's clock  ✓\n(the .keys units and the UI units that poll)" fillcolor="#e6f4e6"];
   i [label="9. the process table's other readers  ✓\n(the cap-* family, arm64-proc-cells, block-gate-restrict)" fillcolor="#e6f4e6"];
+  j [label="10. the ports below PCI's  ✓\n(the PIT on the machine's clock; the rest named)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
@@ -746,6 +788,7 @@ digraph demo {
   f -> g [label="no address answers by default"];
   g -> h [label="waiting for input is waiting for time"];
   h -> i [label="the kernel reads its own table"];
+  i -> j [label="a port is a device register"];
 }
 ```
 
