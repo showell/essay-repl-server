@@ -630,6 +630,62 @@ answers the old value, a sibling of step 8's `atomic-load` and
 
 **The full ladder went from 627 to 631 of 1,032.**
 
+## Step 11: the local APIC, the IOAPIC, and a cheaper register
+
+**Four units stopped at the APICs.**
+- **lapic-regs** reads the local APIC's version and id, and round-trips its
+  spurious-vector register.
+- **timer-registers** checks that the clocks move:
+  - the HPET's counter runs, holds while the HPET is disabled, and reaches
+    its comparator;
+  - the local APIC's current count falls, at a rate set by the divisor
+    rather than the initial count;
+  - the PIT's count runs.
+- **pit-latch** measures the local APIC's input rate against the PIT, and
+  expects 100 MHz give or take ten percent.
+- **hpet-interrupt** routes the HPET's timer through the IOAPIC, then waits
+  for the kernel's interrupt handler to count the interrupt.
+
+**`MachineApic` is codex-vm's model for the boot core.**
+- **The local APIC** answers its id and version, and keeps the spurious-vector
+  register, the interrupt command register, and the timer.
+- **The timer** counts down from its initial count at 100 MHz, divided by
+  the divisor, by the machine's clock. At zero it stays at zero: codex-vm
+  re-arms a timer only on the application processors.
+- **The IOAPIC** keeps its select register, its id and its 24 redirection
+  entries.
+- **The HPET's timer 0** is checked whenever the program touches the HPET.
+  Once the counter reaches an armed comparator, the status bit is set and the
+  timer's IOAPIC line is raised.
+
+**No interrupt is delivered.** A raised line whose entry is unmasked, with a
+real vector, would reach the kernel's device-interrupt handler, which stores
+the vector at 36248 and counts it at 36240. The machine does not run that
+handler, so hpet-interrupt stops at that point: "the HPET raised IOAPIC line 2
+on vector 80, and this machine delivers no interrupts". Whether to model the
+handler's two writes is still an open decision.
+
+**A register access got cheaper: 10 µs, not step 6's 100.** timer-registers
+arms the local APIC for 160 ms and spins 8,000 register reads between
+samples. Its initial counts are one million and two million, and it expects
+both to fall by about the same amount. At 100 µs a read, the spin takes
+800 ms: the timer runs out, and the drops read as scaling with the count. At
+10 µs the constant fits inside all three bands:
+
+| verdict | asks for | at 10 µs |
+|---|---|---|
+| e1000-tx-deadline | two clock readings, with a million memory reads between them, 0–5 ms apart | 0.03 ms: memory is free and a reading is three register reads |
+| timer-registers | 8,000 register reads inside a 160 ms period | 80 ms |
+| e1000-link-deadline | a no-link bring-up lasting 7–15 s | about 500,000 STATUS reads spend the 5 s link wait |
+
+pit-latch's measurement comes out right by construction, because both of the
+clocks it compares count the machine's clock.
+
+**The full ladder went from 631 to 634 of 1,032.** lapic-regs, pit-latch and
+timer-registers pass, and hpet-interrupt now stops at interrupt delivery. No
+other unit moved, and that includes all 27 e1000 units at the cheaper
+register.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -780,6 +836,7 @@ digraph demo {
   h [label="8. keystrokes on the machine's clock  ✓\n(the .keys units and the UI units that poll)" fillcolor="#e6f4e6"];
   i [label="9. the process table's other readers  ✓\n(the cap-* family, arm64-proc-cells, block-gate-restrict)" fillcolor="#e6f4e6"];
   j [label="10. the ports below PCI's  ✓\n(the PIT on the machine's clock; the rest named)" fillcolor="#e6f4e6"];
+  k [label="11. the APICs and a cheaper register  ✓\n(lapic-regs, pit-latch, timer-registers)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
@@ -789,6 +846,7 @@ digraph demo {
   g -> h [label="waiting for input is waiting for time"];
   h -> i [label="the kernel reads its own table"];
   i -> j [label="a port is a device register"];
+  j -> k [label="the timers share one clock"];
 }
 ```
 
