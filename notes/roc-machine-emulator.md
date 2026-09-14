@@ -488,6 +488,72 @@ unit type, two `port-out-byte`, one a field store. The full ladder went from
 0.28 s where five levels took 0.24 s. The full ladder took 1m53s, against
 2m07s for the run before, so the cost does not show at that scale.
 
+## Step 8: keystrokes on the machine's clock
+
+**19 units stopped at the keyboard, and some of their verdicts depend on when
+a key arrives.** KeyInput's `poll-key` makes three calls:
+- `uefi-read-key-ex`, which asks UEFI's console first;
+- `uefi-read-key`, its fallback, which reads the key cell at 28680 that the
+  IRQ1 handler fills;
+- `atomic-load` and `atomic-store`, which hold the modifier state.
+
+Five tests also type. Each carries a `.keys` timeline of `ms:scancode` events,
+which codex-vm delivers by the host's clock. keys-mods, for one, types Caps,
+`a`, Caps, `a`, Ctrl, `a`, Ctrl-up, Enter.
+
+**The doors are small:**
+- `uefi-read-key-ex` answers -1 while the system table cell at 30704 is
+  empty, as it is on codex-vm's bare-metal boot.
+- `uefi-read-key` swaps the key cell with zero and answers the scancode byte.
+- `atomic-load` and `atomic-store` read and write a qword at the address.
+
+**The timeline was a question of time again.** codex-vm writes each scancode
+into the cell once the host's clock passes its time, and a program waiting
+for it spins. A polling loop on this machine touches no device register, so
+the machine's clock would never move and no key would ever come. Instead, a
+read that finds the cell empty moves the clock to the next keystroke's time,
+and the next read finds that key. Keystrokes whose time has already passed
+are written in order, so the cell holds the last one due, as it does under
+codex-vm. The timeline reaches the Roc program the way a disk does: the
+ladder imports the test's `.keys` into the `MachineMedia` it writes.
+
+```dot
+digraph keys {
+  rankdir=LR; bgcolor="transparent";
+  node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=10 fillcolor="#ffffff"];
+  edge [fontname="Helvetica" fontsize=9 color="#666666"];
+
+  side  [label="keys-mods.keys\n500:58 · 900:30 · ..." shape=note fillcolor="#fff8e6"];
+  media [label="MachineMedia.keys\nimported by the ladder" fillcolor="#fde9d9"];
+  cell  [label="key cell 28680\nwritten when the clock\npasses a keystroke" fillcolor="#e6f4e6"];
+  read  [label="uefi_read_key\nswap with zero" fillcolor="#e6f4e6"];
+  poll  [label="KeyInput poll-key" fillcolor="#fff8e6"];
+
+  side -> media -> cell -> read -> poll;
+  read -> cell [label="empty: the clock moves\nto the next keystroke" style=dashed];
+}
+```
+
+**What else the run turned up:**
+- **An emitter bug, fixed.** The first run failed 19 units at compile time:
+  `atomic-load` came out as `Machine.load(machine, 0, 8)`, with the address
+  missing. The machine state is the first argument of every door, and the fix
+  put the address back after it.
+- **Three UI tests pin in-place list writes**, which Roc does not have.
+  detail-pane and tree-view-nav each print what a caller still holding the old
+  value sees. In data-table-rows, `dt-swap` writes the keys list in place and
+  drops the answer, so the sort compares stale keys. The ladder names all
+  three as divergences. The third also shows a gap in rocemit's in-place
+  detector: it refuses a definition that writes a list parameter only when
+  that definition answers something other than a list.
+- **Eight SMP tests run on four cores.** codex-vm boots them with four
+  (`.smp`), and they read what the application processors publish. On one
+  core they printed `cores: 0`. The ladder now skips them by name.
+
+**The full ladder went from 604 to 621 of 1,032.** Of the 17, five are the
+timeline units and twelve more reach the keyboard builtins. The only other
+changes are the three named divergences and the eight named skips.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -635,12 +701,14 @@ digraph demo {
   e [label="5. the capability word  ✓\n(cap-block-denied: denied: -1)" fillcolor="#e6f4e6"];
   f [label="6. a network card and a clock  ✓\n(the 27 e1000 and i219 units)" fillcolor="#e6f4e6"];
   g [label="7. the address space codex-vm backs  ✓\n(10 board units; the APICs stop by name)" fillcolor="#e6f4e6"];
+  h [label="8. keystrokes on the machine's clock  ✓\n(the .keys units and the UI units that poll)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
   d -> e [label="the kernel's rules hold"];
   e -> f [label="time is the machine's"];
   f -> g [label="no address answers by default"];
+  g -> h [label="waiting for input is waiting for time"];
 }
 ```
 
@@ -672,6 +740,7 @@ digraph demo {
   disk.
 - **A real run:** `machine/native/run.sh fat16-write.codex -disk copy.img`.
 - **Configuration:** a machine is `Machine.boot!(args, effects)`: `.vmargs`
-  is the command line, and the effects are the ones the opening declares. On the ladder `.disk` and `.disk2` are imported by the
+  is the command line, and the effects are the ones the opening declares. On
+  the ladder `.disk`, `.disk2` and `.keys` are imported by the
   `MachineMedia.roc` it writes; on the native platform `-disk` and `-disk2`
-  name files. `.keys` comes later.
+  name files.
