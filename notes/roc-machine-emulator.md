@@ -715,6 +715,34 @@ nvme-encode and qr-encode pass. The other 21 get further, then stop on later
 refusals: `port-in-16-block` (13), `net-send-raw` (6) and `__buf-write-bytes`
 (2). safari, gpu and games still pass in full.
 
+## Step 13: a unit is its base number
+
+**57 units stopped at a unit type, 45 of them `Duration`.** The Units foreword
+declares them. `Duration = unit family Nanosecond` has members from
+`Microsecond = 1000` up to `Hour`, and a single unit is declared as, for
+example, `Kelvin = unit Integer`. The desugarer already writes each member's
+constructor and extractor as plain arithmetic. Lowering drops a unit's
+constructor but keeps the unit on the value's type. So at run time a
+`Duration` is just the Integer it wraps. rocemit now emits a unit as an alias
+of its base number, `Duration : I64`, and looks through the unit wherever it
+reads a type to decide how to print or match a value.
+
+**One unit then printed a wrong answer.** implicit-convert hands `Celsius 100`
+to `describe-temp : Kelvin -> Text` and expects "warm". The Rust lowering
+passed the value through unchanged, so 100 °C was read as 100 K and it printed
+"cold". Upstream's lowering has a rule, `try-unit-convert`, that the Rust
+lowering lacked. When an argument of unit A appears where unit B is expected,
+it becomes a call of `A-to-B` on that argument. Here that call is
+`Celsius-to-Kelvin`, which the foreword defines as adding 273. The Rust
+lowering now has the same rule.
+
+**The full ladder went from 643 to 696 of 1,032.** The 53 new passes include
+the board drivers (stm32, nrf, pi4, rp2040, esp32c6, fe310), the audio, signal
+and physics forewords, and the unit smoke units. The other four get further,
+then stop on later refusals: partial application (3) and
+`real-approx-to-bits` (1). The FAIL and CRASH sets are unchanged, and safari,
+gpu and games still pass in full.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -867,6 +895,7 @@ digraph demo {
   j [label="10. the ports below PCI's  ✓\n(the PIT on the machine's clock; the rest named)" fillcolor="#e6f4e6"];
   k [label="11. the APICs and a cheaper register  ✓\n(lapic-regs, pit-latch, timer-registers)" fillcolor="#e6f4e6"];
   l [label="12. the heap's bump pointer  ✓\n(acpi-parse, qr-encode and seven more)" fillcolor="#e6f4e6"];
+  m [label="13. a unit is its base number  ✓\n(the Duration board drivers, implicit-convert)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
@@ -878,6 +907,7 @@ digraph demo {
   i -> j [label="a port is a device register"];
   j -> k [label="the timers share one clock"];
   k -> l [label="a mark is an address"];
+  l -> m [label="a unit is a number"];
 }
 ```
 
