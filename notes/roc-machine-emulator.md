@@ -784,6 +784,32 @@ a record field, `(it.next) 0`. Seven stop at builtins: `fork`,
 `gpu-mem-write` and `abs`. The FAIL and CRASH sets are unchanged, and safari,
 gpu and games still pass in full.
 
+## Step 15: a call on a closure kept in a record
+
+**Six units call a function that is not a name.** roc-returned-closure stores
+a closure in a record field and calls it after the function that built it has
+returned: `(wrapped.next) 0`. The iterator ports do the same with
+`(it.next) 0`. rocemit could only call a name. Now a call whose head is any
+other expression emits that expression in parentheses and passes every
+argument at once, `(it.next)(0)`, just as a local function value is called.
+Given too few arguments, it becomes the closure from step 14.
+
+**Three of them then failed to compile, on an equality nothing asked for.**
+The iterator's `Step` is `One (a) (Iter a) | Done`, and `Iter` holds its
+`next` function. Codex derives an equality for every declared sum type, so the
+IR carries `__eq_Step`, which compares the `Iter` field with `==`. Roc has no
+equality for functions, and it type-checks a definition even when nothing
+calls it. So for a type that holds a function, directly or through a type it
+mentions, rocemit now writes neither the equality helper nor the `is_eq`
+method. A program that actually compares two such values is refused by name.
+
+**The full ladder went from 733 to 739 of 1,032.** roc-returned-closure, the
+three iterator ports, record-smoke and ops@record-closure-field-poly pass.
+Two more units that stopped at the same refusal get further, then stop at
+older causes: mutable-smoke at a field store and typeclass-poly at a type
+error. The FAIL and CRASH sets are unchanged, and safari, gpu and games still
+pass in full.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -938,6 +964,7 @@ digraph demo {
   l [label="12. the heap's bump pointer  ✓\n(acpi-parse, qr-encode and seven more)" fillcolor="#e6f4e6"];
   m [label="13. a unit is its base number  ✓\n(the Duration board drivers, implicit-convert)" fillcolor="#e6f4e6"];
   n [label="14. a partial application is a closure  ✓\n(the lifted lambdas, saturated-call-returning-function)" fillcolor="#e6f4e6"];
+  o [label="15. a call on a closure kept in a record  ✓\n(roc-returned-closure, the iterator ports)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
@@ -951,6 +978,7 @@ digraph demo {
   k -> l [label="a mark is an address"];
   l -> m [label="a unit is a number"];
   m -> n [label="a function value takes every parameter"];
+  n -> o [label="no equality on a function"];
 }
 ```
 
