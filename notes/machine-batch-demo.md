@@ -1,9 +1,28 @@
 # The machine demo, first cut: a batch run in the browser
 
-The Roc machine runs Codex programs, but only on the ladder and on the command
-line. The page at `:9203/machine/machine.html` still runs the hand-written Roc
-app from step 1. This note is the plan for the first page where an emitted
-Codex program runs on the machine in the browser.
+The Roc machine runs Codex programs on the ladder, on the command line, and
+now in the browser. This note is the plan for that first page, and where it
+stands.
+
+## Where it stands
+
+**The page is built: `http://143.244.172.148:9203/machine/batch/`.**
+
+- fat16-write, fat16-list and dhcp-acquire each build for WebAssembly and match
+  their test's expected output (1 to 2 seconds a run).
+- The panes are Console, Verdict, Disk and Network:
+  - fat16-write shows the five sectors it wrote.
+  - dhcp-acquire shows its four frames: DISCOVER, OFFER of 10.0.2.15, REQUEST,
+    ACK.
+- The page's script has run from Node against the built programs
+  (`machine/batch/page.mjs`), but not yet in a browser.
+
+**One Roc compiler bug had to be worked around.** The WebAssembly build fails
+to link when a function copies a record holding nested records with lists in
+several branches. The machine's command-line parser did exactly that. The
+parser now carries the network card and the timer beside its record, and a
+standalone program that shows the bug is kept in
+`roc-apps/findings/wasm-reloc-order/`.
 
 ## What the page shows
 
