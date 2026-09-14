@@ -686,6 +686,35 @@ timer-registers pass, and hpet-interrupt now stops at interrupt delivery. No
 other unit moved, and that includes all 27 e1000 units at the cheaper
 register.
 
+## Step 12: the heap's bump pointer
+
+**30 units stopped at `__heap-advance`.** On x86 it moves the heap pointer
+past `n` bytes and answers Nothing: it is `alloc-bytes` without the address.
+It is now a memory builtin, `advance`, both in the machine and in the `Mem`
+module rocemit writes.
+
+**Two units then printed wrong answers, for the same reason.** acpi-parse
+takes `b = __heap-save`, the bump pointer's current address, writes a
+1,280-byte ACPI blob there, and reserves the space with `__heap-advance`.
+rocemit had emitted `__heap-save` as 0, a choice made back when memory in Roc
+had no heap to mark. So the blob went to address 0, the parser was handed a
+null table, and every field read zero. qr-encode printed wrong
+error-correction bits; the same change fixed it, though I never traced its
+path.
+
+**A heap mark is now the bump pointer wherever memory is threaded.** In any
+definition or opening that threads the machine or `Mem`, `__heap-save` answers
+`top` and `__heap-restore` rewinds to it, as x86's r10 does. Code with no
+memory threaded has no heap, so there the mark stays 0. The rewind is real
+now: the fat16 units bracket their sector buffers with a mark, and they still
+pass with the memory reused.
+
+**The full ladder went from 634 to 643 of 1,032.** acpi-parse, act-tco-loop,
+fat32-cluster-guard, gop-stride, gop-text-field, hid-decode, mouse-decode,
+nvme-encode and qr-encode pass. The other 21 get further, then stop on later
+refusals: `port-in-16-block` (13), `net-send-raw` (6) and `__buf-write-bytes`
+(2). safari, gpu and games still pass in full.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -837,6 +866,7 @@ digraph demo {
   i [label="9. the process table's other readers  ✓\n(the cap-* family, arm64-proc-cells, block-gate-restrict)" fillcolor="#e6f4e6"];
   j [label="10. the ports below PCI's  ✓\n(the PIT on the machine's clock; the rest named)" fillcolor="#e6f4e6"];
   k [label="11. the APICs and a cheaper register  ✓\n(lapic-regs, pit-latch, timer-registers)" fillcolor="#e6f4e6"];
+  l [label="12. the heap's bump pointer  ✓\n(acpi-parse, qr-encode and seven more)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
@@ -847,6 +877,7 @@ digraph demo {
   h -> i [label="the kernel reads its own table"];
   i -> j [label="a port is a device register"];
   j -> k [label="the timers share one clock"];
+  k -> l [label="a mark is an address"];
 }
 ```
 
