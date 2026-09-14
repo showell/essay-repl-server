@@ -824,6 +824,45 @@ inline in `I32`.
 lang-smoke pass. The FAIL and CRASH sets are unchanged, and safari, gpu and
 games still pass in full.
 
+## Step 17: the IDE channel
+
+**13 units stopped at `port-in-16-block`,** x86's `rep insw`, the way GopDisk
+reads a sector. Before that read, GopDisk drives the channel itself. It
+writes the drive/head register, the sector count and three address registers,
+writes READ SECTORS to the command register, and polls status until the drive
+shows data. Until now every one of those ports stopped the run, as a device
+this machine did not model.
+
+**`MachineIde` models the channel the way codex-vm does.** A drive/head write
+lands on both positions, and its bit 4 selects the one the following accesses
+reach. A position with no medium ignores every other write, and answers 0x00
+from the status registers and 0xFF from the rest, which a driver's detect
+reads as no drive. On a present drive, READ SECTORS and WRITE SECTORS move
+whole sectors through the data register a word at a time, and IDENTIFY DEVICE
+answers a sector naming the drive and its size. The sectors come from
+`MachineDisk`, the same drives the block builtins read.
+
+**The byte and 16-bit port doors are now effects.** A command written to the
+channel loads a sector, and on the native platform a sector is a read of a
+file on the host. So `port-out-byte`, `port-in-byte` and the 16-bit doors are
+spelled with `!`, as the block doors already were. The 32-bit doors reach PCI
+and the port map, and stay pure. `port-in-16-block` and `port-out-16-block`
+move their words through the same doors. As x86 does, they first refuse a
+buffer in the GPU's memory page to a process without the gpu-memory
+capability.
+
+**One unit it reached shows an in-place write of a record, not a device.**
+gop-composite-translate moves each child of a widget with `__record-set` and
+throws the answers away. Codex writes the record in place, so the parent's
+list of children sees the move. In Roc a record is a value, and the children
+stay where they were. The ladder names it DIVERGES.
+
+**The full ladder went from 741 to 752 of 1,032.** fat32-parse, files-parse,
+disk-enum-parse, diag-pci-map-judge, lib@widget-tone, gop-corner-ramp and five
+gop-composite units pass. gop-scene-backbuffer gets further, then stops at
+`gpu-out`. No unit that passed before is lost, and safari, gpu and games still
+pass in full.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -980,6 +1019,7 @@ digraph demo {
   n [label="14. a partial application is a closure  ✓\n(the lifted lambdas, saturated-call-returning-function)" fillcolor="#e6f4e6"];
   o [label="15. a call on a closure kept in a record  ✓\n(roc-returned-closure, the iterator ports)" fillcolor="#e6f4e6"];
   p [label="16. abs as x86 computes it  ✓\n(ir-check-clean, lang-smoke)" fillcolor="#e6f4e6"];
+  q [label="17. the IDE channel  ✓\n(fat32-parse, files-parse, the gop-composite units)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
@@ -995,6 +1035,7 @@ digraph demo {
   m -> n [label="a function value takes every parameter"];
   n -> o [label="no equality on a function"];
   o -> p [label="the builtin wraps as the CPU does"];
+  p -> q [label="a port is a device register"];
 }
 ```
 
