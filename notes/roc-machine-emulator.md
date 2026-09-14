@@ -810,6 +810,20 @@ older causes: mutable-smoke at a field store and typeclass-poly at a type
 error. The FAIL and CRASH sets are unchanged, and safari, gpu and games still
 pass in full.
 
+## Step 16: `abs` as x86 computes it
+
+**Two units stopped at `abs`.** On x86 it tests the sign and negates a negative
+value with `neg`, which wraps. So the most negative 64-bit integer comes back
+unchanged, because its negation does not fit. Roc's `Num.abs` crashes on that
+same value. The emitted Prelude now has `int_abs`, which negates with
+`I64.minus_wrap` below zero and otherwise answers its argument, and `abs` is a
+call to it. A GPU kernel has no Prelude, so there the same test is written
+inline in `I32`.
+
+**The full ladder went from 739 to 741 of 1,032:** ir-check-clean and
+lang-smoke pass. The FAIL and CRASH sets are unchanged, and safari, gpu and
+games still pass in full.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -965,6 +979,7 @@ digraph demo {
   m [label="13. a unit is its base number  ✓\n(the Duration board drivers, implicit-convert)" fillcolor="#e6f4e6"];
   n [label="14. a partial application is a closure  ✓\n(the lifted lambdas, saturated-call-returning-function)" fillcolor="#e6f4e6"];
   o [label="15. a call on a closure kept in a record  ✓\n(roc-returned-closure, the iterator ports)" fillcolor="#e6f4e6"];
+  p [label="16. abs as x86 computes it  ✓\n(ir-check-clean, lang-smoke)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
@@ -979,6 +994,7 @@ digraph demo {
   l -> m [label="a unit is a number"];
   m -> n [label="a function value takes every parameter"];
   n -> o [label="no equality on a function"];
+  o -> p [label="the builtin wraps as the CPU does"];
 }
 ```
 
