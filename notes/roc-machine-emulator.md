@@ -863,6 +863,44 @@ gop-composite units pass. gop-scene-backbuffer gets further, then stops at
 `gpu-out`. No unit that passed before is lost, and safari, gpu and games still
 pass in full.
 
+## Step 18: the NE2000 and the NAT behind it
+
+**27 units stopped at `net-send-raw`.** On x86 the network builtins are
+kernel helpers that drive the NE2000 themselves. `net-send-raw` checks the
+process's network-write capability and the cell where the boot recorded the
+card. It copies the frame into card memory by remote DMA, sets the transmit
+page and length, and writes the transmit command. `net-recv-raw` compares the
+ring's CURR with BNRY and reads the next frame out the same way. The machine
+runs those same register sequences against a model of the card.
+
+**`MachineNe2k` is codex-vm's card.** It has the page-selected registers,
+32 KB of card memory reached through the data port, and the receive ring.
+Every run starts with the card as x86's boot probe leaves it: the ring at
+pages 70 to 128, the station address copied out to 33032, and the card
+marked present. The byte and 16-bit port doors route 0x300-0x31F to it.
+
+**`MachineNat` is the part of codex-vm's NAT that needs no host.** It answers
+an ARP request from the gateway. It answers a DHCP DISCOVER or REQUEST with an
+offer or an ack of 10.0.2.15, for the lease `-dhcp-lease` sets. A transmit
+lays those answers into the ring behind the card's 4-byte header, as codex-vm
+does. The rest of codex-vm's NAT is the host itself: DNS goes to the host's
+resolver, other UDP ports to host sockets, and a TCP SYN to a connection. A
+frame that would need one of those stops the run by name.
+
+**The frames are built with `__buf-write-bytes`,** which copies a list of
+byte values into memory. It is a memory builtin now, in the `Mem` rocemit
+writes and in the machine.
+
+**The full ladder went from 752 to 759 of 1,032.** dhcp-acquire, dhcp-renew,
+udp-frame-guard, net-driver-seam-no-av and net-poll-clamped pass. So do
+arm64-net-gate and cap-network-denied, which read `net-status` as a value.
+Twenty-two units get further and stop at `__buf-read-bytes`, which reads bytes
+out of memory into a new list; the desk, web-mux and network-scope units are
+among them. dhcp-acquire-e1000 stops by name on `-e1000-nat`, the NAT behind
+the e1000, which this machine does not model. net-driver-seam-bound runs out
+of time, not yet explained. No unit that passed before is lost, and safari,
+gpu and games still pass in full.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -1020,6 +1058,7 @@ digraph demo {
   o [label="15. a call on a closure kept in a record  ✓\n(roc-returned-closure, the iterator ports)" fillcolor="#e6f4e6"];
   p [label="16. abs as x86 computes it  ✓\n(ir-check-clean, lang-smoke)" fillcolor="#e6f4e6"];
   q [label="17. the IDE channel  ✓\n(fat32-parse, files-parse, the gop-composite units)" fillcolor="#e6f4e6"];
+  r [label="18. the NE2000 and the NAT  ✓\n(dhcp-acquire, dhcp-renew, udp-frame-guard)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
@@ -1036,6 +1075,7 @@ digraph demo {
   n -> o [label="no equality on a function"];
   o -> p [label="the builtin wraps as the CPU does"];
   p -> q [label="a port is a device register"];
+  q -> r [label="the host is named, never faked"];
 }
 ```
 
