@@ -554,6 +554,41 @@ digraph keys {
 timeline units and twelve more reach the keyboard builtins. The only other
 changes are the three named divergences and the eight named skips.
 
+## Step 9: the process table's other readers
+
+**Six units read the capability word through the kernel's own builtins.**
+Step 5 made the capability word memory. The `cap-*` family reads it back with
+`process-get-cap`:
+- cap-direction checks that `[FileSystem.Read]` grants the read bit and not
+  the write bit.
+- cap-audio checks that Audio buys its own bit, and neither Device nor the
+  disk.
+- cap-media-families checks that five media names reach five bits.
+
+arm64-proc-cells walks the refusals: a pid past the table, then a
+restriction and a scope set on that pid, and finally a restriction of its
+own console-write bit. block-gate-restrict clears its own block bit and
+checks that the next sector count answers -1.
+
+**Four more builtins, plus a second scope reader, each a few lines,
+answering as x86's helpers do:**
+
+| builtin | answers |
+|---|---|
+| `process-get-cap pid` | the word at 20480 + pid·256 + 56; -1 past the 16-entry table |
+| `process-restrict-cap pid bit` | clears the bit and answers 0; -1 without capability-admin (bit 14), or past the table |
+| `process-set-scope pid text` | 0, under the same two refusals |
+| `process-get-scope`, `process-get-network-scope` | the scope that was set, or the empty text |
+
+**The boot writes a little more than the grant.** arm64-proc-cells reads the
+boot process's first word and expects 2, running. The boot also grants
+process 1 the console bit. Both are now written at boot. Under the machine,
+rocemit threads the `Capability` effect the way it threads `Device.Block`,
+since the machine keeps the table those builtins read.
+
+**The full ladder went from 621 to 627 of 1,032.** Those six units moved,
+and nothing else.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -702,6 +737,7 @@ digraph demo {
   f [label="6. a network card and a clock  ✓\n(the 27 e1000 and i219 units)" fillcolor="#e6f4e6"];
   g [label="7. the address space codex-vm backs  ✓\n(10 board units; the APICs stop by name)" fillcolor="#e6f4e6"];
   h [label="8. keystrokes on the machine's clock  ✓\n(the .keys units and the UI units that poll)" fillcolor="#e6f4e6"];
+  i [label="9. the process table's other readers  ✓\n(the cap-* family, arm64-proc-cells, block-gate-restrict)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
@@ -709,6 +745,7 @@ digraph demo {
   e -> f [label="time is the machine's"];
   f -> g [label="no address answers by default"];
   g -> h [label="waiting for input is waiting for time"];
+  h -> i [label="the kernel reads its own table"];
 }
 ```
 
