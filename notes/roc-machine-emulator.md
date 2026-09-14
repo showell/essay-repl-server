@@ -743,6 +743,47 @@ then stop on later refusals: partial application (3) and
 `real-approx-to-bits` (1). The FAIL and CRASH sets are unchanged, and safari,
 gpu and games still pass in full.
 
+## Step 14: a partial application is a closure
+
+**51 units stopped at a function applied to fewer arguments than it takes.**
+Most of them are lifted lambdas. Lowering turns `\x -> n + x` into a
+definition `__lam_0 (n) (x)`, and the lambda's value is `__lam_0 n`: the
+definition, still waiting for `x`. The rest are ordinary partial applications,
+such as `let h = add3 10`.
+
+**A Roc function value takes all of its parameters at once.** rocemit already
+writes a curried Codex type as one Roc signature, so `Integer -> Integer ->
+Integer` is `I64, I64 -> I64`. A partial application is now a closure over
+every parameter still missing: `add3 10` becomes `|b, c| add3(10, b, c)`. The
+10 is bound once, outside the closure, so it is evaluated where the
+application is written, not at every call. A local function applied to too few
+arguments gets the same treatment.
+
+**A definition that answers a function needed the same rule when used as a
+value.** saturated-call-returning-function writes `let f = mk3`, where `mk3`
+takes three integers and answers a function of two. Called directly, it is
+`mk3(x, y, z)` answering a closure. As a value, though, its type flattens to
+five parameters, and the call `f 1 2 3 20` was emitted with five arguments.
+Used as a value, `mk3` now becomes `|a, b, c, d, e| mk3(a, b, c)(d, e)`, so
+every function value takes all of its parameters at once.
+
+**One unit printed a wrong row count, from a cause older than this step.**
+db-full-test's backup reports 21 rows where the verdict says 26. Two earlier
+tests, test-bulk-load and test-import, insert 5 rows through
+`heap-insert-encoded`. That writes the catalog's page list with `list-set-at`,
+and the tests answer only Text. Codex writes the list in place, so the
+backup, scanning the same catalog, sees the new rows. In Roc a list is a
+value, so the catalog still holds the old pages. This is the same in-place
+boundary lib@data-table-rows meets, and the ladder names db-full-test as
+DIVERGES with that reason.
+
+**The full ladder went from 696 to 733 of 1,032.** Of the 51 units, 37 pass,
+among them the 20 AI forewords, the linear-algebra and matrix units, and
+workflow-parse-int. Six get further, then stop at a call on a closure kept in
+a record field, `(it.next) 0`. Seven stop at builtins: `fork`,
+`gpu-mem-write` and `abs`. The FAIL and CRASH sets are unchanged, and safari,
+gpu and games still pass in full.
+
 ## The layers
 
 The machine is one Roc value. Everything that touches a device takes the
@@ -896,6 +937,7 @@ digraph demo {
   k [label="11. the APICs and a cheaper register  ✓\n(lapic-regs, pit-latch, timer-registers)" fillcolor="#e6f4e6"];
   l [label="12. the heap's bump pointer  ✓\n(acpi-parse, qr-encode and seven more)" fillcolor="#e6f4e6"];
   m [label="13. a unit is its base number  ✓\n(the Duration board drivers, implicit-convert)" fillcolor="#e6f4e6"];
+  n [label="14. a partial application is a closure  ✓\n(the lifted lambdas, saturated-call-returning-function)" fillcolor="#e6f4e6"];
   a -> b [label="the machine is right"];
   b -> c [label="the disk is right"];
   c -> d [label="the seam holds"];
@@ -908,6 +950,7 @@ digraph demo {
   j -> k [label="the timers share one clock"];
   k -> l [label="a mark is an address"];
   l -> m [label="a unit is a number"];
+  m -> n [label="a function value takes every parameter"];
 }
 ```
 
