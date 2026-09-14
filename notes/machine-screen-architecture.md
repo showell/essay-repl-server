@@ -149,6 +149,45 @@ for three of the copying rules, and none has been reported. Steve's call.
 **B** changes what the machine is, and I would not start it without a reason A
 leaves behind.
 
+## Built: A
+
+Steve chose A, and it is built (roc-apps 31e7fd0). The machine record is
+`{ mem, gpu, clock, devices }`, and the other devices are one `Devices` record
+in a list of one. A door that changes a device takes it out of the list,
+writes it, and puts it back.
+
+**First, the question under it, measured:** does updating one field copy an
+inline record beside it? On Roc's dev backend, yes. 20 million updates of one
+field took 0.13 s alone, 2.19 s beside a 512-byte record, and 0.21 s with that
+record in a list of one.
+
+| what | before A | after A |
+|---|---|---|
+| gop-padded-stride, the page's wasm build | 1,506 ms | 716 ms |
+| scene-on-screen, the page's wasm build | 2,662 ms | 1,413 ms |
+| e1000-tx-deadline, natively on the ladder's platform | 10.18 s | 3.92 s |
+
+The ladder is unchanged, and no unit measured allocates more.
+
+**A list of one, or a `Box`?** Carried untouched, a `Box` costs the same as the
+list. But writing through a `Box` means boxing again, which allocates on every
+write: 200,000 device writes made 200,004 allocations, against 4 through the
+list, and ran ten times slower. Roc's own documentation calls box and unbox
+"expensive". So the devices stay in the list of one, and a `Box` is for a part
+of the machine that is never written after it is made.
+
+The numbers and the programs behind them are in `roc-apps/machine/batch/PERF.md`
+and `machine/batch/probes/`.
+
+## Steve's answers
+
+- Mode 2 verifies with a hash of the image.
+- The screen does not need to step back through history.
+- B is appealing and does not conflict with A: writing memory is an effect.
+- A hybrid of zig and Roc in the browser is fine. The goal is to use the Roc
+  code that comes from Codex in a way that can be demonstrated, not to write
+  everything in Roc.
+
 ## Questions for Steve
 
 - Is A the right first step, or should the screen move straight to mode 3 (C)?
