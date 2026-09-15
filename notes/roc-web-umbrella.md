@@ -2,7 +2,8 @@
 
 A design for serving roc-apps' pages as one site, with a landing page, a link
 home from every page, a publish step that nothing bypasses, and a path to
-lynrummy.com. Nothing here is built yet.
+lynrummy.com. Nothing here is built yet. Steve's answers, and the scheme they
+settle (dev on 9210, staging on 9200, prod on roc.lynrummy.com), are at the end.
 
 ## What runs today
 
@@ -239,3 +240,83 @@ Neither umbrella reads the other's files or shares its code.
    or behind a password in Caddy?
 5. On lynrummy.com, `/roc/` or `roc.lynrummy.com`?
 6. What should the site be called on its landing page?
+
+## Steve's answers
+
+1. Paths on one port per channel.
+2. Yes, and three channels rather than two: 9210 is dev, 9200 is staging, and
+   roc.lynrummy.com is prod.
+3. BASIC's first publish is a build Steve checks first.
+4. The dev channel stays open to anyone with the URL.
+5. roc.lynrummy.com.
+6. The landing page calls the site **Cobblestone Roc Projects**.
+
+Nothing is built until Steve says go.
+
+## The scheme as decided
+
+**Three channels, the same paths in each**, so a page moves from one to the
+next unchanged:
+
+| channel | where | what it serves | written by |
+|---|---|---|---|
+| dev | `http://<box>:9210/` | `~/build/roc-apps/next/` | the build scripts, on every build |
+| staging | `http://<box>:9200/` | `roc-apps/site/live/`, tracked in git | `<app>/publish.sh`, after an eye test on dev |
+| prod | `https://roc.lynrummy.com/` | a copy of staging on the prod droplet | the deploy script, after Steve signs off on staging |
+
+**Two sign-offs, two scripts.** `publish.sh` moves one app from dev to staging,
+as described above. The deploy moves staging to prod whole. It refuses a dirty
+tree or an unpushed commit, rsyncs the staging tree to the prod droplet, and
+touches nothing else there. It runs from this box, as Angry Gopher's
+`ops/deploy` does, and it waits for Steve's word, as every prod deploy does.
+
+**Prod is one new site block** in the prod droplet's Caddyfile, beside
+lynrummy.com's; Angry Gopher's block does not change. A sketch:
+
+```
+roc.lynrummy.com {
+	root * /home/steve/roc-site
+	header Cache-Control "no-cache"
+	header Cross-Origin-Opener-Policy same-origin
+	header Cross-Origin-Embedder-Policy require-corp
+	file_server
+}
+```
+
+Prod revalidates rather than refusing to cache: a deploy is rare, and a
+browser that asks whether a module changed still never runs a stale one.
+
+It needs a DNS record pointing roc.lynrummy.com at the prod droplet. It is
+HTTPS by construction: Caddy provisions the certificate, and lynrummy.com's
+HSTS header covers the subdomain regardless. **An HTTPS page is a secure
+context**, so on prod, keys and the mouse reach the framebuffer page without
+an SSH tunnel, and the page can be shared.
+
+**The public URLs** follow the signed-off copy:
+
+| old URL | until prod is up | once prod is up |
+|---|---|---|
+| `:9201/...` (Safari) | `:9200/safari/` | `https://roc.lynrummy.com/safari/` |
+| `:9203/basic/...` | `:9210/basic/...` until BASIC's first publish, then `:9200/basic/...` | `https://roc.lynrummy.com/basic/...` |
+| `:9203/` anything else | `:9210/`, the same path | the same |
+| `:9204/`, `:9205/` | `:9200/gpu/`, `:9200/games/` | the same |
+
+**The landing page** is titled Cobblestone Roc Projects. Each root's `channel`
+file says dev, staging or prod; dev and staging show a banner naming the
+channel, and prod shows none.
+
+## The order of work, as decided
+
+0. Install Caddy on this box.
+1. Audit the pages for absolute URLs and make them relative.
+2. `site/shared/home.js`, the landing page, and the `channel` files.
+3. `site/live/` from today's `safari/web/`, `gpu/live/`, `games/live/`; one
+   publish script.
+4. The Caddyfile and its user service: dev on 9210 and staging on 9200, beside
+   the Python servers; an eye test of every page on both.
+5. The flip: the four Python services stop, and Caddy answers 9201, 9203, 9204
+   and 9205 with the redirects above.
+6. BASIC's first publish, once Steve has checked a build on dev.
+7. The DNS record for roc.lynrummy.com, prod's site block, and the deploy
+   script; Steve signs off on staging; the first deploy.
+8. The public URLs redirect to prod.
