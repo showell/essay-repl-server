@@ -38,6 +38,14 @@ walk: about 12% under dev, about 11% of the closest-hit time and about 1% of
 the render under LLVM. Writing the vector arithmetic inline instead of calling
 one-line functions: nothing measurable under dev.
 
+**A change to the program that a compiled backend rewards, dev barely sees.**
+Raytracer's closest-hit walk rewritten to compare distances and build one hit
+per ray (a Cobblestone PR) takes 12% off the whole render through
+Cobblestone's zig plug, in Debug and ReleaseFast alike. The same source,
+emitted as Roc, moves the render by 2% or less under dev and under LLVM, and
+the walk alone by 1% under dev and 8% under LLVM. The work removed is real;
+under dev it is not where the time goes.
+
 **Copies through libc are not where it goes.** `perf` finds no memcpy in the
 top functions and under 1% in reference counting.
 
