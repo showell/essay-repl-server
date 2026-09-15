@@ -50,7 +50,11 @@ squares: they never differ by more than four ULPs.
 | the Newton loop | 0.86 to 1.12 s | 1.26 to 1.35 s | unchanged |
 | Roc's `sqrt` | 0.57 to 0.64 s | 0.82 to 0.88 s | unchanged |
 
-A third of the frame, and not one pixel moves.
+A third of the frame, and not one pixel moves. **It has landed**
+(rust-codex-compiler `ad24db4`) with every gate green: safari's 54 units, the
+ladder at 779 of 1,032 with its ledger unchanged, the gpu and games smoke
+tests, and `verify.sh` with all 18 hashes the same. The page's wasm now takes
+61 to 69 ms a frame in Node, where it took 96 to 101.
 
 ## Step 2: what rt-closest carries
 
@@ -102,8 +106,7 @@ Raytracer's shape: no rewrite of the program removes it.
 
 ## What this leaves to decide
 
-1. **The `sqrt` rule** is built; its gates are running (the ladder, safari's
-   units, the smoke tests, `verify.sh`). It lands when they pass.
+1. **The `sqrt` rule** has landed (step 1).
 2. **Distances before hits** in `rt-closest` is Raytracer's change, not the
    emitter's: about 12% natively, the same images, and it would help every
    backend. It could go upstream as a PR.
