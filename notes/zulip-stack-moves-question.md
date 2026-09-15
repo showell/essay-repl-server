@@ -74,6 +74,59 @@ top functions and under 1% in reference counting.
    an order of magnitude behind `--opt=speed`, or is 16x a sign of something
    specific in how we emit?
 
+## Two kinds of copy, kept apart
+
+The question should not blur them.
+
+1. **A record moved by value.** Its cost is the code that moves it: under dev
+   that is stack slots, under LLVM mostly registers. It is linear in the
+   record's width, and paid once per move.
+2. **A list copied because Roc can still reach it.** Roc writes a list in
+   place only while its reference count is one. When some spelling of the
+   program keeps a second reference alive, every write copies the whole list.
+   That is linear in the list's length, paid on every write, and invisible:
+   no diagnostic, no type error.
+
+**What we already know about the second kind** (roc-apps `findings/`, nightly
+2026-09-11):
+
+| finding | backend | what copies | mmap per 10,000 writes |
+|---|---|---|---|
+| `threaded-record-copy` | LLVM (the default) | a record holding a list, passed down a recursive function and handed back, then written | 10,001 (2 without the recursion) |
+| `threaded-record-copy`, a recursion that only reads the record | LLVM | nothing | 2 |
+| `helper-arg-copy` | dev | a helper given the record AND a value read from it (`settle(m, m.fuel)`), then a store through a multi-tag union holding lists | 50,006 (10 with `settle(m, 0)`) |
+
+- **Both are reduced programs** of under 30 lines, with every ingredient cut
+  until the copy stops.
+- **Neither is understood.** `helper-arg-copy` needs four conditions together,
+  and its hypothesis, a borrow held across the call, is not verified.
+- **Our BASIC machine lost days to three more shapes** that are not reduced
+  (roc-apps memory: a loop that rebuilds a record, a big `match` with inline
+  arms, a field read in a separate statement).
+
+## The small program
+
+`roc-apps/findings/zulip-copies/`, built with LLVM and with dev, measured by
+how the time scales rather than by one number:
+
+- **`ThreadCopy.roc`, the second kind of copy.**
+  - The program makes 20,000 writes into a list inside a state record, at list
+    sizes of 4,096, 32,768 and 262,144.
+  - Before each write, a recursive walk over a short text either never sees
+    the state (`none`), is given it and only reads it (`reads`), or is given it
+    and hands it back unchanged (`returns`).
+  - A flat time across sizes means the writes happen in place. A time that
+    grows with the size means every write copies.
+  - `strace` counts each copy as an mmap.
+- **`RecordWidth`, the first kind.**
+  - The program runs 20 million steps of a loop carrying one record of 4, 32
+    or 256 `F64` fields, two of them updated per step.
+  - A flat time across widths means the record is not copied per step.
+
+The hypothesis to test: under LLVM, `returns` grows with the list's size and
+`none` and `reads` do not; `RecordWidth` is flat under LLVM and grows under
+dev.
+
 ## Still to gather before asking
 
 - A minimal Roc program, independent of Codex and rocemit, that shows the
