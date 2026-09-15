@@ -123,14 +123,87 @@ how the time scales rather than by one number:
     or 256 `F64` fields, two of them updated per step.
   - A flat time across widths means the record is not copied per step.
 
-The hypothesis to test: under LLVM, `returns` grows with the list's size and
-`none` and `reads` do not; `RecordWidth` is flat under LLVM and grows under
-dev.
+## What the small program shows
+
+**The first try did not copy.** `ThreadCopy`, written from scratch, wrote in
+place in every shape under both backends. So the program was rebuilt from
+`threaded-record-copy`'s known copier and cut one ingredient at a time
+(`findings/zulip-copies/thread/`). Each variant makes 10,000 writes into
+`num`, a `List(F64)` inside a record. Figures are at a list of 65,536; the
+full table has 286 and 4,096 too.
+
+| variant | what differs from T1 | `--opt=speed` | `--opt=dev` |
+|---|---|---|---|
+| `T1_walk_returns` | a recursive walk hands the record back; the record has two more lists; the write is inline in the tail call | **1.9 s, 5,003 mmap** | 0.00 s, 3 mmap |
+| `T0_no_walk` | no walk | 0.00 s, 3 | 0.00 s, 3 |
+| `T4_walk_reads` | the walk only reads the record | 0.00 s, 3 | 0.00 s, 3 |
+| `T2_one_list` | no other list in the record | 0.00 s, 3 | 0.00 s, 3 |
+| `T3_write_in_helper` | the write in its own function | 0.00 s, 3 | 0.00 s, 3 |
+| `T5_bytes_only` | one other list, a `List(U8)` | **1.87 s, 5,003** | 0.00 s, 3 |
+| `T6_strs_only` | one other list, a `List(Str)` | **1.87 s, 5,003** | 0.00 s, 3 |
+| `T7_one_byte_walk` | the walk recurses once a step | **1.93 s, 5,003** | 0.00 s, 3 |
+
+The copying rows grow with the list: 0.03 s at 286, 0.15 s at 4,096, 1.9 s at
+65,536. The count of copies stays at 5,003. **Under LLVM every other write
+copies the whole list. The dev backend writes all of them in place.**
+
+**The copy needs three things together:**
+1. **A recursive function is given the record and hands it back.** A walk
+   that only reads it does not copy, and neither does no walk.
+2. **The record holds a second refcounted field besides the written list.**
+   Any list will do.
+3. **The write is spelled inline in the tail call's argument**
+   (`spin({ ..m1, num: List.set(m1.num, 7, 1.0) ?? crash("oob"), pc: i }, ...)`).
+   The same update in a helper does not copy.
+
+**The result is the same on nightly-2026-09-11-793f9d8 and
+nightly-2026-09-12-220fd47.** nightly-2026-09-15-fe09c42 does not run on this
+machine: it dies with SIGILL on any `check` or `build`, on a CPU with AVX2 and
+no AVX-512.
+
+**`RecordWidth`, the first kind of copy.**
+- 20 million steps take 0.05 s under LLVM at 4, 32 and 256 fields.
+- Under dev they take 0.19 to 0.21 s at 4 and 32 fields, and 25 to 26 s at 256
+  (both nightlies).
+- LLVM does not pay for the width; dev pays heavily past some size.
+
+**Known issues nearby, both closed:**
+- roc-lang/roc #10218, "Any read of a loop-carried list makes the next
+  mutation copy the whole list" (no longer reproduces);
+- #10920, "Tail-call arguments are forced owned, losing borrows from outside
+  the SCC", fixed by PR 10990 on 2026-09-03, before either nightly above.
+
+Borrow inference lives in `src/lir/arc_solve.zig`, which as far as we can
+tell both backends share. So a copy under LLVM that dev does not make is the
+question.
+
+## A draft question
+
+> **`--opt=speed` copies a list on every other write that `--opt=dev` updates in place**
+>
+> The program below makes 10,000 writes into `m.num`. Built with `--opt=dev` it writes in place: 3 `mmap` calls at any list size. Built with `--opt=speed` (nightly-2026-09-12-220fd47, x86_64 Linux, default platform) it copies the list on every other write: 5,003 `mmap` calls. The time grows with the list: 0.03 s at 286 elements, 0.15 s at 4,096, 1.9 s at 65,536.
+>
+> It stops copying if any one of these changes:
+> - `walk` only reads `m` instead of handing it back;
+> - `M` loses `scr` and `out`. Keeping either one alone still copies.
+> - the record update in `spin` moves into its own function.
+>
+> *(T1's 25 lines)*
+>
+> Three questions:
+> 1. Is this a known difference in how reference counting is placed on the LLVM path, and is `arc_solve.zig` (after #10920) the place to look, or something LLVM-specific?
+> 2. Is there a way to see where a list write loses uniqueness: a flag, a debug counter, anything better than counting `mmap` calls? And is there a way to map `roc__proc_NNN` in a profile back to source names?
+> 3. Under `--opt=dev`, a loop carrying a 256-field record takes about 25 s where LLVM takes 0.05 s, and in our real code most instructions move values between stack slots. Is register allocation for the dev backend planned, or is `--opt=dev` meant only for fast builds?
+
+Written by Claude, working with Steve Howell; Steve decides whether and when
+it goes.
 
 ## Still to gather before asking
 
-- A minimal Roc program, independent of Codex and rocemit, that shows the
-  same pattern, so the question does not need our emitter to reproduce.
-- The same comparison for Renderer3D's hot row loop, a second, different
-  shape of code.
-- Whether wasm32 under dev shows the same ratio as native.
+- A nightly after 2026-09-15 that runs here, to check the copy still happens.
+- Whether the copy happens for `--target=wasm32` as well as native.
+- The ARC placement in the LLVM build of `T1` against `T2` or `T3`, if the
+  LIR dump shows where the extra increment comes from. That would turn the
+  question from "why" into "is this the line".
+- Renderer3D's row loop, a second and different shape of code, only if the
+  question needs it.
