@@ -104,6 +104,25 @@ and a record moves field by field from slot to slot. The hottest instructions
 in `perf annotate` are `movsd` to a slot. That is the dev backend's code, not
 Raytracer's shape: no rewrite of the program removes it.
 
+## Step 4: the same bench under LLVM
+
+Steve allows LLVM for a bench that builds in under a minute; this one builds in
+2 s. Fastest of five, interleaved, every checksum the same:
+
+| 30 frames, native | dev `trace` | dev `render` | LLVM `trace` | LLVM `render` |
+|---|---|---|---|---|
+| as emitted, with Roc's `sqrt` | 0.592 s | 0.804 s | 0.036 s | 0.082 s |
+| distances first, the distance computed in the walk (`dist-calls`) | 0.520 s | 0.753 s | 0.032 s | 0.081 s |
+| distances first, read off Geometry's own `ray3-sphere` and `ray3-plane` (`dist-rayhit`) | 0.555 s | 0.788 s | 0.032 s | 0.084 s |
+
+**LLVM is sixteen times the dev backend on the walk and ten times on the
+render.** Under it, distances first still take a tenth off the walk, and
+nothing measurable off the whole render, where shading is the rest.
+
+**The upstream change is `dist-rayhit`'s shape**: it stays inside Raytracer and
+writes no arithmetic twice. Under LLVM it equals the variant that duplicates
+Geometry's; under dev it gets half as much.
+
 ## What this leaves to decide
 
 1. **The `sqrt` rule** has landed (step 1).
