@@ -1,5 +1,29 @@
 # Notes toward a Zulip question: stack moves, and seeing where copies go
 
+> **Update, later on 2026-09-15.** The digging moved the focus, and the plan
+> is now a roc-lang/roc issue that carries the details, with a short Zulip
+> question pointing at it. What changed:
+>
+> - **The comparison is sound.** Every build is a native x86-64 binary, and
+>   dev and LLVM print the same results. `--opt=size` copies exactly as
+>   `--opt=speed` does.
+> - **"LLVM copies more" is wrong.** Built both ways, the earlier findings
+>   disagree in both directions: `helper-arg-copy` copies under dev and not
+>   under LLVM, its control does the reverse, and some shapes copy under
+>   both.
+> - **The LIR shows where T1 differs.**
+>   - Under speed, `spin`'s step appears twice.
+>   - The second copy releases the record after `list_set` instead of before.
+>   - The record still holds the list at the write, so every other write
+>     copies.
+> - **roc's `src/cli/main.zig` sets four LIR settings by optimization level.**
+>   The leading suspect is SpecConstr's clone inlining (`.all_calls` for
+>   speed and size, `.iterator_fusion` for dev). The proof needs roc rebuilt
+>   with that one line changed.
+>
+> The full account is roc-apps `findings/zulip-copies/README.md`. The draft
+> question below predates it and is superseded.
+
 Not a question yet. Steve wants one polished question for the Roc Zulip about
 the dev backend's stack moves and about analyzing copy slowness in general,
 asked when the evidence is strong enough to deserve a real audience. This
