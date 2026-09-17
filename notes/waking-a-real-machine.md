@@ -257,3 +257,126 @@ for**, and check for a serial console before checking anything else.
    needs settling before any hardware is bought.
 4. **Serial or framebuffer first?** Serial is less work and remote-friendly;
    the framebuffer is more work and more satisfying, and we have prior art.
+
+
+---
+
+# Iteration 2: "why doesn't someone just rent me the hardware?"
+
+They do — that is a real product category, not a gap. But the market is
+smaller and stranger than you would expect, and looking at it properly changed
+what I would recommend.
+
+## The flagship just died
+
+**Equinix Metal — the best-known bare-metal cloud, and the one I was going to
+recommend — is gone.** Announced as sunsetting, stopped selling, switched off
+on 30 June 2026, support retired at the end of September, console access
+lingering to the end of the year. Anything still provisioned after the sunset
+was deleted.
+
+That is worth more than a correction to my shopping list. The company that owns
+the datacenters, whose whole business is floor space and interconnection,
+could not make renting bare machines pay. Which is most of the answer to your
+question.
+
+## Why it is a thin market
+
+Every property that makes a VM cheap to sell is a property bare metal lacks:
+
+- **Utilization.** One physical box can carry many tenants as VMs. Rented
+  whole, it earns one rent, and it earns nothing at all while it sits between
+  customers.
+- **Provisioning time.** A VM appears in seconds. A real machine has to be
+  wiped, re-imaged and POSTed — minutes, sometimes tens of minutes — and that
+  is dead time the provider eats.
+- **Firmware persistence.** This is the deep one. A tenant with real hardware
+  can write to the BIOS, the BMC, the NIC's option ROM, the drive's firmware —
+  and those survive a reinstall. To rent the same box to someone else safely, a
+  provider must re-flash everything it cannot verify, which is slow, risky, and
+  occasionally bricks a machine. AWS's Nitro cards exist in large part to move
+  the trust boundary off the motherboard for exactly this reason.
+- **None of the cloud's operational tricks work.** No live migration, no
+  snapshot, no resize, no moving you off failing hardware. A dead disk is a
+  support ticket, not an automatic reschedule.
+
+So bare metal is a specialty product with worse margins, sold mostly to people
+who need it for licensing, latency or compliance — and one of the biggest
+sellers just concluded it was not worth doing.
+
+## What is actually awkward for us, which is not what I expected
+
+I assumed the hard part would be getting permission to boot our own code. It is
+not; several providers support custom netboot or a rescue environment you can
+write an image from. **The hard part is the network card.**
+
+A datacenter machine has a datacenter NIC: dual 10 or 25 gigabit, Mellanox or
+Intel's X710/E810 family. Those are serious devices — descriptor formats built
+for offload, queues built for many cores — and writing one from scratch is not
+the few-hundred-line afternoon that an Intel i210 is. Renting hardware means
+taking the NIC that comes with it, which throws away the one move that made
+this tractable: *choose the hardware to fit the driver.*
+
+The other two are fine. Storage is standard NVMe nearly everywhere, which is
+the driver I would write by choice. Consoles vary from excellent
+(serial-over-SSH, IPMI) to awkward (a KVM-over-IP unit a technician physically
+attaches on request).
+
+## The one that looks right anyway
+
+**Hetzner's dedicated line** comes out well, for an unglamorous reason: their
+cheaper machines are built from consumer parts, so the onboard NIC is an Intel
+PCH part — the interface name in their own documentation is the giveaway — and
+that is the **e1000e family**, the same lineage as the i210 I wanted to buy. A
+driver written for it is the driver we were going to write anyway.
+
+The rest of the picture:
+
+- **Getting our code on it:** their rescue system is a PXE-booted Linux that
+  runs in RAM without touching the disks. From inside it we can write our EFI
+  binary to the machine's boot partition and reboot. Not as slick as handing a
+  provider an iPXE URL, but it is a two-minute loop and it cannot brick us —
+  rescue always comes back.
+- **Seeing what happens:** no permanent serial console on the cheap lines. A
+  KVM-over-IP unit can be requested, and because it captures video rather than
+  serial, **our UEFI framebuffer console would be visible through it**. That
+  moves the framebuffer from "nice to have" to "the thing that makes a rented
+  machine debuggable."
+- **The private network:** their vSwitch is a real layer-2 VLAN between your
+  own machines. Which leads to the part I like.
+
+## The topology that falls out
+
+If the box is in a datacenter that also sells ordinary VMs, the architecture we
+designed becomes *physically true*:
+
+```
+the internet → Caddy (a small VM) ──private VLAN── gopher-metal (a real machine)
+```
+
+Both in the same facility, connected by a layer-2 network that is actually
+private, with no tunnel, no crypto in our kernel, and no residential uplink
+under chat. The DigitalOcean droplet stops being in the path for chat at all —
+DNS points at the new front door.
+
+The cost to us is one small thing: a vSwitch is **802.1Q tagged**, so frames
+carry a four-byte VLAN tag between the MAC addresses and the ethertype. That is
+perhaps twenty lines in the frame parser and the frame writer, and it is a fact
+about a private network we would meet in any datacenter.
+
+## So the three options, honestly ranked
+
+1. **A box at home, first.** Still where I would start, and nothing above
+   changes that: we choose the NIC, we have a serial cable, the machine is on
+   the desk when it does not boot, and the first milestone — chat served from
+   bare metal to a browser on the LAN — needs no provider at all.
+2. **A rented dedicated machine, once it works.** Consumer-grade hardware on
+   purpose, for the NIC. This is what carries real traffic, with Caddy moved
+   onto a VM beside it and the droplet out of the path.
+3. **Bare metal from a hyperscaler.** Hourly billing makes an experiment cheap
+   and the consoles are good, but the network device is theirs — Amazon's is
+   ENA, which is documented but is a second driver we do not need to write.
+
+I would do 1 and 2, and in that order, because the whole cost of 2 is a NIC
+driver that 1 lets us write against hardware we picked and can power-cycle by
+hand.
