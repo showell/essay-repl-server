@@ -162,7 +162,7 @@ and curl does not run JavaScript, so it has never opened a stream.
 
 ## The options
 
-### A. A bridge the browser already has: short-lived streams
+### A. A bridge the browser already has: short-lived streams (ruled out)
 
 The conversation stream already knows how to resume. So the machine could
 answer a stream request by sending everything after the browser's last event,
@@ -248,10 +248,45 @@ What has to be built, in the order it can be made solid:
    open, sends a message on another connection, and requires it to arrive —
    on Linux and on the machine, and the same.
 
-### C. Rewrite the stream handlers as explicit state machines
+### C. Streams as state the host keeps
 
-Possible, and not recommended: it changes the application for the machine's
-sake, and "one source, two hosts" is what has kept this whole effort honest.
+*(This section first argued that C breaks "one source, two hosts". Steve
+challenged that, rightly: a state machine compiled into both builds is still
+one source. What follows is the corrected case.)*
+
+A stream, stripped down, is a few words of state — which socket, which
+mailbox, whose view, when it last pinged — and a ten-line loop: take an event
+and write this viewer's frame for it, or ping after 25 quiet seconds. The frame
+itself is already computed by a pure function (`liveFrame`).
+
+So the application could **describe** a stream — its bus key, its backlog, how
+to render an event for this viewer — and hand the connection to the **host** to
+keep:
+
+- **Linux** can keep it exactly as today, a task per stream behind the same
+  interface. Nothing changes in behaviour; it can move to a table later if it
+  wants one, and it would save a parked thread and its stack per open stream.
+- **The machine** keeps a table in its loop, and each turn it drains every
+  stream's mailbox and pings the quiet ones — literally iterating through the
+  open sessions. No fibers, no scheduler, no context switch.
+- **The bus does not change.** Publish still copies into mailboxes; only who
+  drains them differs by host.
+
+It is the same kind of seam as the memory work: the application is shared, and
+each host supplies the part that is about the machine. The step function —
+(state, event) → (frames to write, new state) — can be tested on the host,
+which the streaming loop today cannot.
+
+**What C gives up against B:** a request that must *wait part-way through* —
+a slow client trickling an upload body — would hold every stream until it
+finishes, where a fiber would park. Everything else that stalls (a login, a big
+answer) stalls B just as much, because B has no preemption either. Behind Caddy
+on a private network slow uploads are unlikely, and Caddy can buffer request
+bodies before forwarding them.
+
+**What C saves:** the scheduler, the context switches, a stack per stream, and
+the rules about never parking while holding a lock — general-purpose kernel
+machinery, where the aim is a kernel tailored to what chat does.
 
 ### Not considered: threads
 
@@ -275,16 +310,19 @@ None of those is a reason to add threads. Each has a local fix if it ever
 matters — a fiber can yield part-way through a long write, for instance — and
 the per-request timings will say which one matters first.
 
-## What I would do, and what is yours to decide
+## Where this landed
 
-My recommendation is **B, built in the four steps above**, each judged before
-the next, the same rhythm the storage work just finished with.
+**A is ruled out** (Steve). Between B and C, my recommendation is now **C, with
+B in reserve** if a request ever genuinely needs to wait part-way through.
 
-Two decisions are yours:
+Step one is the same for both: **a network layer that holds many connections**,
+judged by several clients at once. After that, for C:
 
-- **Whether A is worth building as a bridge** — it would let a real browser use
-  chat on the machine weeks sooner, at the cost of slower live updates and lost
-  notification hints until B lands.
-- **How many open tabs to size for.** It sets the stack budget and the length
-  of the connection table, and it is the first real capacity number this
-  machine will have.
+1. the stream interface — the application describes, the host keeps — with
+   Linux implementing it as today, judged by the existing tests;
+2. the machine's stream table in its loop, draining mailboxes and pinging;
+3. a judge that opens streams: hold a conversation stream open, send a message
+   on another connection, and require it to arrive, on both hosts, the same.
+
+Still open: **how many open tabs to size for**, which sets the length of the
+connection table and is the first real capacity number this machine will have.
