@@ -1,6 +1,7 @@
 # A hypervisor, and the one input it does not own
 
-*2026-09-18 — metal-vmm, four milestones in, and what the fifth has to do*
+*2026-09-18 — metal-vmm, four milestones in; then the fifth, which was the
+point of the other four*
 
 Four days ago the question was whether to rent a bare-metal box. The answer was
 no, and the reason was a good one: the thing we wanted from bare metal — a
@@ -70,6 +71,7 @@ Milestone by milestone, that took four sittings:
 | **2. give it a disk** | virtio-mmio transport, split virtqueues, virtio-blk |
 | **3. give it a wire** | virtio-net, two queues, and the asymmetry between them |
 | **4. give it someone to talk to** | DHCP and a TCP client, written here, at the other end of that wire |
+| **5. give it a clock of its own** | the rest of this essay |
 
 ## QEMU is the oracle
 
