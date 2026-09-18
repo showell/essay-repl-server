@@ -172,8 +172,7 @@ That is the honest crack in the foundation, and it is the whole of milestone 5.
 
 ## Time is measured in questions
 
-Here is the shape of the fix, and it is not a clever clock — it is the opposite
-of a clock.
+The fix is not a clever clock — it is the opposite of a clock.
 
 **The machine's time is the number of things the guest has asked the outside
 world for.** Every exit advances one virtual counter by a fixed quantum.
@@ -287,6 +286,78 @@ gives the suite a second oracle alongside QEMU, and a stricter one:
 
 The second is the one that makes a bug reproducible, a fault injectable, and a
 measurement exact — and it is the reason for all of it.
+
+## It works
+
+Written, and then run. The clock probe booted here for the first time, on the
+first try:
+
+```
+gopher-metal clock probe
+tsc_hz 2500014511
+  .awake: monotonic over 1000 readings
+  one RTC second measured as 999994195 ns of .awake
+unix 1789732802
+civil 2026-9-18 12:0:2
+  .real anchored at the RTC edge, not at the moment it was set
+  four RTC formats (BCD/binary x 12/24-hour) decode to one moment
+  .real: the time it was told, advancing with .awake, re-anchored when told again
+PASS
+```
+
+`tsc_hz 2500014511` — the rate we chose, to sixteen parts per million, and the
+sixteen are the interval timer's own integer division rounding, not noise. The
+guest's second opinion agrees: the gap between two real-time-clock seconds-edges
+came to 999,994,195 nanoseconds of its monotonic clock, six parts per million
+off a second. Two devices, one counter, no argument.
+
+And `civil 2026-9-18 12:0:2`. Noon, plus the two seconds the probe spent
+getting to its first edge. Every run. `unix 1789732802` every run.
+
+Three runs, byte for byte identical. Then all nine probes, twice each, words and
+exit codes and **disk images**:
+
+```
+SAME    clock       10 lines, verdict 0 (1236 ms, then 1224 ms)
+SAME    block        9 lines, verdict 0 (101 ms, then 112 ms)
+SAME    fat16        7 lines, verdict 0 (158 ms, then 156 ms)
+SAME    fat16write   7 lines, verdict 0 (873 ms, then 879 ms)
+SAME    vfat         6 lines, verdict 0 (3622 ms, then 4097 ms)
+SAME    net          9 lines, verdict 0 (99 ms, then 103 ms)
+SAME    http         7 lines, verdict 0 (127 ms, then 124 ms)
+SAME    stdhttp      8 lines, verdict 0 (131 ms, then 123 ms)
+every probe ran the same way twice
+```
+
+QEMU still agrees with every one of them, which is the part that had to be
+checked rather than assumed: rewriting instructions in a guest's text is the
+kind of thing that produces a machine which is beautifully reproducible and
+quietly wrong. Nine probes, same words, same disks.
+
+Two numbers I did not expect.
+
+**The clock probe runs in 1.3 seconds here against QEMU's 9.7.** It spends its
+life waiting for real-time-clock seconds-edges, and under QEMU a second is a
+second. Here a second is ten thousand questions, and questions are fast. This
+is the first time this program has beaten QEMU at anything, and it did it by
+not doing the waiting.
+
+**And the price, on the other side: `vfat` went from 2.3 seconds to 4.1.** It
+reads the clock eighty-eight thousand times, and each of those is now a trip out
+to us. That is the honest cost of owning an input: you pay for every use of it.
+A release build of the hypervisor runs it in the same 4.1 seconds, which
+confirms where the time goes — not in our code, in the kernel's exit path, about
+17 µs a crossing.
+
+One design number needed tuning and is worth writing down, because it was not
+obvious from the armchair. The first quantum I picked was 10 µs per question,
+and the clock probe took 7.7 seconds. The reason is a detail inside the guest:
+between polls of the RTC it naps for 250 µs, and it implements that nap by
+spinning on `rdtsc` — which is now an exit each time round. 25 exits per nap,
+thousands of naps. At 100 µs per question the same nap is 3 exits, and the probe
+takes 1.24 seconds with **identical output**. The quantum is a trade between how
+fast virtual time passes and how finely the guest can measure anything, and
+neither end of it is more deterministic than the other.
 
 ## What stays open after this
 
