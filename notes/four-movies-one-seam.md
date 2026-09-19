@@ -21,6 +21,7 @@ a callback registry: a record of functions that a movie hands to a player.
 ```
 Movie(model) : {
     size : { width : F64, height : F64 },
+    fps : I32,
     init : model,
     advance : model -> model,
     back : model -> model,
@@ -36,7 +37,7 @@ That is all of it. **Nothing in the type names a subject** — no ride, no sky,
 no sun, no skeleton. A player that has one of these can play any of them, and
 a second movie is a second value of the same type.
 
-Two of those fields are there because a movie disagreed with the player and
+Three of those fields are there because a movie disagreed with the player and
 won. `size` exists because Safari's frame was 960 by 600 and the player simply
 knew that, until a 640-by-360 movie arrived and drew itself into a corner.
 `back` returns the model unchanged for a movie that cannot rewind, and **that
