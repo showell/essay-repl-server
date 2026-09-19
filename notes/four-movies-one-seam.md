@@ -26,7 +26,8 @@ Movie(model) : {
     advance : model -> model,
     back : model -> model,
     skip : model -> model,
-    frame : model -> { shapes : List(Shape), roll : F64 },
+    frame : model -> List(Shape),
+    roll : model -> F64,
     clock : model -> F64,
     title : Str,
     stem : Str,
@@ -37,8 +38,8 @@ That is all of it. **Nothing in the type names a subject** — no ride, no sky,
 no sun, no skeleton. A player that has one of these can play any of them, and
 a second movie is a second value of the same type.
 
-Three of those fields are there because a movie disagreed with the player and
-won. `size` exists because Safari's frame was 960 by 600 and the player simply
+Several of those fields are there because a movie disagreed with the player
+and won. `size` exists because Safari's frame was 960 by 600 and the player simply
 knew that, until a 640-by-360 movie arrived and drew itself into a corner.
 `back` returns the model unchanged for a movie that cannot rewind, and **that
 is a fair answer rather than a failure**: Safari can go back because a frame of
@@ -71,7 +72,7 @@ digraph shapes {
   node [shape=box, style="rounded,filled", fillcolor="#f6f6f6", color="#999", fontsize=11];
   edge [color="#666", fontsize=9];
 
-  f [label="a frame\nList(Shape) + roll", fillcolor="#e8f0fe"];
+  f [label="a frame\nList(Shape)", fillcolor="#e8f0fe"];
   p [label="Poly\nany polygon"];
   t [label="Pieces\ntriangles of a concave one"];
   d [label="Disc\nwith a clip rectangle"];
@@ -83,7 +84,7 @@ digraph shapes {
 }
 ```
 
-`movie/` is the vocabulary every movie is written in — ten files, about 1250
+`movie/` is the vocabulary every movie is written in — eleven files, about 1330
 lines:
 
 | file | what |
@@ -93,7 +94,7 @@ lines:
 | `Brush.roc` | six fill modes and the colour each gives a point |
 | `View.roc` | metres to pixels: right, forward, height, an eye at a height with a heading, and a polygon cut against the near plane |
 | `Font.roc` | 68 glyphs as stroke polylines, which become thick-line quads |
-| `BrushGlsl.roc`, `ShapeWire.roc` | the two edges, below |
+| `BrushGlsl.roc`, `ShapeWire.roc`, `WasmApp.roc` | the edges, below |
 | `Trig.roc`, `DeviceMath.roc` | the arithmetic those need |
 
 None of it is anybody's private helper. `Shapes.line` was written for
@@ -128,24 +129,37 @@ digraph players {
   subgraph cluster_s {
     label="shared"; color="#bbb"; fontsize=10;
     voc [label="movie/\nMovie · Shapes · Brush · View · Font", fillcolor="#e6f4ea"];
+    wa [label="WasmApp\nthe wasm edge, once"];
     wire [label="ShapeWire\nshapes as U32 words"];
-    pf [label="wasm/platform\n11 exports over a boxed model"];
+    pf [label="wasm/platform\n12 exports over a boxed model"];
     pl [label="ray/player\nMoviePlayer.roc"];
     bl [label="web/blitter.js\nthe canvas player"];
   }
 
   mv -> voc [style=dashed, label="written in"];
   app -> mv; main -> mv;
-  app -> wire -> pf -> bl; page -> bl;
+  app -> wa -> wire -> pf -> bl; page -> bl;
   main -> pl;
 }
 ```
 
-**The canvas side.** `<Name>App.roc` is the same file for every movie, give or
-take the name: it boxes the model for the host, and `render` answers the
-frame's shapes packed by `ShapeWire` — a kind, a brush mode, the brush's words,
-then the geometry, as `U32`s in linear memory. `blitter.js` unpacks that and
-fills. It knows the six brush modes and the four shapes, and nothing else. It
+**The canvas side.** `WasmApp.program` takes a `Movie` and names none, the same
+way `MoviePlayer.program` does: it boxes the model for the host, and `render`
+answers the frame's shapes packed by `ShapeWire` — a kind, a brush mode, the
+brush's words, then the geometry, as `U32`s in linear memory. So a movie's wasm
+app is five lines, `import` and `program =`, and it was three copies of the
+same eighty-line file before anybody noticed they were byte for byte identical
+apart from the name they imported. An app that answers something differently
+says so by name:
+
+```roc
+program = { ..WasmApp.program(SafariMovie.movie), scene, probe_frame, probe_expand }
+```
+
+That is Safari's whole app: the route segment it calls a scene, and the two
+command counts the Node smoke run times its stages by. `blitter.js` unpacks the
+wire and fills. It knows the six brush modes and the four shapes, and nothing
+else. It
 used to know a great deal else: the platform once required a rider's segment
 and tilt, a camera focal length, a gaze yaw, two sky colours, four numbers
 about the sun and three about a truck — twenty exports, of which the page
@@ -168,6 +182,15 @@ of `Movie` now, next to `size`, and for the same reason: the player should ask
 rather than know. The desktop hands it to raylib as a cap that waits; the page
 banks elapsed time and takes steps as they fall due, which also fixes it for a
 144 Hz monitor.
+
+**And a field can be in the wrong place for years.** `roll` — how far the camera
+is banked — was part of the frame, which reads well until you notice that the
+page asks for the frame and the roll as two separate calls. Answering `roll()`
+built every shape in the frame and threw them all away, so Safari painted each
+displayed frame twice. It is `movie.roll(m)` now, beside `frame`; Safari's own
+is a function of the ride and never needed the shapes. **The seam being small
+is what made that visible**: with twelve fields to look at, a field that is
+paid for twice stands out.
 
 The third painter is `Brush`. A gradient has to mean the same thing in three
 places — a CPU rasteriser in Roc, a GLSL fragment shader on roc-ray, and a
