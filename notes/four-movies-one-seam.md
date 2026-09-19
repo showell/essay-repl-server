@@ -61,6 +61,36 @@ Model : MoviePlayer.Model(Halloween.Model)
 program = MoviePlayer.program(Halloween.movie)
 ```
 
+## The directories
+
+Every movie is laid out the same way:
+
+```
+movies/<name>/
+    <Name>.roc        the movie
+    <Name>App.roc     the wasm app
+    main.roc          the roc-ray app
+    page.html         the page
+    …                 any other Roc the movie owns
+```
+
+Those four files are all that is required; capture_plot and particles have
+nothing else, while halloween has nine more and safari a hundred and twenty.
+Everything shared sits beside them: `movie/` the library, `ray/player/` and
+`web/blitter.js` the players, `wasm/` the platform and its host.
+
+A build takes the directory name and nothing else. `movies/build.sh halloween`
+stages `movie/*.roc` and `movies/halloween/*.roc` together and finds the app by
+globbing `*App.roc`; `ray/build.sh halloween` stages the same plus the player,
+and builds `main.roc`.
+
+| movie | Roc, including its own tests and tools |
+|---|---|
+| safari | 10,084 lines in 123 modules |
+| halloween | 1,011 in 13 |
+| capture_plot | 201 in 3 |
+| particles | 189 in 3 |
+
 ## The shared library
 
 A frame is a list of shapes:
@@ -89,7 +119,7 @@ digraph shapes {
 | file | what |
 |---|---|
 | `Movie.roc` | the type above |
-| `Shapes.roc` | the four shapes, and what a polygon can be: a thick line is a quad, a rounded rectangle is a swept corner, a yawed figure is every x pulled toward an axis |
+| `Shapes.roc` | the four shapes, and what a polygon can be: a thick line is the quad it covers, a rounded rectangle is a swept corner, a figure turned away from the viewer is every x pulled toward its own middle |
 | `Brush.roc` | six fill modes and the colour each gives a point |
 | `View.roc` | metres to pixels: right, forward, height, an eye at a height with a heading, and a polygon cut against the near plane |
 | `Font.roc` | 68 glyphs as stroke polylines, which become thick-line quads |
@@ -157,9 +187,8 @@ which a Node script uses to time the stages of building a safari frame
 separately. `blitter.js` unpacks the wire and fills; it knows the six brush
 modes and the four shapes.
 
-**The roc-ray player.** `MoviePlayer.roc` is 331 lines and also takes a `Movie`
-and names no particular one: the window, the keys, the supersampling, the
-screenshot.
+**The roc-ray player.** `MoviePlayer.roc` is 331 lines and takes the same
+`Movie`: the window, the keys, the supersampling, the screenshot.
 
 Keys belong to the player. Both bind space to pause, up and down to step a
 frame, `J` to `skip`, and `D` to a debug overlay; the roc-ray player also binds
@@ -171,36 +200,6 @@ A gradient has to mean the same thing in three renderers — a CPU rasteriser in
 Roc, a GLSL fragment shader on roc-ray, and a canvas gradient in JavaScript.
 The mode numbers are one contract (`BrushGlsl.mode_of`), and the arithmetic is
 written once, in `Brush.shade`.
-
-## The directories
-
-Every movie is laid out the same way:
-
-```
-movies/<name>/
-    <Name>.roc        the movie
-    <Name>App.roc     the wasm app
-    main.roc          the roc-ray app
-    page.html         the page
-    …                 any other Roc the movie owns
-```
-
-Those four files are all that is required; capture_plot and particles have
-nothing else, while halloween has nine more and safari a hundred and twenty.
-Everything shared sits beside them: `movie/` the library, `ray/player/` and
-`web/blitter.js` the players, `wasm/` the platform and its host.
-
-A build takes the directory name and nothing else. `movies/build.sh halloween`
-stages `movie/*.roc` and `movies/halloween/*.roc` together and finds the app by
-globbing `*App.roc`; `ray/build.sh halloween` stages the same plus the player,
-and builds `main.roc`.
-
-| movie | Roc, including its own tests and tools |
-|---|---|
-| safari | 10,084 lines in 123 modules |
-| halloween | 1,011 in 13 |
-| capture_plot | 201 in 3 |
-| particles | 189 in 3 |
 
 ## What depends on what
 
