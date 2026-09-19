@@ -231,6 +231,101 @@ The sizes are worth seeing, because they say what the seam is worth:
 A movie in 238 lines is only possible because the 1250 lines under it and the
 800 lines of player beside it are already there.
 
+## What depends on what
+
+Two movies, four programs, and everything funnelling down to the same handful
+of leaves. Safari's own half is a hundred and twenty modules and Halloween's is
+ten; what they have in common is everything below the dashed line, and the
+player each of them is played by.
+
+```dot
+digraph deps {
+  rankdir=TB; bgcolor="transparent"; compound=true;
+  nodesep=0.22; ranksep=0.40;
+  node [shape=box, style="rounded,filled", fillcolor="#f6f6f6", color="#999", fontsize=10];
+  edge [color="#888", arrowsize=0.6];
+
+  subgraph cluster_entry {
+    label="the four programs"; color="#ccc"; fontsize=10;
+    sray  [label="safari/main.roc\nroc-ray", fillcolor="#fff3e0"];
+    swasm [label="safari/SafariApp.roc\nwasm", fillcolor="#fff3e0"];
+    hray  [label="halloween/main.roc\nroc-ray", fillcolor="#fff3e0"];
+    hwasm [label="halloween/HalloweenApp.roc\nwasm", fillcolor="#fff3e0"];
+  }
+
+  mp [label="MoviePlayer", fillcolor="#e8f0fe"];
+  wa [label="WasmApp", fillcolor="#e8f0fe"];
+
+  subgraph cluster_safari {
+    label="movies/safari/"; color="#ccc"; fontsize=10;
+    smv  [label="SafariMovie"];
+    srd  [label="SafariRide"];
+    ssh  [label="SafariShapes"];
+    sbr  [label="SafariBrush"];
+    rest [label="World · Safari · Blit · Paint · Sky\nRider · Lens · Frame · RocBird\n…120 modules, emitted from Codex", shape=note, fillcolor="#fafafa"];
+  }
+
+  subgraph cluster_hw {
+    label="movies/halloween/"; color="#ccc"; fontsize=10;
+    hw  [label="Halloween"];
+    wk  [label="Walk\nthe only one that knows the time", fillcolor="#e6f4ea"];
+    ni  [label="Night"];
+    fe  [label="Fence"];
+    st  [label="Streetlight"];
+    ho  [label="House"];
+    wi  [label="Witch"];
+    gu  [label="Guards"];
+    sk  [label="Skeleton"];
+    pa  [label="Panels"];
+  }
+
+  subgraph cluster_common {
+    label="movie/ — every movie's"; color="#bbb"; style=dashed; fontsize=10;
+    mo  [label="Movie", fillcolor="#e6f4ea"];
+    sw  [label="ShapeWire"];
+    bg  [label="BrushGlsl"];
+    vw  [label="View"];
+    sp  [label="Shapes", fillcolor="#e6f4ea"];
+    br  [label="Brush", fillcolor="#e6f4ea"];
+    tr  [label="Trig"];
+    dm  [label="DeviceMath"];
+  }
+
+  sray -> mp; sray -> smv;
+  hray -> mp; hray -> hw;
+  swasm -> wa; swasm -> smv;
+  hwasm -> wa; hwasm -> hw;
+
+  mp -> mo; mp -> sp; mp -> br; mp -> bg;
+  wa -> mo; wa -> sw;
+
+  smv -> srd; smv -> ssh; smv -> mo; smv -> sp;
+  srd -> rest; ssh -> sbr; ssh -> sp; ssh -> br;
+
+  hw -> wk; hw -> ni; hw -> fe; hw -> st; hw -> ho; hw -> wi; hw -> gu;
+  hw -> mo; hw -> sp; hw -> vw;
+  ni -> pa; fe -> pa; st -> pa; ho -> pa; wi -> pa;
+  gu -> sk; gu -> vw; gu -> sp;
+  pa -> vw; pa -> sp; pa -> br;
+  sk -> sp; sk -> br; wk -> tr;
+
+  mo -> sp; sw -> sp; sw -> br; bg -> br;
+  vw -> tr; sp -> br; sp -> tr; tr -> dm;
+}
+```
+
+Read it downward and the shape is the point. **The two players are the only
+thing between a program and a movie**, and both movies reach both of them. Each
+movie's own modules are its own — `SafariRide` means nothing to Halloween and
+`Witch` means nothing to Safari — but every one of them lands on `Shapes` and
+`Brush` within two or three steps, and everything at all lands on `Brush`.
+
+It also shows where the next thing would go. `Panels` — the three ways anything
+gets placed in metres — sits at the bottom of Halloween's half with five users
+above it and `View` below it. Nothing in it knows what a house or a fence is.
+The day Safari wants a witch on its roadside, that is the file that moves down
+into `movie/`, and `Witch` follows it across unchanged.
+
 ## Getting built
 
 ```dot
