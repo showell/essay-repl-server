@@ -1,24 +1,23 @@
-# Four movies, one seam
+# Four movies, one interface
 
-*2026-09-19 — what the four movies in roc-apps share, and how one of them gets
-from a directory to a web page, a Windows executable, and roc.lynrummy.com*
+*2026-09-19 — the architecture of the movies in roc-apps: what they share, how
+they are built, and how they are deployed*
 
-There are four movies now. One of them is a driving screensaver whose 120
-modules came out of a Codex compiler; one is a fountain of particles; one is a
-plot drawing itself; one is a child walking up to a Halloween house. They have
-nothing in common as subjects, and almost everything in common as programs.
+There are four movies: a driving screensaver, a fountain of particles, a plot
+drawing itself, and a child walking up to a Halloween house. They share one
+interface and one library, and each builds either to a web page or to a native
+program.
 
-This is a tour of what they share and how they get built. (roc-apps holds more
-than movies — a BASIC interpreter, Damian's classic games, Cobblestone's WGSL
-kernels run on the CPU, a Roc model of a machine with disks and a network,
-and Codex drawing straight onto a framebuffer — but this is about the movies.)
+roc-apps holds more than movies — a BASIC interpreter, Damian's classic games,
+Cobblestone's WGSL kernels run on the CPU, a Roc model of a machine with disks
+and a network, and Codex drawing onto a framebuffer — but this is about the
+movies.
 
 ## A movie is a value
 
-**The whole seam is one record.** Not a module found by name, not a class, not
-a callback registry: a record of functions that a movie hands to a player.
+A movie is a record of functions. A player is a function of one.
 
-```
+```roc
 Movie(model) : {
     size : { width : F64, height : F64 },
     fps : I32,
@@ -26,6 +25,8 @@ Movie(model) : {
     advance : model -> model,
     back : model -> model,
     skip : model -> model,
+    scene : model -> I64,
+    scenes : I64,
     frame : model -> List(Shape),
     roll : model -> F64,
     clock : model -> F64,
@@ -34,20 +35,26 @@ Movie(model) : {
 }
 ```
 
-That is all of it. **Nothing in the type names a subject** — no ride, no sky,
-no sun, no skeleton. A player that has one of these can play any of them, and
-a second movie is a second value of the same type.
+Nothing in the type names a subject — no ride, no sky, no skeleton. A second
+movie is a second value of the same type.
 
-Several of those fields are there because a movie disagreed with the player
-and won. `size` exists because Safari's frame was 960 by 600 and the player simply
-knew that, until a 640-by-360 movie arrived and drew itself into a corner.
-`back` returns the model unchanged for a movie that cannot rewind, and **that
-is a fair answer rather than a failure**: Safari can go back because a frame of
-it is thirteen numbers and it keeps two thousand of them; the plot can because
-a frame is a function of its clock; the particles cannot, because a velocity
-accumulates gravity and there is no summary to keep.
+Four of the fields are worth a note:
 
-The app that plays one says which it is, out loud, in four lines:
+- `size` and `fps` are the movie's, not the player's. Motion is written per
+  tick, so a player that runs at its own rate plays the movie at the wrong
+  speed; a player that assumes a frame size draws the wrong movie into a
+  corner.
+- `back` may return the model unchanged. Safari can rewind because a frame of
+  it is thirteen numbers and it keeps two thousand of them; the plot can
+  because a frame is a function of its clock; the particles cannot, because a
+  velocity accumulates gravity and there is no summary to keep.
+- `roll` is asked for apart from `frame` because the wasm player asks for the
+  two in separate calls. While it was a field of the frame, answering `roll()`
+  built every shape and discarded them.
+- `skip` is the movie's own idea of a jump: Safari's is the next of its
+  nineteen route segments, and a movie with one scene skips a second.
+
+The program that plays one names it:
 
 ```roc
 app [Model, program] { rr: platform "roc-ray/platform/main.roc" }
@@ -57,14 +64,9 @@ Model : MoviePlayer.Model(Halloween.Model)
 program = MoviePlayer.program(Halloween.movie)
 ```
 
-An earlier version of this bound the movie by convention — the build staged a
-directory and the player imported a module of a fixed name. It worked and it
-was horrible: the one line that says what this program *is* was not in the
-program.
+## The shared library
 
-## What sits under the seam
-
-A frame is a list of shapes, and there are four of them:
+A frame is a list of shapes:
 
 ```dot
 digraph shapes {
@@ -84,8 +86,8 @@ digraph shapes {
 }
 ```
 
-`movie/` is the vocabulary every movie is written in — eleven files, about 1330
-lines:
+`movie/` is the vocabulary every movie is written in — eleven files, about
+1,340 lines:
 
 | file | what |
 |---|---|
@@ -94,23 +96,22 @@ lines:
 | `Brush.roc` | six fill modes and the colour each gives a point |
 | `View.roc` | metres to pixels: right, forward, height, an eye at a height with a heading, and a polygon cut against the near plane |
 | `Font.roc` | 68 glyphs as stroke polylines, which become thick-line quads |
-| `BrushGlsl.roc`, `ShapeWire.roc`, `WasmApp.roc` | the edges, below |
+| `WasmApp.roc`, `ShapeWire.roc`, `BrushGlsl.roc` | the two platform edges |
 | `Trig.roc`, `DeviceMath.roc` | the arithmetic those need |
 
-None of it is anybody's private helper. `Shapes.line` was written for
-capture_plot's gridlines, and it is what every bone in the Halloween skeletons
-is drawn with. `View.roc` was written for Halloween and is a generic camera —
-Safari has an older one of its own with a 600-pixel screen and an adult's eye
-baked in, which is exactly why a second one was written rather than bent.
+It is shared in practice, not only in principle. `Shapes.line` was written for
+capture_plot's gridlines and draws every bone in the Halloween skeletons.
+`View.roc` was written for Halloween; Safari has an older camera of its own
+with a 600-pixel screen and an adult's eye height baked in, which is why a
+second one was written rather than the first one bent.
 
-**The line between the movie and the player is drawn at "what does this mean"
-versus "how does this platform do it".** The clearest case: roc-ray fills only
-*convex* polygons, so a concave one has to be ear-clipped into triangles. That
-is not the movie's problem. `Shapes.cut` lives in the shared vocabulary and the
-roc-ray player calls it on every frame; the canvas player never does, because a
-canvas fills a concave polygon itself and would rather have the polygon.
+The division between a movie and a player is what a frame means against how a
+platform draws it. roc-ray fills only convex polygons, so a concave one is
+ear-clipped into triangles: `Shapes.cut` is in the shared library and the
+roc-ray player calls it on every frame, while the canvas player never does,
+because a canvas fills a concave polygon itself.
 
-## Two players, and neither knows a subject
+## Two players
 
 ```dot
 digraph players {
@@ -131,7 +132,7 @@ digraph players {
     voc [label="movie/\nMovie · Shapes · Brush · View · Font", fillcolor="#e6f4ea"];
     wa [label="WasmApp\nthe wasm edge, once"];
     wire [label="ShapeWire\nshapes as U32 words"];
-    pf [label="wasm/platform\n12 exports over a boxed model"];
+    pf [label="wasm/platform\n14 exports over a boxed model"];
     pl [label="ray/player\nMoviePlayer.roc"];
     bl [label="web/blitter.js\nthe canvas player"];
   }
@@ -143,61 +144,36 @@ digraph players {
 }
 ```
 
-**The canvas side.** `WasmApp.program` takes a `Movie` and names none, the same
-way `MoviePlayer.program` does: it boxes the model for the host, and `render`
-answers the frame's shapes packed by `ShapeWire` — a kind, a brush mode, the
-brush's words, then the geometry, as `U32`s in linear memory. So a movie's wasm
-app is five lines, `import` and `program =`, and it was three copies of the
-same eighty-line file before anybody noticed they were byte for byte identical
-apart from the name they imported. An app that answers something differently
-says so by name:
+On the canvas side, `WasmApp.program` takes a `Movie` and names none. It boxes
+the model for the host, and `render` answers the frame's shapes packed by
+`ShapeWire` — a kind, a brush mode, the brush's words, then the geometry, as
+`U32`s in linear memory. A movie's wasm app is five lines. One that answers
+something differently says so by name:
 
 ```roc
-program = { ..WasmApp.program(SafariMovie.movie), scene, probe_frame, probe_expand }
+program = { ..WasmApp.program(SafariMovie.movie), probe_frame, probe_expand }
 ```
 
-That is Safari's whole app: the route segment it calls a scene, and the two
-command counts the Node smoke run times its stages by. `blitter.js` unpacks the
-wire and fills. It knows the six brush modes and the four shapes, and nothing
-else. It
-used to know a great deal else: the platform once required a rider's segment
-and tilt, a camera focal length, a gaze yaw, two sky colours, four numbers
-about the sun and three about a truck — twenty exports, of which the page
-bound half and used to paint a country sky *itself*. A second movie could not
-have satisfied any of it.
+That is Safari's whole app: the two command counts the Node smoke run times its
+stages by. `blitter.js` unpacks the wire and fills; it knows the six brush
+modes and the four shapes.
 
-**The roc-ray side.** `MoviePlayer.roc` is 328 lines and takes a `Movie` and
-names none: the window, the keys, the supersampling, the screenshot. The same
-keys work in both players, because they are the player's, not the movie's —
-space to pause, up and down to step a frame, `J` for the movie's own idea of a
-jump, `P` for a screenshot named by the movie's clock.
+On the roc-ray side, `MoviePlayer.roc` is 331 lines and also takes a `Movie`
+and names none: the window, the keys, the supersampling, the screenshot. The
+keys belong to the player rather than to the movie, and are the same in both —
+space to pause, up and down to step a frame, `J` for `skip`, `P` for a
+screenshot named by the movie's clock. The two players pace themselves the same
+way too: roc-ray caps its frame rate at `fps`, and the page banks elapsed time
+and steps as steps fall due, which is not the same as one step per display
+refresh.
 
-**A rate is a movie's, too.** Every movie's motion is written per tick — a
-velocity, a gravity, a walk of eight hundred frames — so a player that runs at
-its own rate plays the movie at the wrong speed. That one went unnoticed for a
-while: the page was paced by accident, because one step per animation frame is
-one step per display refresh, and roc-ray sat at raylib's default of 240 frames
-a second. The same movie ran four times faster on the desktop. `fps` is a field
-of `Movie` now, next to `size`, and for the same reason: the player should ask
-rather than know. The desktop hands it to raylib as a cap that waits; the page
-banks elapsed time and takes steps as they fall due, which also fixes it for a
-144 Hz monitor.
+`Brush` is a third kind of painter, in the sense that a gradient has to mean
+the same thing in three places — a CPU rasteriser in Roc, a GLSL fragment
+shader on roc-ray, and a canvas gradient in JavaScript. The mode numbers are
+one contract (`BrushGlsl.mode_of`) and the arithmetic is written once in
+`Brush.shade`.
 
-**And a field can be in the wrong place for years.** `roll` — how far the camera
-is banked — was part of the frame, which reads well until you notice that the
-page asks for the frame and the roll as two separate calls. Answering `roll()`
-built every shape in the frame and threw them all away, so Safari painted each
-displayed frame twice. It is `movie.roll(m)` now, beside `frame`; Safari's own
-is a function of the ride and never needed the shapes. **The seam being small
-is what made that visible**: with twelve fields to look at, a field that is
-paid for twice stands out.
-
-The third painter is `Brush`. A gradient has to mean the same thing in three
-places — a CPU rasteriser in Roc, a GLSL fragment shader on roc-ray, and a
-canvas gradient in JavaScript — so the mode numbers are one contract
-(`BrushGlsl.mode_of`) and the arithmetic is written once in `Brush.shade`.
-
-## Four directories that look the same
+## The directories
 
 Every movie is the same five things:
 
@@ -210,33 +186,19 @@ movies/<name>/
     …                 whatever other Roc it owns
 ```
 
-That is a recent tidying and it is worth a sentence. Safari's Roc lived under
-`safari/roc/`, its platform under `safari/wasm/`, its blitter under
-`safari/web/`, and its roc-ray app under `ray/apps/safari/` — because for a
-long time there was one movie and it was Safari. The other three each had a
-piece in four different places and a `modules` file listing the directories to
-stage. Now the shared things are shared (`wasm/`, `web/`, `movie/`,
-`ray/player/`), the movies are movies, and there is nothing left for a
-`modules` file to say.
+Everything shared sits beside them: `movie/` the library, `ray/player/` and
+`web/blitter.js` the players, `wasm/` the platform and its host.
 
-The sizes are worth seeing, because they say what the seam is worth:
-
-| movie | lines of Roc |
+| movie | Roc, including its own tests and tools |
 |---|---|
-| safari | 10,146 (120 modules, and their specs) |
-| halloween | 935 |
-| capture_plot | 251 |
-| particles | 238 |
-
-A movie in 238 lines is only possible because the 1250 lines under it and the
-800 lines of player beside it are already there.
+| safari | 10,084 lines in 123 modules |
+| halloween | 1,011 in 13 |
+| capture_plot | 201 in 3 |
+| particles | 189 in 3 |
 
 ## What depends on what
 
-Two movies, four programs, and everything funnelling down to the same handful
-of leaves. Safari's own half is a hundred and twenty modules and Halloween's is
-ten; what they have in common is everything below the dashed line, and the
-player each of them is played by.
+Two movies, four programs, converging on the same leaves.
 
 ```dot
 digraph deps {
@@ -314,17 +276,18 @@ digraph deps {
 }
 ```
 
-Read it downward and the shape is the point. **The two players are the only
-thing between a program and a movie**, and both movies reach both of them. Each
-movie's own modules are its own — `SafariRide` means nothing to Halloween and
-`Witch` means nothing to Safari — but every one of them lands on `Shapes` and
-`Brush` within two or three steps, and everything at all lands on `Brush`.
+The two players are the only thing between a program and a movie, and both
+movies reach both players. Each movie's own modules stay its own — `SafariRide`
+means nothing to Halloween, `Witch` means nothing to Safari — but all of them
+reach `Shapes` and `Brush` within two or three steps.
 
-It also shows where the next thing would go. `Panels` — the three ways anything
-gets placed in metres — sits at the bottom of Halloween's half with five users
-above it and `View` below it. Nothing in it knows what a house or a fence is.
-The day Safari wants a witch on its roadside, that is the file that moves down
-into `movie/`, and `Witch` follows it across unchanged.
+Halloween's own half is arranged the way Safari's is: one module that knows
+what time it is (`Walk`), and modules that are handed numbers and draw
+something (`House` is told how far open its door is, `Witch` how far down the
+hall she has come, `Guards` how much the skeletons are attending to the child).
+`Panels` under them is the three ways anything is placed in metres, and knows
+nothing about a house or a fence; it is what would move into `movie/` if a
+second movie wanted to place something in the world.
 
 ## Getting built
 
@@ -355,19 +318,17 @@ symlinked; a staging directory is a flat pile of Roc with one app in it.
 
 Windows goes through a hosted runner, because Roc's `x64win` link is MSVC-ABI
 and wants an installed Windows SDK that a Linux box cannot provide. The
-workflow builds every movie, runs each one headless to prove it links and
-loads, and uploads the executables. Two of them then run again in a hidden
-window against Mesa's llvmpipe — software OpenGL on the CPU — with their keys
-scripted by frame number, and save screenshots. That is the only way anyone
-sees these drawn without a display.
+workflow builds every movie, runs each headless to prove it links and loads,
+and uploads the executables. Two of them then run again in a hidden window
+against Mesa's llvmpipe — software OpenGL on the CPU — with their keys scripted
+by frame number, and save screenshots, which is how anyone sees these drawn
+without a display.
 
-**The check that matters most is the cheapest one.** `web/page_check.mjs` runs
-a built page the way a browser would: a fake DOM, a canvas that records instead
-of painting, the real wasm. It cannot say whether a frame *looks* right —
-nothing can, without eyes — but it says the page runs, draws, and keeps
-drawing. It exists because for a while every check ran the wasm from Node and
-never executed `blitter.js`, and a reference error in the blitter reached the
-browser as four blank pages.
+`web/page_check.mjs` runs a built page the way a browser would: a fake DOM, a
+canvas that records instead of painting, the real wasm, and a virtual clock so
+the paced loop takes a step per frame. It cannot say whether a frame looks
+right, but it says the page runs, draws, and keeps drawing — including over all
+1,500 frames of a long movie.
 
 ## Getting deployed
 
@@ -386,24 +347,10 @@ digraph deploy {
 }
 ```
 
-Three channels, one Caddy, and every page's URLs relative — so a page moves
-from one channel to the next unchanged. A build only ever writes dev.
-**Staging never changes under you**: a deliberate copy, with a file recording
-what the build read (the Roc nightly, the commits, each module's hash), is what
-moves it, and that copy is a commit. The prod deploy refuses to run if staging
-has uncommitted changes, copies with `rsync --delete`, and then proves the copy
-verbatim — every file's sha256 on prod must equal staging's, with none missing
-and none extra.
-
-## What it cost to find out
-
-The seam was not designed up front. It was extracted from a 400-line
-`main.roc` that knew about `sky_top`, `sky_horizon` and a sun, with a fragment
-shader full of Safari's own arithmetic. The way it got found was to port a
-movie that had nothing to do with driving, and then another, and then to write
-one by hand — and each of those pulled something out of Safari that was never
-Safari's: the shape vocabulary, the brush modes, the text, the camera.
-
-**An abstraction earns its keep on the second user.** Three of the four movies
-here exist partly to be that second user, and the fourth one — 238 lines of
-particles — is what the bill came to.
+Three channels, one Caddy, and every page's URLs relative, so a page moves from
+one channel to the next unchanged. A build only ever writes dev. Moving it on
+is a deliberate copy carrying a file that records what the build read — the Roc
+nightly, the commits, each module's hash — and that copy is a commit. The prod
+deploy refuses to run if staging has uncommitted changes, copies with `rsync
+--delete`, and then proves the copy verbatim: every file's sha256 on prod must
+equal staging's, with none missing and none extra.
