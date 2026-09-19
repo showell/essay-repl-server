@@ -157,6 +157,17 @@ keys work in both players, because they are the player's, not the movie's —
 space to pause, up and down to step a frame, `J` for the movie's own idea of a
 jump, `P` for a screenshot named by the movie's clock.
 
+**A rate is a movie's, too.** Every movie's motion is written per tick — a
+velocity, a gravity, a walk of eight hundred frames — so a player that runs at
+its own rate plays the movie at the wrong speed. That one went unnoticed for a
+while: the page was paced by accident, because one step per animation frame is
+one step per display refresh, and roc-ray sat at raylib's default of 240 frames
+a second. The same movie ran four times faster on the desktop. `fps` is a field
+of `Movie` now, next to `size`, and for the same reason: the player should ask
+rather than know. The desktop hands it to raylib as a cap that waits; the page
+banks elapsed time and takes steps as they fall due, which also fixes it for a
+144 Hz monitor.
+
 The third painter is `Brush`. A gradient has to mean the same thing in three
 places — a CPU rasteriser in Roc, a GLSL fragment shader on roc-ray, and a
 canvas gradient in JavaScript — so the mode numbers are one contract
