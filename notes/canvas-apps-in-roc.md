@@ -1,13 +1,17 @@
 # Canvas apps in Roc, on two platforms
 
-*How `roc-apps/arcade` is put together: one set of files per app, running as a
+*How `roc-apps/canvas_apps` is put together: one set of files per app, running as a
 native program on roc-ray and as a page in a browser.*
 
 ## The shape of it
 
-An app is a Roc value. Two runners know how to run one: `GameRunner.roc` on
-roc-ray, and `canvas_app_runner.js` in a browser. Between the app and either
-runner sits `lib/`, a Roc package every app shares.
+The six apps cover a few different kinds of program: three arcade games, a
+world you fly around with a camera, a pixel paint program, and a movie you can
+scrub. Snake is the example throughout, because it is the smallest.
+
+An app is a Roc value. Two runners know how to run one:
+`CanvasAppRunner.roc` on roc-ray, and `canvas_app_runner.js` in a browser.
+Between the app and either runner sits `lib/`, a Roc package every app shares.
 
 ```dot
 digraph {
@@ -15,14 +19,14 @@ digraph {
   node [shape=box style=rounded fontsize=11]
   subgraph cluster_app {
     label="snake/  (one app)" fontsize=10 style=dashed
-    game [label="SnakeGame.roc\na Game value"]
+    game [label="SnakeApp.roc\na CanvasApp value"]
     rules [label="Rules.roc\nSnake.roc\nBoard.roc"]
     draw [label="SnakeDraw.roc"]
     game -> rules
     game -> draw
   }
-  lib [label="lib/\nGame  Shapes  Brush  Input\nKeys  Mouse  Math  Color\nCamera  Font  Random  View"]
-  native [label="native/GameRunner.roc" shape=box]
+  lib [label="lib/\nCanvasApp  Shapes  Brush\nInput  Keys  Mouse  Math\nColor  Camera  Font  Random"]
+  native [label="native/CanvasAppRunner.roc" shape=box]
   web [label="web/canvas_app_runner.js" shape=box]
   ray [label="roc-ray\n(window, GPU, keyboard)" shape=box style="rounded,filled" fillcolor="#eef"]
   page [label="a browser\n(canvas, events, WebAudio)" shape=box style="rounded,filled" fillcolor="#efe"]
@@ -41,11 +45,11 @@ Six apps are built this way: `snake`, `pong`, `breakout`, `camera`,
 
 ## What an app is
 
-`lib/Game.roc` is the type. An app is a record of eight fields over its own
-model:
+`lib/CanvasApp.roc` is the type. An app is a record of eight fields over its
+own model:
 
 ```roc
-Game(model) : {
+CanvasApp(model) : {
     size : { width : F64, height : F64 },
     fps : I32,
     init : model,
@@ -66,8 +70,8 @@ An app names its own value out loud. `snake_web.roc` and `snake_native.roc` are
 five lines each:
 
 ```roc
-program = GameApp.program(SnakeGame.game)      # the page
-program = GameRunner.program(SnakeGame.game)   # roc-ray
+program = WasmApp.program(SnakeApp.canvas_app)          # the page
+program = CanvasAppRunner.program(SnakeApp.canvas_app)  # roc-ray
 ```
 
 ## What a frame is
@@ -94,7 +98,7 @@ geometry, so a fill means the same thing to every painter.
 
 `Input.Snapshot` is a value: which keys are held, which were struck since the
 last tick, and the pointer's position, buttons and wheel. Each runner builds
-one — `GameRunner` from roc-ray's `Devices.Snapshot`, `canvas_app_runner.js`
+one — `CanvasAppRunner` from roc-ray's `Devices.Snapshot`, `canvas_app_runner.js`
 from the browser's keyboard and pointer events — and a test writes one down:
 
 ```roc
@@ -103,7 +107,7 @@ Input.none.with_key_down(KeyW)
 
 ## The roc-ray side
 
-`native/GameRunner.roc` opens a window at the app's `size`, paces to its `fps`,
+`native/CanvasAppRunner.roc` opens a window at the app's `size`, paces to its `fps`,
 converts roc-ray's snapshot into an `Input.Snapshot`, and paints the frame.
 
 Painting walks the frame once and cuts it into runs at every mark, because
@@ -114,8 +118,8 @@ position; a flat colour is drawn directly. The whole frame is painted into a
 render texture at twice the window and scaled back down, which is where the
 anti-aliasing comes from.
 
-    arcade/native.sh snake                 a binary
-    TARGET=x64win arcade/native.sh snake    for Windows
+    canvas_apps/native.sh snake                 a binary
+    TARGET=x64win canvas_apps/native.sh snake    for Windows
 
 ## The web side
 
@@ -148,9 +152,9 @@ animation frame may take several steps or none.
 ones `sounds` reports, one WebAudio oscillator each, with a pip per tone drawn
 in the corner.
 
-    arcade/build.sh snake                        a page
-    node arcade/web/page_check.mjs snake         run it headlessly
-    node arcade/web/camera_check.mjs             the camera, on both ends
+    canvas_apps/build.sh snake                        a page
+    node canvas_apps/web/page_check.mjs snake         run it headlessly
+    node canvas_apps/web/camera_check.mjs             the camera, on both ends
 
 ## The platform, and the glue
 
@@ -278,11 +282,11 @@ already has. The host keeps no knowledge of what a shape looks like.
 ## The files
 
 ```
-arcade/
+canvas_apps/
     snake_web.roc  snake_native.roc      the two apps, five lines each
     snake/                               the app: its rules, its drawing, its page
     lib/                                 the Roc every app shares
-    native/GameRunner.roc                the roc-ray runner
+    native/CanvasAppRunner.roc                the roc-ray runner
     web/
         platform/main.roc                what the page needs from an app
         platform/Frame.roc               what a frame is
