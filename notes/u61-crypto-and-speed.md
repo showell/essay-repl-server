@@ -122,11 +122,30 @@ record for every one of the 64 rounds, and does 32-bit rotation in 64-bit
 arithmetic with masks. All of that is honest Codex; none of it is a bug. It is
 what a hash written over immutable lists costs.
 
-**The one number that looks like a bug is the 30% in `memset`.** Something is
-zero-filling memory on a hot path -- in a hash, which should be all arithmetic.
-Candidates: a list created with capacity being cleared, or Zig's safe-mode
-filling of `undefined` memory. That is worth one more look before anyone
-concludes the cost is inherent.
+**The 30% in `memset`, attributed.** A call-graph profile says it is not
+hashing at all. It is Zig's safe-mode allocator *poisoning* every fresh
+allocation (filling it with `0xAA` so a read of uninitialised memory shows
+up), and the cost is simply the number of allocations. Three places make them:
+
+| source | share of the whole run | what it is |
+|---|---|---|
+| `hash-words-to-bytes` (`hmac-hw2b`) | ~11% | the 8 digest words become 32 bytes by `acc & [b0, b1, b2, b3]`, once per word: 16 allocations per hash, each copy longer than the last |
+| `sha256-k` in `sha256-compress` | ~9% | SHA-256's 64 round constants, **rebuilt as a new list on every compression** |
+| other concatenation | ~6% | building each HMAC input, `ipad & message` |
+
+The `sha256-k` row is a design question, not a slip. `sha256-k` is a definition
+with no parameters, and the Zig plug compiles every such definition to a
+function that the reference calls ("constants compile to nullary functions, so
+the reference must call"). Caching it is not free either: code like PBKDF2 rolls
+the heap back itself (`__heap-save`/`__heap-restore` around every round), so a
+constant cached inside one of those regions would be freed by the next restore.
+It needs a permanent region to live in.
+
+The other two rows are the crypto code's own choices, and cheap to change
+where they sit: build the 32 bytes into a list made with capacity, and pass
+the constant table down once per `sha256` call rather than per compression.
+Neither changes an output. That is worth a measured experiment before it is
+worth a PR.
 
 ## What it means
 
