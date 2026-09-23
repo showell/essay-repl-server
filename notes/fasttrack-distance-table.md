@@ -132,7 +132,9 @@ hop 1, pen 4, back4 off
 | rB2 | 2 | 2 | rB2 -> rB3 -> rB4 |
 | rB3 | 1 | 1 | rB3 -> rB4 |
 | rB4 | 0 | 0 | rB4 |
-| bullseye | 18 | 11 + (1 + 6) | bullseye ~> pFT -> rR4 -> rR3 -> rR2 -> rR1 -> rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |## The computer today: a 4 played backwards costs 6
+| bullseye | 18 | 11 + (1 + 6) | bullseye ~> pFT -> rR4 -> rR3 -> rR2 -> rR1 -> rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
+
+## Table 2: the computer today (a 4 played backwards costs 6)
 
 hop 1, pen 4, back4 6
 
@@ -199,3 +201,4 @@ hop 1, pen 4, back4 6
 | rB3 | 1 | 1 | rB3 -> rB4 |
 | rB4 | 0 | 0 | rB4 |
 | bullseye | 18 | 11 + (1 + 6) | bullseye ~> pFT -> rR4 -> rR3 -> rR2 -> rR1 -> rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
+
