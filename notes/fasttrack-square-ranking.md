@@ -1,108 +1,113 @@
 # Fast Track: ranking the squares
 
-Every square a red piece can stand on, ranked best first, from the table on
-the board at `?show=b3`. That table counts cards to B3, as once B4 is taken,
-and lets a free face card go first. Printed by
-`roc-apps/fasttrack/rank_board.roc`.
+Every square a red piece can stand on, ranked best first. The squares count
+the way to B3, as once B4 is taken, with a free face card allowed first. The
+table is printed by `roc-apps/fasttrack/rank_board.roc` from
+`Reach.routes_with`.
 
 **The rules, in order:**
 
-1. **Fewer cards to B3.**
-2. **Among equals, a base square first, the deeper first.** Rule 3 alone
-   would put B1 above B2: B1 has six ways into B3, a 2 or a face card then
-   any one-step card, and B2 has five.
-3. **More ways in.** A way is a distinct first card on a shortest route.
-   "F+5" (a face card, then a 5) is a different way from "6".
-4. **More ways on an expendable card:** 2, 3, 5, 8, 9 or 10, counting the card
-   played after any face card. These don't leave the pen, go backwards,
-   split, or let you play again.
+1. **Fewer cards to B3,** with every card but the joker.
+2. **Among equals, a base square first,** the deeper first.
+3. **More routes.** A route is every shortest sequence of moves, where a move
+   is a card, or a face card then a card. For a square one card out, that is
+   just its ways in: R1's two are F+5 and 6.
+4. **While still tied,** rules 1 and 3 again (fewer cards, then more routes)
+   with a smaller deck at each stage:
+   - without the 6;
+   - without the J, Q and K, which also takes away the free face card;
+   - without the 7;
+   - without the 4.
 
-## The ties left after all four rules
+Each cell below is `cards / routes` with that stage's deck. A `-` means the
+square cannot reach B3 at all with that deck: the bullseye needs a J, Q or K
+to leave.
 
-- **The purest pair: `rR1` and `rR3`.** Both are 1 card, with 2 ways and 1 of
-  them expendable. R1 is F+5 or 6 (the 5 is expendable); R3 is F+7 or 8 (the
-  8 is).
-- **`rDS`, `rR4` and purple's fast-track square:** 1 card, 2 ways, both
-  expendable (F+2 or 3; F+8 or 9; F+9 or 10).
-- **`rBR`, `rR0`, green's fast-track square, purple's L4 and the bullseye:**
-  1 card, a single expendable way (F+3; 5; F+10; F+10; F+10).
-- **Two-card squares:** `rFT`, `bFT` and `pL3` (26 ways, 12 expendable);
-  `rL3`, `gL2`, `gR0` and `gR1` (2 ways, 2 expendable); `rL2`, `gHH` and
-  `gBR`; `gL0`, `gL1`, `gR2` and `pR3`.
-- **The four pen squares,** which really are the same square.
+## What still ties
 
-Your two cases come out as you said: **R1 beats R0**, on 2 ways against 1,
-and **R4 beats R3**, on 2 expendable ways against 1.
+- **`rDS`, `rR3`, `rR4` and purple's fast-track square, at every stage.**
+  - With all the cards, each has two one-card routes, and none of them uses
+    a 6: F+2 or 3, F+7 or 8, F+8 or 9, F+9 or 10.
+  - Without J, Q and K, each keeps exactly one route: 3, 8, 9 and 10.
+  - Dropping the 7 and the 4 then touches none of them.
+- **Green's fast-track square and purple's L4,** blue's fast-track square
+  and purple's L3, and green's BR and green's R0: identical at every stage.
+- **The four pen squares,** which are the same square.
 
-**One caution.** For squares two or more cards out, rule 3 counts only the
-*first* card of a shortest way. The face-card pairs inflate those counts:
-`rFT` has 26. Whether that tells two squares apart usefully is open.
+**R3 against R4.** You ranked R4 above R3, because R3's second way is face +
+7 and R4's is face + 8. The cascade removes the J, Q and K before the 7, and
+that takes both face routes out at once. With the 7 removed before the
+J/Q/K, R3 would lose its face + 7 route first, and R4 would come out ahead.
+The rest of the group would still tie.
+
+**R1 against R3,** the pair that tied before, now splits at the first stage.
+Without the 6, R1 keeps only F+5, while R3 keeps both of its routes.
 
 ## The ranking
 
-| square | cards | ways | expendable | ways in |
-|---|---|---|---|---|
-| rB3 | 0 | 0 | 0 |  |
-| rB2 | 1 | 5 | 0 | A, J, Q, K, Jo |
-| rB1 | 1 | 6 | 1 | F+A, 2, F+J, F+Q, F+K, F+Jo |
-| rDS | 1 | 2 | 2 | F+2, 3 |
-| rR4 | 1 | 2 | 2 | F+8, 9 |
-| pFT | 1 | 2 | 2 | F+9, 10 |
-| rR1 | 1 | 2 | 1 | F+5, 6 |
-| rR3 | 1 | 2 | 1 | F+7, 8 |
-| rR2 | 1 | 2 | 0 | F+6, 7 |
-| rBR | 1 | 1 | 1 | F+3 |
-| rR0 | 1 | 1 | 1 | 5 |
-| gFT | 1 | 1 | 1 | F+10 |
-| pL4 | 1 | 1 | 1 | F+10 |
-| bullseye | 1 | 1 | 1 | F+10 |
-| rFT | 2 | 26 | 12 | F+8, 9, F+9, 10, F+10, A, F+A, 2, F+2, 3, F+3, 5, F+5, 6, F+6, 7, F+7, 8, J, F+J, Q, F+Q, K, F+K, Jo, F+Jo |
-| bFT | 2 | 26 | 12 | F+2, 3, F+3, 5, F+5, 6, F+6, 7, F+7, 8, F+8, 9, F+9, 10, F+10, A, F+A, 2, J, F+J, Q, F+Q, K, F+K, Jo, F+Jo |
-| pL3 | 2 | 26 | 12 | F+2, 3, F+3, 5, F+5, 6, F+6, 7, F+7, 8, F+8, 9, F+9, 10, F+10, A, F+A, 2, J, F+J, Q, F+Q, K, F+K, Jo, F+Jo |
-| pL2 | 2 | 21 | 12 | F+3, 5, F+5, 6, F+6, 7, F+7, 8, F+8, 9, F+9, 10, F+10, F+A, 2, F+2, 3, F+J, F+Q, F+K, F+Jo |
-| gL4 | 2 | 18 | 6 | F+2, F+3, F+5, F+6, F+7, F+8, F+9, F+10, A, F+A, J, F+J, Q, F+Q, K, F+K, Jo, F+Jo |
-| pL1 | 2 | 15 | 11 | 5, F+5, 6, F+6, 7, F+7, 8, F+8, 9, F+9, 10, F+10, F+2, 3, F+3 |
-| rL4 | 2 | 14 | 7 | F+9, F+10, F+A, 2, F+2, F+3, F+5, F+6, F+7, F+8, F+J, F+Q, F+K, F+Jo |
-| pL0 | 2 | 13 | 9 | F+5, 6, F+6, 7, F+7, 8, F+8, 9, F+9, 10, F+10, F+3, 5 |
-| bL4 | 2 | 13 | 6 | F+3, F+5, F+6, F+7, F+8, F+9, F+10, F+A, F+2, F+J, F+Q, F+K, F+Jo |
-| pHH | 2 | 12 | 8 | F+6, 7, F+7, 8, F+8, 9, F+9, 10, F+10, 5, F+5, 6 |
-| pDS | 2 | 11 | 7 | F+7, 8, F+8, 9, F+9, 10, F+10, F+5, 6, F+6, 7 |
-| pBR | 2 | 9 | 6 | F+8, 9, F+9, 10, F+10, F+6, 7, F+7, 8 |
-| pR0 | 2 | 7 | 6 | F+7, 8, F+8, 9, F+9, 10, F+10 |
-| pR1 | 2 | 6 | 5 | 4 back, F+8, 9, F+9, 10, F+10 |
-| gL3 | 2 | 6 | 1 | F+A, 2, F+J, F+Q, F+K, F+Jo |
-| pR2 | 2 | 4 | 3 | F+4 back, F+9, 10, F+10 |
-| rL0 | 2 | 4 | 1 | F+4 back, 4 back, F+5, 6 |
-| rHH | 2 | 4 | 0 | 4 back, F+4 back, F+6, 7 |
-| rL1 | 2 | 3 | 1 | 4 back, F+4 back, 5 |
-| rL3 | 2 | 2 | 2 | F+2, 3 |
-| gL2 | 2 | 2 | 2 | F+2, 3 |
-| gR0 | 2 | 2 | 2 | F+8, 9 |
-| gR1 | 2 | 2 | 2 | F+9, 10 |
-| rL2 | 2 | 2 | 1 | 4 back, F+3 |
-| gHH | 2 | 2 | 1 | F+5, 6 |
-| gBR | 2 | 2 | 1 | F+7, 8 |
-| gDS | 2 | 2 | 0 | F+6, 7 |
-| gL0 | 2 | 1 | 1 | 5 |
-| gL1 | 2 | 1 | 1 | F+3 |
-| gR2 | 2 | 1 | 1 | F+10 |
-| pR3 | 2 | 1 | 1 | F+10 |
-| pR4 | 3 | 28 | 12 | A, F+A, 2, F+2, 3, F+3, 5, F+5, 6, F+6, 7, F+7, 8, F+8, 9, F+9, 10, F+10, J, F+J, Q, F+Q, K, F+K, Jo, F+Jo, 4 back, F+4 back |
-| gR3 | 3 | 27 | 12 | A, F+A, 2, F+2, 3, F+4 back, F+10, J, F+J, Q, F+Q, K, F+K, Jo, F+Jo, F+3, 5, F+5, 6, F+6, 7, F+7, 8, F+8, 9, F+9, 10 |
-| bL3 | 3 | 23 | 9 | A, F+A, 2, 5, F+5, 6, F+6, 7, J, F+J, Q, F+Q, K, F+K, Jo, F+Jo, F+7, 8, F+8, 9, F+9, 10, F+10 |
-| gR4 | 3 | 21 | 12 | F+A, 2, F+2, 3, F+3, F+J, F+Q, F+K, F+Jo, 5, F+5, 6, F+6, 7, F+7, 8, F+8, 9, F+9, 10, F+10 |
-| bL2 | 3 | 19 | 10 | F+A, 2, F+2, 3, F+5, 6, F+6, 7, F+7, 8, F+J, F+Q, F+K, F+Jo, F+8, 9, F+9, 10, F+10 |
-| bL1 | 3 | 12 | 9 | F+2, 3, F+3, F+6, 7, F+7, 8, F+8, 9, F+9, 10, F+10 |
-| bL0 | 3 | 9 | 8 | F+3, 5, F+7, 8, F+8, 9, F+9, 10, F+10 |
-| bHH | 3 | 8 | 7 | 5, F+5, 6, F+8, 9, F+9, 10, F+10 |
-| bDS | 3 | 7 | 4 | F+5, 6, F+6, 7, F+9, 10, F+10 |
-| bR1 | 3 | 5 | 4 | 4 back, F+8, 9, F+9, 10 |
-| bR2 | 3 | 5 | 3 | 4 back, F+4 back, F+9, 10, F+10 |
-| bBR | 3 | 5 | 2 | F+6, 7, F+7, 8, F+10 |
-| bR0 | 3 | 4 | 3 | F+7, 8, F+8, 9 |
-| bR3 | 3 | 3 | 1 | F+4 back, F+10, 4 back |
-| rHP1 | 3 | 3 | 0 | A, 6, Jo |
-| rHP2 | 3 | 3 | 0 | A, 6, Jo |
-| rHP3 | 3 | 3 | 0 | A, 6, Jo |
-| rHP4 | 3 | 3 | 0 | A, 6, Jo |
-| bR4 | 3 | 2 | 0 | 4 back, F+4 back |
+| square | no joker | no 6 | no J/Q/K | no 7 | no 4 |
+|---|---|---|---|---|---|
+| rB3 | 0 / 1 | 0 / 1 | 0 / 1 | 0 / 1 | 0 / 1 |
+| rB2 | 1 / 4 | 1 / 4 | 1 / 1 | 1 / 1 | 1 / 1 |
+| rB1 | 1 / 5 | 1 / 5 | 1 / 1 | 1 / 1 | 1 / 1 |
+| rDS | 1 / 2 | 1 / 2 | 1 / 1 | 1 / 1 | 1 / 1 |
+| rR3 | 1 / 2 | 1 / 2 | 1 / 1 | 1 / 1 | 1 / 1 |
+| rR4 | 1 / 2 | 1 / 2 | 1 / 1 | 1 / 1 | 1 / 1 |
+| pFT | 1 / 2 | 1 / 2 | 1 / 1 | 1 / 1 | 1 / 1 |
+| rR2 | 1 / 2 | 1 / 1 | 1 / 1 | 2 / 2 | 2 / 2 |
+| rR1 | 1 / 2 | 1 / 1 | 2 / 4 | 2 / 4 | 2 / 3 |
+| rR0 | 1 / 1 | 1 / 1 | 1 / 1 | 1 / 1 | 1 / 1 |
+| gFT | 1 / 1 | 1 / 1 | 2 / 6 | 2 / 6 | 2 / 6 |
+| pL4 | 1 / 1 | 1 / 1 | 2 / 6 | 2 / 6 | 2 / 6 |
+| rBR | 1 / 1 | 1 / 1 | 2 / 4 | 2 / 4 | 2 / 3 |
+| bullseye | 1 / 1 | 1 / 1 | - | - | - |
+| bFT | 2 / 48 | 2 / 43 | 2 / 6 | 2 / 4 | 2 / 4 |
+| pL3 | 2 / 48 | 2 / 43 | 2 / 6 | 2 / 4 | 2 / 4 |
+| rFT | 2 / 44 | 2 / 38 | 2 / 4 | 2 / 4 | 2 / 4 |
+| pL2 | 2 / 34 | 2 / 28 | 2 / 4 | 2 / 4 | 2 / 4 |
+| gL4 | 2 / 31 | 2 / 29 | 3 / 21 | 3 / 12 | 3 / 12 |
+| pL1 | 2 / 24 | 2 / 17 | 2 / 3 | 2 / 2 | 2 / 2 |
+| pL0 | 2 / 22 | 2 / 14 | 2 / 4 | 2 / 2 | 2 / 2 |
+| pHH | 2 / 22 | 2 / 14 | 2 / 3 | 2 / 1 | 2 / 1 |
+| bL4 | 2 / 21 | 2 / 18 | 3 / 6 | 3 / 4 | 3 / 4 |
+| pDS | 2 / 20 | 2 / 14 | 2 / 4 | 2 / 2 | 2 / 2 |
+| rL4 | 2 / 18 | 2 / 15 | 3 / 5 | 3 / 5 | 3 / 4 |
+| pBR | 2 / 16 | 2 / 14 | 2 / 3 | 2 / 3 | 2 / 3 |
+| pR0 | 2 / 12 | 2 / 12 | 2 / 2 | 2 / 2 | 2 / 2 |
+| pR1 | 2 / 9 | 2 / 9 | 2 / 1 | 2 / 1 | 2 / 1 |
+| pR2 | 2 / 5 | 2 / 5 | 3 / 28 | 3 / 21 | 3 / 21 |
+| gL3 | 2 / 5 | 2 / 5 | 3 / 18 | 3 / 12 | 3 / 12 |
+| rHH | 2 / 5 | 2 / 3 | 3 / 6 | 3 / 6 | 4 / 16 |
+| rL1 | 2 / 4 | 2 / 4 | 3 / 5 | 3 / 5 | 4 / 24 |
+| rL0 | 2 / 4 | 2 / 3 | 2 / 1 | 2 / 1 | 3 / 4 |
+| rL2 | 2 / 3 | 2 / 3 | 2 / 1 | 2 / 1 | 3 / 4 |
+| gL2 | 2 / 2 | 2 / 2 | 3 / 16 | 3 / 13 | 3 / 13 |
+| gR1 | 2 / 2 | 2 / 2 | 3 / 12 | 3 / 10 | 3 / 6 |
+| gBR | 2 / 2 | 2 / 2 | 3 / 6 | 3 / 6 | 3 / 6 |
+| gR0 | 2 / 2 | 2 / 2 | 3 / 6 | 3 / 6 | 3 / 6 |
+| rL3 | 2 / 2 | 2 / 2 | 3 / 4 | 3 / 4 | 3 / 4 |
+| gDS | 2 / 2 | 2 / 1 | 3 / 6 | 4 / 76 | 4 / 76 |
+| gHH | 2 / 2 | 2 / 1 | 3 / 1 | 3 / 1 | 3 / 1 |
+| pR3 | 2 / 1 | 2 / 1 | 3 / 24 | 3 / 15 | 3 / 15 |
+| gL0 | 2 / 1 | 2 / 1 | 3 / 9 | 3 / 9 | 3 / 9 |
+| gL1 | 2 / 1 | 2 / 1 | 3 / 6 | 3 / 6 | 3 / 6 |
+| gR2 | 2 / 1 | 2 / 1 | 4 / 92 | 4 / 64 | 4 / 56 |
+| pR4 | 3 / 374 | 3 / 269 | 3 / 18 | 3 / 12 | 3 / 12 |
+| bL3 | 3 / 346 | 3 / 301 | 3 / 6 | 3 / 4 | 3 / 4 |
+| bL2 | 3 / 221 | 3 / 190 | 3 / 6 | 3 / 4 | 3 / 4 |
+| bR1 | 3 / 182 | 3 / 160 | 3 / 10 | 3 / 8 | 3 / 4 |
+| bR2 | 3 / 152 | 3 / 132 | 4 / 45 | 4 / 33 | 4 / 24 |
+| bDS | 3 / 142 | 3 / 65 | 3 / 6 | 4 / 8 | 4 / 8 |
+| bBR | 3 / 139 | 3 / 105 | 3 / 6 | 3 / 4 | 3 / 4 |
+| bR0 | 3 / 138 | 3 / 122 | 3 / 6 | 3 / 4 | 3 / 4 |
+| bHH | 3 / 125 | 3 / 69 | 4 / 40 | 4 / 30 | 4 / 18 |
+| bL1 | 3 / 106 | 3 / 93 | 4 / 48 | 4 / 38 | 4 / 30 |
+| gR3 | 3 / 96 | 3 / 86 | 4 / 79 | 4 / 51 | 4 / 43 |
+| bL0 | 3 / 81 | 3 / 73 | 3 / 6 | 3 / 4 | 3 / 4 |
+| bR3 | 3 / 41 | 3 / 35 | 4 / 44 | 4 / 24 | 4 / 16 |
+| gR4 | 3 / 34 | 3 / 28 | 4 / 56 | 4 / 48 | 4 / 40 |
+| rHP1 | 3 / 8 | 3 / 3 | 3 / 1 | 3 / 1 | 4 / 4 |
+| rHP2 | 3 / 8 | 3 / 3 | 3 / 1 | 3 / 1 | 4 / 4 |
+| rHP3 | 3 / 8 | 3 / 3 | 3 / 1 | 3 / 1 | 4 / 4 |
+| rHP4 | 3 / 8 | 3 / 3 | 3 / 1 | 3 / 1 | 4 / 4 |
+| bR4 | 3 / 5 | 3 / 5 | 3 / 1 | 3 / 1 | 4 / 16 |
