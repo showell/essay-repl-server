@@ -43,9 +43,10 @@ because a red piece never stands on them.
   fast-track square and on into red's home stretch.
 - **The pen is 3** (A, 6 or joker to L0, then 2), and so is the bullseye
   (J, Q or K to purple's fast-track square, then 2).
-- **Blue's zone is the worst place on the board.** Its R side and L1 are 4
-  cards from home. Everywhere else in enemy territory is 2 or 3: purple's
-  zone, the last before red's, is 2 all the way round.
+- **The worst squares on the board are 4 cards from home:** blue's R2–R4
+  and L1, and green's R2–R4. The rest of enemy territory is 3, except
+  purple's zone, the last before red's: its L side, bottom row and
+  fast-track square are 2, and only its R side is 3.
 
 ### Red's zone (the mover's own)
 
