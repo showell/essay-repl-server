@@ -42,25 +42,31 @@ stretch and base, and last the bullseye.
 - **Your two squares.** Six past the pen without the bullseye is `bR4`:
   26 = 24 + 2·hop, which is 13 to blue's FT, then 13 home. Landing on the
   fast track instead is `bFT`: 13 = 11 + 2·hop.
-- **The pen, in the first table: 24.** That is better than `bR4`'s 26, so a
-  piece in the pen scores better than one out and stuck. That is the missing
-  penalty you pointed out.
-- **The 4 played backwards, in the second table.** `rL0` becomes 7 (back to
-  `rR0`, then 6 home), `rL1` 6 and `rL2` 5, and the pen falls to 12. Then
-  there is a cliff: `rL3` is 16, because from there a 4 back no longer
-  reaches red's home stretch.
-- **What `back4` should cost** is open. Here it is 1, the move alone, with no
-  allowance for waiting for a 4 to turn up.
+- **The pen, without the 4 played backwards: 24.** That is better than
+  `bR4`'s 26, so a piece in the pen scored better than one out and stuck.
+- **With it (the computer today, back4 6):** `rL0` 12, `rL1` 11, `rL2` 10 --
+  the three squares worth parking on -- and the pen 17. Then the cliff:
+  `rL3` is 16, because from there a 4 back no longer reaches red's home
+  stretch.
 
-## The race so far
+## What the races said
 
-A bigger pen wait, on the first table (no 4 played backwards), has only made
-the computer lose. Each value below was raced against pen 4, 200 games:
-pen 7 won 50.0%, pen 11 48.0%, pen 15 43.0%, pen 23 39.0%.
+Each line is 200 games (100 deals, each played abab and baba), the change
+against the computer without it. The full log is `roc-apps/fasttrack/TUNING.md`.
 
-The second table has not been raced yet.
+| change | won |
+|---|---|
+| pen wait 7, 11, 15, 23 (was 4), no 4 back | 50.0%, 48.0%, 43.0%, 39.0% |
+| 4 back costing 1, 3 | 47.5%, 48.5% |
+| 4 back costing 6, 9, 12 | 56.5%, 54.5%, 55.5% |
+| 4 back costing 6, on fresh deals | 51.5% |
+| pen 8, 12 on top of 4 back 6 | 48.5%, 49.5% |
 
-## Table 1: the computer today
+Priced at one step, the 4 back makes the computer park too eagerly. Priced for
+the wait for a 4, it helps a little: 216 wins in 400 games at cost 6. So the
+computer now plays with it at cost 6. A bigger pen wait never helped.
+
+## Table 1: without the 4 played backwards
 
 hop 1, pen 4, back4 off
 
@@ -126,16 +132,16 @@ hop 1, pen 4, back4 off
 | rB2 | 2 | 2 | rB2 -> rB3 -> rB4 |
 | rB3 | 1 | 1 | rB3 -> rB4 |
 | rB4 | 0 | 0 | rB4 |
-| bullseye | 18 | 11 + (1 + 6) | bullseye ~> pFT -> rR4 -> rR3 -> rR2 -> rR1 -> rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |## With the 4 played backwards (Steve)
+| bullseye | 18 | 11 + (1 + 6) | bullseye ~> pFT -> rR4 -> rR3 -> rR2 -> rR1 -> rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |## The computer today: a 4 played backwards costs 6
 
-hop 1, pen 4, back4 1
+hop 1, pen 4, back4 6
 
 | square | steps | formula | route |
 |---|---|---|---|
-| rHP1 | 12 | 6 + (1 + pen) + 1·back4 | rHP1 ~> rL0 <- rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
-| rL0 | 7 | 6 + 1·back4 | rL0 <- rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
-| rL1 | 6 | 5 + 1·back4 | rL1 <- rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
-| rL2 | 5 | 4 + 1·back4 | rL2 <- rDS -> rB1 -> rB2 -> rB3 -> rB4 |
+| rHP1 | 17 | 6 + (1 + pen) + 1·back4 | rHP1 ~> rL0 <- rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
+| rL0 | 12 | 6 + 1·back4 | rL0 <- rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
+| rL1 | 11 | 5 + 1·back4 | rL1 <- rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
+| rL2 | 10 | 4 + 1·back4 | rL2 <- rDS -> rB1 -> rB2 -> rB3 -> rB4 |
 | rL3 | 16 | 13 + 3·hop | rL3 -> rL4 -> rFT => bFT => gFT => pFT -> rR4 -> rR3 -> rR2 -> rR1 -> rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
 | rL4 | 15 | 12 + 3·hop | rL4 -> rFT => bFT => gFT => pFT -> rR4 -> rR3 -> rR2 -> rR1 -> rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
 | rFT | 14 | 11 + 3·hop | rFT => bFT => gFT => pFT -> rR4 -> rR3 -> rR2 -> rR1 -> rR0 -> rBR -> rDS -> rB1 -> rB2 -> rB3 -> rB4 |
