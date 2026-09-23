@@ -10,7 +10,19 @@ square, B4. `formula` counts the edges on the shortest way there, by kind.
 `route` is that way, square by square.
 
 - **Squares** are a zone letter and an id: `r` red (the mover), `b` blue (the
-  next zone), `g` green, `p` purple (the zone before red's).
+  next zone), `g` green, `p` purple (the zone before red's). The ids are the
+  Elm code's:
+  - `HP1`–`HP4`: the holding pen (all four are worth the same; the table
+    shows HP1).
+  - `L0`–`L4`: the side a piece leaves the pen onto. `L0` is the square a
+    piece lands on when it comes out of the pen.
+  - `FT`: the zone's fast-track square, at the end of that side.
+  - `R4`–`R0`: the other side, walked from `R4` down to `R0`.
+  - `BR`, `DS`, `HH`: the three squares across the bottom. `DS` is the door:
+    a piece of the zone's own color turns from `DS` into its base, and every
+    other piece walks on to `HH` and `L0`.
+  - `B1`–`B4`: the base. `B4` is the deepest square, and "home" in this
+    table.
 - **Kinds of edge:**
   - `->` a walk: 1 step.
   - `=>` a fast-track hop, or entering the bullseye: `hop` steps. Both need
