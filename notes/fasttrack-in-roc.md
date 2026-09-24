@@ -52,22 +52,49 @@ the tests.
 
 ## The page
 
-**Roc answers the whole page as data.** The board is 89 slots in a fixed
-order, each a centre, a size, a fill and a piece; the page draws them once as
-SVG and afterwards changes only the attributes that differ. The rest of the
-page -- the hand, the instructions, a few buttons -- is a flat list of nodes,
-rebuilt on every click. A click carries the number Roc gave the thing clicked,
-and the page hands it straight back to Roc. The JavaScript knows no rule and
-no color. The code that reads Roc's values out of WebAssembly memory is
-generated from the platform's types by a glue script.
+Fast Track is one of a family of small interactive programs in Roc on the
+same site: the canvas apps (games and animations drawn as shapes, which also
+run natively), a BASIC REPL, and now a board game. None of them is a
+forms-and-database application; each is a program with state that a person
+plays with.
+
+**Each has a thin JavaScript layer, on purpose.** Roc compiled to WebAssembly
+cannot touch the browser by itself: it cannot load its own module, draw,
+listen for a click or set a timer. A small amount of JavaScript does those
+things and nothing else, which keeps Roc from contortions that are not in its
+wheelhouse, while everything the program means stays in Roc. The layers are
+light: the BASIC REPL's JavaScript is small enough to live inside its HTML
+page, about 235 lines; the canvas apps share two small files; Fast Track's is
+one file, `web/fasttrack.js`, about 300 lines. It loads the WebAssembly,
+draws what Roc answers, hands clicks back, runs the computer's clock and
+walks the marbles.
+
+**Roc answers the whole page as data.** Roc's side of the boundary is a
+platform (`web/platform/`) exporting three calls: start a game, answer a
+click, compute the view. The view is:
+
+- **the board**: 89 slots in a fixed order, each a centre, a size, a fill and
+  a piece. The JavaScript draws them once as SVG and afterwards changes only
+  the attributes that differ from the last view, because the board never
+  changes shape. Nothing like a virtual DOM is needed.
+- **the rest of the page**: the hand, the instructions, a few buttons, as a
+  flat list of nodes, each naming its parent. The JavaScript rebuilds these on
+  every click; there are only a handful.
+- **a click code** on everything clickable. A click sends that number back to
+  Roc, which decodes it into a move; the JavaScript never builds a message and
+  knows no rule and no color.
+
+The code that reads the view out of WebAssembly memory is generated from the
+platform's types by a glue script, so the two sides cannot disagree about a
+record's layout.
 
 **The computer plays through the page's clock.** In a computer's seat the
-view names a tick; the page sends it back after a pause, and each tick is one
-click of the plan the computer made for its turn -- a card, a piece, a
+view names a tick; the JavaScript sends it back after a pause, and each tick
+is one click of the plan the computer made for its turn -- a card, a piece, a
 square. Each click also carries its motions: the squares a piece walked, and
-any piece it sent home. The page walks a marble along each path, square by
-square, holds a captured piece in place until the mover lands on it, bursts
-it, and shows it back in its pen.
+any piece it sent home. The JavaScript walks a marble along each path, square
+by square, holds a captured piece in place until the mover lands on it,
+bursts it, and shows it back in its pen, and only then lets the next tick go.
 
 ## The computer player
 
@@ -147,12 +174,23 @@ can, and they point at where the values are still wrong.
 
 ## The checks
 
-Every build regenerates the square values and fails if they differ, runs
-every test -- Elm's, the partnership rules, the routes, the motions, the
-experiments' bookkeeping -- and builds the page twice, with LLVM and with the
-dev backend, playing the two against each other click for click. A last check
-plays the built page against a stand-in document for two hundred clicks, and
-one more run paints the landing page's picture: four computers, 200 clicks
-into a game. A change meant
-not to alter the computer's play is checked by playing 200 games before and
-after: every game must come out the same.
+The family's programs are tested headless. The Roc is tested as Roc: every
+program's expects, and for BASIC its interpreter run natively over a corpus
+of BASIC programs. And for Fast Track and the canvas apps, the page itself is
+run under node -- the built WebAssembly and the real JavaScript, against a
+stand-in document -- clicking through it as a person would.
+
+For Fast Track, every build:
+
+- regenerates the square values and fails if they differ;
+- runs every Roc test: Elm's, the partnership rules, the routes, the motions,
+  the experiments' bookkeeping, and four computers playing a whole game
+  through the same calls the page makes;
+- builds the page twice, with LLVM and with the dev backend, and plays the
+  two against each other click for click;
+- plays the built page for two hundred clicks, checking after each that the
+  board and the page are what Roc sent, then paints the landing page's
+  picture from a four-computer game.
+
+A change meant not to alter the computer's play is checked by playing 200
+games before and after: every game must come out the same.
