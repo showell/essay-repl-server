@@ -96,8 +96,15 @@ messages and in memory.
 
 ## What is left
 
-- **exp_search_size uses 21% more memory than roc.** It is the one experiment
-  where memory is not even. Nobody has looked at it yet.
+- ~~**exp_search_size uses 21% more memory than roc.**~~ **Closed the same
+  evening.** Two causes. A `Str` was 32 bytes, not 24: its length was a plain
+  byte, which left no spare value for Rust to tell the three forms apart. The
+  length is now a 24-value enum, and a `Str` is 24 bytes as roc's is, still
+  without `unsafe`. And a shared list copied for `append` was cloned at its
+  length and then doubled at once; it is now copied with room for what is
+  added. At ten games exp_search_size is within 3% of roc's memory, and the
+  other four use *less* than roc (exp_duplicate 8.0 MB against 9.2 MB).
+  Memory is now compared by peak live bytes, which both builds report.
 - **A closure is copied to call it.** `(*wins.clone())(j)` bumps a count just
   to call `wins`. It is cheap, but free to remove, and it is in the generated
   code everywhere.
