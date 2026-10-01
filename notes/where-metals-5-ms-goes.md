@@ -76,3 +76,36 @@ clock.
   yet. It may be the same cause, a packet held up long enough to be given up
   on, or it may not.
 - **A proper 40-round run** for real statistics, best done after the fix.
+
+## Update, later the same evening
+
+**Part of it was our own fault, and that part is fixed (v3).** When metal
+finished an answer, it only put it in a queue. The queue went out on the next
+turn of the network loop, which came *after* the request's two log lines had
+been written to the screen and serial port. On a droplet each character
+written there is a trip to the hypervisor, so every answer waited for its own
+log entry. Now the answer goes out first.
+
+v3 measured on the droplet, 40 rounds (median / 90th percentile, ms):
+
+| page | through Caddy, lynrummy | through Caddy, metal | server alone, Linux | server alone, metal |
+|---|---|---|---|---|
+| home page | 3.0 / 3.4 | 4.1 / 8.1 | 0.56 / 0.82 | 1.5 / 3.9 |
+| a picture | 2.5 / 2.8 | 4.0 / 6.3 | 0.28 / 0.41 | 1.6 / 5.0 |
+| /delivery | 2.6 / 3.6 | 2.7 / 3.2 | 0.22 / 0.28 | 0.42 / 3.0 |
+| /game | 2.5 / 2.9 | 2.7 / 4.0 | 0.22 / 0.33 | 0.41 / 3.4 |
+
+Small pages are now as fast as Linux's through Caddy, at the median. The slow
+tenth is still slow, by 3 to 5 ms. That's the part resting should help.
+
+**v4 rests.** It now has interrupts. With nothing to do, it halts, and the
+network card wakes it when a frame comes; a 1 ms timer also wakes it, so
+timeouts still happen. On the droplet-shaped machine here, an idle chat server
+went from 100% of a core to 4%. It also carries three fixes from the cloud
+Claude: a goodbye that no longer holds up other requests, frames no longer
+left unread, and a "go ahead, send more" message that is now repeated until
+it's heard. Everything passed: the chat judge on both test machines, the boot,
+hello and screen checks, and metal-vmm.
+
+Whether resting removes the slow tenth on DigitalOcean is the next
+measurement.
