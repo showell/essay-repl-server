@@ -109,3 +109,28 @@ hello and screen checks, and metal-vmm.
 
 Whether resting removes the slow tenth on DigitalOcean is the next
 measurement.
+
+## Update: v4 on the droplet
+
+The guess was right. Metal alone, measured from prod (40 rounds, median / 90th
+percentile, ms):
+
+| page | Linux | metal v3 | metal v4 |
+|---|---|---|---|
+| /game | 0.23 / 0.29 | 0.41 / 3.35 | **0.30 / 0.50** |
+| /delivery | 0.20 / 0.30 | 0.42 / 3.02 | **0.31 / 0.50** |
+| home page | 0.55 / 0.63 | 1.47 / 3.89 | **1.27 / 2.37** |
+| a picture | 0.28 / 0.38 | 1.60 / 5.00 | **1.23 / 1.66** |
+
+Once metal rests instead of spinning, the slow tenth goes from 3–5 ms to half
+a millisecond. A guest that never halts was keeping DigitalOcean's own network
+helpers waiting for the processor.
+
+**What's left: about 1 ms on pages that come from files.** The home page and
+the pictures are read from metal's disk on every request. Linux keeps recently
+read files in memory, so it doesn't. That's the likely cause, but it hasn't
+been measured on its own yet. If it holds up, the fix is a small file cache in
+memory.
+
+Through Caddy, small pages are now within about 0.2 ms of lynrummy.com, and
+the pages that come from files are within about 1 ms.
