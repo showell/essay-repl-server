@@ -89,3 +89,29 @@ addresses on the screen, and answered.
 - **speed**: 3 to 25 ms per request from this box. The spread is probably our
   own logging: once the screen fills up, every logged request moves all 25 rows
   of screen memory, which is slow on a virtual machine. Not measured yet.
+
+## Update: the import fix works
+
+The guess was right. gopher-metal's disk now puts the kernel in **partition 1**,
+and gopher-metal finds chat's data partition by its *type* ("the first
+partition that isn't the kernel's") instead of by its position. That's sturdier
+anyway: the data no longer has to come first.
+
+You imported that disk (v3) and **rebuilt** the droplet from it, so the droplet
+ran exactly what DigitalOcean's importer produced, with no hand-copying. It
+booted and answered on both cards:
+
+```
+$ curl http://162.243.30.235/...          # from this box, over the internet
+hello from no Linux, on the public card, request 3
+
+$ curl http://10.100.0.4/...              # from prod, over the private network
+hello from no Linux, on the private card, request 4
+```
+
+The private request is exactly the path prod's Caddy would use to reach chat.
+
+Requests 1 and 2 weren't ours: within a minute of the droplet coming up,
+something on the internet had already knocked on port 80. Any public address
+gets scanned like that, which is one more reason chat should listen only on
+the private card once it's real, with Caddy in front.
