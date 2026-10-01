@@ -72,7 +72,7 @@ clock.
 
 ## Still open
 
-- **One fetch from metal failed outright** in 24 tries. It isn't explained
+- **One fetch from metal failed outright** in 12 tries. It isn't explained
   yet. It may be the same cause, a packet held up long enough to be given up
   on, or it may not.
 - **A proper 40-round run** for real statistics, best done after the fix.
