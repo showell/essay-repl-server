@@ -1,6 +1,6 @@
 # Gopher Chat on its own kernel
 
-*Draft 1, 2026-10-03. For Apoorva and Damian.*
+*Draft 2, 2026-10-03. For Apoorva and Damian.*
 
 **Tomorrow, lynrummy.com's chat stops running on Linux.** The same zig code
 that serves it today will run on a small kernel of our own, booted straight
@@ -39,7 +39,26 @@ digraph same_code {
 }
 ```
 
-The red boxes are ours. Everything green and blue is the same code either way.
+*Arrows here mean "calls into" or "runs on". The red boxes are ours;
+everything green and blue is the same code either way.*
+
+## How this affects you (the user)
+
+**If we have been careful, not at all.** The same address, the same pages,
+the same logins, the same conversations and pictures. Your data is copied
+across exactly as it is (and checked file by file), and you should stay
+logged in.
+
+We are not claiming metal is better than Linux. It is not faster: Linux sends
+a big picture several times quicker, mostly because it keeps recent files in
+memory, and metal answers one request at a time where Linux can answer many.
+For a chat app that should be invisible, but **if anything feels slow or
+stalls, tell Steve**, with roughly when; that is exactly the report we want.
+
+And as always: **you can keep your own copy of any conversation.** The `d`
+hotkey (download) gives you a topic's whole transcript, its reactions, and
+every picture in it, as one archive. That has always been there, and it is
+the best backup there is of what matters to you.
 
 ## The seam is one line per file
 
@@ -71,14 +90,20 @@ digraph seam {
   io [label="const Io = ...\nthe one changed line" fillcolor="#fde8e8" penwidth=2];
   linux [label="std.Io on Linux\n(syscalls)" fillcolor="#fff8e6"];
   metal [label="metal's io.zig\n(fat16.zig, page cache)" fillcolor="#fde8e8"];
-  stream [label="a TCP connection\nas a std.Io Reader/Writer" fillcolor="#fde8e8"];
+  stream [label="metal's tcp.zig connection\nas a std.Io Reader/Writer" fillcolor="#fde8e8"];
+  socket [label="a Linux socket" fillcolor="#fff8e6"];
 
   routes -> store -> io;
   io -> linux [label="on Linux"];
   io -> metal [label="on metal"];
-  routes -> http -> stream [label="on metal"];
+  routes -> http;
+  http -> socket [label="on Linux"];
+  http -> stream [label="on metal"];
 }
 ```
+
+*Arrows mean "calls". Above the fork, both hosts run the same code; an edge
+labelled "on metal" exists only on metal, and "on Linux" only on Linux.*
 
 One piece of groundwork made this honest: angry-gopher's own `store.zig`
 enforces FAT's rules (names FAT can hold, case-insensitive identity with the
@@ -89,34 +114,52 @@ FAT-shaped for a while, and the two hosts agree about which names exist.
 
 TLS stays on prod. Prod's Caddy terminates HTTPS as it does today and
 forwards to the metal droplet over DigitalOcean's private network; metal's
-public card is not even listening. Inside metal, there is one loop.
+public card is not even listening. From the outside, metal is one box:
 
 ```dot
-digraph request {
-  rankdir=LR; bgcolor="transparent"; nodesep=0.25;
+digraph request_outside {
+  rankdir=LR; bgcolor="transparent";
   node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=10 fillcolor="#ffffff"];
   edge [fontname="Helvetica" fontsize=9 color="#666666"];
 
   browser [label="a browser" fillcolor="#f3f3f3"];
-  caddy [label="prod's Caddy\nHTTPS ends here" fillcolor="#fff8e6"];
-
-  subgraph cluster_metal {
-    label="the metal droplet"; fontname="Helvetica"; fontsize=10; color="#bbbbbb";
-    nic [label="virtio-net\n(private card)" fillcolor="#fde8e8"];
-    tcp [label="tcp.zig\na table of connections" fillcolor="#fde8e8"];
-    http [label="std.http.Server" fillcolor="#eef3fb"];
-    app [label="angry-gopher's routes" fillcolor="#e6f4e6"];
-    io [label="io.zig + page cache" fillcolor="#fde8e8"];
-    fat [label="fat16.zig\n(FAT16 and FAT32)" fillcolor="#fde8e8"];
-    scsi [label="virtio-scsi" fillcolor="#fde8e8"];
-  }
-  vol [label="a DigitalOcean volume\n(network block storage)" fillcolor="#f3f3f3"];
+  caddy [label="prod's Caddy\n(lynrummy.com)\nHTTPS ends here" fillcolor="#fff8e6"];
+  metal [label="the metal droplet" fillcolor="#fde8e8" penwidth=2];
+  vol [label="a DigitalOcean volume\n(chat's data)" fillcolor="#f3f3f3"];
 
   browser -> caddy [label="HTTPS"];
-  caddy -> nic [label="HTTP over the\nprivate network"];
-  nic -> tcp -> http -> app -> io -> fat -> scsi -> vol;
+  caddy -> metal [label="plain HTTP over the\nprivate network"];
+  metal -> vol [label="disk reads\nand writes"];
 }
 ```
+
+*Arrows: the order a request travels, left to right; the answer comes back
+the same way. Only the red box changes tomorrow: today Caddy forwards to a
+Linux process on prod itself.*
+
+Inside the red box there is one loop, and a request passes through these
+pieces, all of them metal's except the two the application brings:
+
+```dot
+digraph request_inside {
+  rankdir=LR; bgcolor="transparent"; nodesep=0.25;
+  node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=10 fillcolor="#ffffff"];
+  edge [fontname="Helvetica" fontsize=9 color="#666666"];
+
+  nic [label="virtio-net\n(the private card)" fillcolor="#fde8e8"];
+  tcp [label="tcp.zig\na table of connections" fillcolor="#fde8e8"];
+  http [label="std.http.Server\n(zig's own)" fillcolor="#eef3fb"];
+  app [label="angry-gopher's routes\n(the application)" fillcolor="#e6f4e6"];
+  io [label="io.zig\n+ page cache" fillcolor="#fde8e8"];
+  fat [label="fat16.zig\n(FAT16 and FAT32)" fillcolor="#fde8e8"];
+  scsi [label="virtio-scsi" fillcolor="#fde8e8"];
+
+  nic -> tcp -> http -> app -> io -> fat -> scsi;
+}
+```
+
+*Arrows: the order a request is handled. Blue is zig's standard library,
+green is the application, red is metal.*
 
 The kernel serves **one request at a time**, start to finish, but it holds
 many connections at once: chat keeps a connection open for every open tab, so
@@ -152,6 +195,8 @@ digraph boot {
 }
 ```
 
+*Arrows: what happens next, from power-on to serving.*
+
 The serial console and the droplet's screen both carry the log, so
 DigitalOcean's recovery console shows what the machine is doing. If the
 kernel panics it restarts itself, with a back-off so a crash loop cannot spin.
@@ -165,23 +210,24 @@ the peer resends), and a send side that keeps its promises to the peer.
 
 ```dot
 digraph tcp {
-  rankdir=LR; bgcolor="transparent";
+  rankdir=TB; bgcolor="transparent";
   node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=10 fillcolor="#ffffff"];
   edge [fontname="Helvetica" fontsize=9 color="#666666"];
 
-  rx [label="frames arrive\n(virtio-net receive ring)" fillcolor="#f3f3f3"];
-  handle [label="handle()\nSYN, data, ACK, FIN, RST\nper-connection state machine" fillcolor="#fde8e8"];
-  table [label="the connection table\nsend queue + receive buffer\nper connection" fillcolor="#fde8e8"];
-  app [label="the request being served\nreads and writes its stream" fillcolor="#e6f4e6"];
-  transmit [label="transmit()\nevery turn of the loop:\nsend what the window allows,\nresend what timed out,\ngive up on dead peers" fillcolor="#fde8e8"];
-  tx [label="frames leave\n(a 64-buffer transmit ring)" fillcolor="#f3f3f3"];
+  arrive [label="1. take every frame that has arrived\n(the virtio-net receive ring)" fillcolor="#fde8e8"];
+  handle [label="2. each frame moves its connection's state machine\nSYN -> a new row in the table; data -> its receive buffer;\nACK -> its send queue shrinks; FIN/RST -> it closes" fillcolor="#fde8e8"];
+  serve [label="3. a connection whose request is complete is served,\nstart to finish: the application reads its stream\nand queues its answer" fillcolor="#e6f4e6"];
+  transmit [label="4. transmit, for every connection:\nsend what the peer's window allows,\nresend what was not acknowledged in time,\ngive up on a peer that stopped answering\n(the 64-buffer transmit ring)" fillcolor="#fde8e8"];
+  idle [label="5. nothing to do? log a little to the console,\nor halt until the next interrupt" fillcolor="#f3f3f3"];
 
-  rx -> handle -> table;
-  app -> table [label="queue()"];
-  table -> app [label="read"];
-  table -> transmit -> tx;
+  arrive -> handle -> serve -> transmit -> idle;
+  idle -> arrive [label="the next turn" constraint=false];
+  serve -> arrive [label="while it waits on\nits own stream, the\nloop keeps turning\nfor everyone else" style=dashed constraint=false];
 }
 ```
+
+*Arrows here are time, not data: one turn of the main loop, then the next.
+Bytes live in each connection's row of the table and move between steps.*
 
 What it respects: the peer's window (with zero-window probes), the
 negotiated segment size, retransmission with a doubling timeout, and a
@@ -211,26 +257,26 @@ boot disk's small site partition) and FAT32 (the data volume).
 
 ```dot
 digraph fat {
-  rankdir=LR; bgcolor="transparent";
+  rankdir=TB; bgcolor="transparent";
   node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=10 fillcolor="#ffffff"];
   edge [fontname="Helvetica" fontsize=9 color="#666666"];
 
-  path [label="data/chat/<conversation>/\nsessions/<id>/uploads/<file>" fillcolor="#e6f4e6"];
-  dirs [label="each directory: a chain of clusters\nholding 32-byte entries\n(long names span several)" fillcolor="#fde8e8"];
-  fat [label="the FAT: cluster -> next cluster\nheld whole in memory (2 MiB for 16 GiB)" fillcolor="#fde8e8"];
-  runs [label="a file: runs of consecutive clusters\nread as one disk request per run\n(up to 64 KB)" fillcolor="#fde8e8"];
-  cache [label="page cache\nwhole files up to 2 MiB,\nkept after their first read" fillcolor="#eef3fb"];
-  disk [label="sectors on the volume" fillcolor="#f3f3f3"];
+  ask [label="the app asks for\ndata/chat/<conversation>/sessions/<id>/uploads/<file>" fillcolor="#e6f4e6"];
+  cache [label="1. in the page cache?\n(whole files up to 2 MiB, kept after a read)" fillcolor="#eef3fb"];
+  done [label="answered from memory" fillcolor="#e6f4e6"];
+  walk [label="2. walk the path, one directory at a time:\neach directory is a chain of clusters of 32-byte entries,\nread a cluster per disk request, stopping at the name" fillcolor="#fde8e8"];
+  chain [label="3. the file's entry gives its first cluster;\nthe FAT (held whole in memory, 2 MiB for 16 GiB)\ngives each next one, so the file is a list of runs" fillcolor="#fde8e8"];
+  read [label="4. read each run of consecutive clusters\nas one disk request (up to 64 KB)" fillcolor="#fde8e8"];
+  keep [label="5. small enough? keep it in the page cache" fillcolor="#eef3fb"];
 
-  path -> dirs [label="walk, name by name"];
-  dirs -> fat [label="next cluster"];
-  dirs -> runs [label="the file's\nfirst cluster"];
-  runs -> fat;
-  runs -> disk;
-  dirs -> disk;
-  cache -> runs [label="miss" style=dashed];
+  ask -> cache;
+  cache -> done [label="yes"];
+  cache -> walk [label="no"];
+  walk -> chain -> read -> keep;
 }
 ```
+
+*Arrows: the order of the steps in reading one file.*
 
 The rules that keep it safe:
 
@@ -273,6 +319,9 @@ digraph judge {
 }
 ```
 
+*Arrows: the same requests go to both, and both sets of answers and files
+go to the comparison.*
+
 Around that: unit tests for every module, small probe kernels for each device,
 dosfstools' `fsck.vfat` over every volume we write, an hours-long soak that watches memory and
 connections for a trend, and metal-vmm, a hypervisor of our own that runs the
@@ -301,8 +350,12 @@ digraph cutover {
 }
 ```
 
-The whole runbook has been rehearsed on a copy of prod's data, and it runs
-tonight once more as a script against stand-ins. Each step has a go/no-go
+*Arrows: the order of tomorrow's steps; the dashed one only if we must.*
+
+The whole runbook has been rehearsed on a copy of prod's data, and tonight it
+ran once more as a script against stand-ins, on that copy: every step GO
+through the switch, and 1,084 of 1,084 pages identical between metal and
+Linux with writes in between. Each step has a go/no-go
 line. The way back is part of it: FAT32 is readable by Linux, so metal's data
 can be turned back into an ordinary directory tree and served by the Linux
 build again.
