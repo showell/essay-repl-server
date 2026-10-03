@@ -57,3 +57,11 @@ So the worst case is losing up to a day of chat, and only if the whole volume
 is lost. Users can always keep their own copy with `d`.
 
 **Answer:** yes / a different interval / automate the tar anyway.
+
+## Steve's answers (2026-10-03, night)
+
+1. **Yes to both recommendations.** The throttle ships with the cutover if
+   it is green in the morning, at 10 / 15 minutes per address and 30 / hour
+   per name.
+2. **Backups at 20:00 UTC**: DigitalOcean volume snapshots (scheduled then if
+   DigitalOcean allows a time), and the encrypted tar by hand, then.
