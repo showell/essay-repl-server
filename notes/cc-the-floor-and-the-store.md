@@ -43,9 +43,10 @@ steers.
   work. **You ask, under Questions, and keep going:** a seventh Store
   operation, anything that changes kernel behavior, anything in angry-gopher,
   and anything that looks like a bug in production.
-- **A found bug is a test first.** Write the failing case. If the fix is in a
-  pure layer and small, fix it in the same commit. Otherwise file it under
-  Questions as a bug, with the test committed but left out of the default run
+- **A found bug is a test first.** Write the failing case. If the bug is in
+  code you wrote for this assignment (the Store, a simulator), fix it in the
+  same commit. If it's in a module the kernel runs, file it under Questions
+  as a bug, with the test committed but left out of the default run
   *and named there*, so it's visible, never silently skipped. Then move on.
 - **Green at every push.** Each commit leaves `zig build test` and `zig build
   properties` passing. Push after every item. Merge `interrupts` and
