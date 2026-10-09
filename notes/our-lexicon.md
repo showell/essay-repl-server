@@ -253,5 +253,6 @@ falsifiable on a guest and never tried.
 | source | the authoritative copy of a fact; for anything durable, the disk |
 | mirror / cache / derived / hint | the roles any other copy plays, each with its rule for a disagreement |
 | reconcile | bring every copy of a fact back in line with its source |
+| reconstruct / retry / forget | the triage of anything in memory, by what its loss costs: rebuilt from the disk; asked again, never having been promised; dropped, as its protocol allows ([web server in a box](web-server-in-a-box.md)) |
 | witness | the smallest thing that lets someone else check a claim |
 | falsify | try to show a stated claim false |
