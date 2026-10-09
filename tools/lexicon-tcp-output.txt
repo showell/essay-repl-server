@@ -1,0 +1,122 @@
+8955 words of prose in tcp.zig, stream.zig, proto.zig, arp.zig, net.zig, netcore.zig, dhcp.zig, tcp_check.zig, tcp.md; baseline: 6693772 words of man pages
+
+WORDS, most over-used (count here, count in the man pages)
+  go                    18        0
+  acknowledged          35        6
+  acknowledgement       40       57
+  fin                   48       85
+  answered              15       29
+  said                  18       54
+  wire                  21       66
+  peer                 141      667
+  room                  27      173
+  shut                  17      129
+  behind                17      150
+  carry                 19      180
+  queued                25      238
+  syn                   36      345
+  bounded               20      224
+  answer                32      470
+  say                   38      610
+  frame                 78     1244
+  waiting               32      541
+  past                  16      281
+  measured              15      276
+  dropped               16      320
+  lost                  17      375
+  nothing               65     1463
+  everything            15      355
+  segment               61     1463
+  connection           102     2531
+  ring                  17      442
+  half                  27      694
+  ack                   29      766
+  let                   15      428
+  wait                  66     1799
+  anything              20      597
+  slot                  30      882
+  rest                  15      478
+  something             16      569
+  timer                 37     1368
+  sent                  51     1960
+  send                  67     2822
+  reset                 30     1408
+  once                  42     2014
+  window                81     3914
+  never                 29     1616
+  keep                  21     1272
+  else                  20     1265
+  turn                  44     3076
+  clock                 17     1260
+  taken                 19     1478
+  hold                  20     1568
+  until                 28     2186
+  back                  20     1721
+  move                  15     1365
+  receive               15     1386
+  machine               43     3993
+  whose                 21     2103
+  still                 21     2160
+  real                  15     1594
+  open                  37     3899
+  stream                39     4308
+  queue                 36     4011
+  buffer                45     5261
+  table                 44     5358
+  way                   31     3950
+  request               35     4582
+  next                  27     3652
+  last                  26     3596
+  host                  40     5541
+  timeout               16     2373
+  byte                  76    11028
+  because               21     3685
+
+PHRASES, most over-used
+  next turn                         10        0
+  peer last                          9        0
+  send queue                        16       10
+  half open                         21       21
+  syn ack                           11       19
+  state machine                      8       32
+  anything else                     10      127
+  receive buffer                     9      174
+  round trip                        10      192
+  sequence number                    8      234
+
+CODE NAMES in backticks, most used
+  transmit                          16
+  max_retries                       11
+  handle                             8
+  sent                               8
+  idle_ns                            8
+  una                                8
+  out                                7
+  update_at                          6
+  pump                               6
+  send                               6
+  tx                                 4
+  rto_at                             4
+  poll                               4
+  reply                              4
+  src_ip                             4
+  dst_ip                             4
+  fin_wait_ns                        3
+  min_rto_ns                         3
+  syn_received                       3
+  window_news                        3
+  .repeating                         3
+  wnd                                3
+  rcv_nxt                            3
+  ack                                3
+  std.Io.Reader                      3
+  sendAll                            3
+  lose_one_sent_in                   3
+  payload_len                        3
+  ip                                 3
+  mac                                3
+  recycle                            3
+  reclaim                            3
+  frame                              3
+  src/tcp.zig                        3
+  here                               3
