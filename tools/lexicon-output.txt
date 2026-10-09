@@ -1,0 +1,143 @@
+24400 words of prose in QUEUE.md, QUEUE-ARCHIVE.md, FEEDBACK.md; baseline: 6693772 words of man pages
+
+WORDS, most over-used (count here, count in the man pages)
+  sweep                 53        0
+  go                    20        0
+  judged                16        0
+  unhurt                15        0
+  explorer              43        3
+  excuse                41        3
+  refusal               32        4
+  blind                 24        3
+  tier                  17        2
+  judge                 24        7
+  knob                  46       15
+  budget                17        6
+  proposal              25       15
+  floor                 53       33
+  lint                  29       18
+  answered              30       29
+  door                  18       23
+  today                 40       54
+  flood                 20       37
+  cut                   65      153
+  review                38       97
+  proposed              39      103
+  finding               54      154
+  wire                  22       66
+  reach                 70      215
+  gate                  18       59
+  synchronize           25       83
+  simulator             47      155
+  seed                 141      469
+  gap                   15       62
+  refused               17       76
+  lie                   22       98
+  red                   81      361
+  flip                  20       93
+  answer                95      470
+  box                  185      915
+  coverage              64      330
+  cloud                 15       83
+  past                  48      281
+  green                 20      120
+  say                  105      610
+  stay                  26      163
+  held                  30      202
+  readme                17      123
+  sim                   26      188
+  oracle                18      134
+  cold                  18      145
+  walk                  17      144
+  kept                  24      210
+  peer                  74      667
+  apart                 16      155
+  volume               123     1155
+  draw                  29      279
+  question              63      605
+  edge                  27      277
+  refuse                38      393
+  reached               53      564
+  site                  38      409
+  lose                  22      243
+  absence               16      191
+  tape                  24      286
+  merged                37      452
+  guest                 91     1099
+  item                 186     2296
+  lost                  29      375
+  fix                   69      994
+  now                   90     1312
+  fault                 27      432
+  keep                  80     1272
+  flush                 45      732
+
+PHRASES, most over-used
+  red test                          32        0
+  under question                    27        0
+  red fix                           22        0
+  real kernel                       13        0
+  unhurt run                        12        0
+  power cut                         11        0
+  under proposed                    11        0
+  cold review                       10        0
+  caching page                      10        0
+  blind run                         10        0
+  next five                         10        0
+  long tier                         10        0
+  box build                          9        0
+  red first                          9        0
+  box run                            9        0
+  seed run                           8        0
+  volume line                        8        0
+  item merged                        8        0
+  end run                           10        3
+  unit test                         14        5
+  write cache                       19        8
+  guest time                        10       11
+  synchronize cache                 15       18
+  test first                         9       13
+  read back                         21       44
+  half open                          9       21
+  mode select                       10       42
+  mode sense                        10       44
+  long name                         11       98
+  kernel code                        8      102
+  directory entry                    9      125
+
+CODE NAMES in backticks, most used
+  store_sim                         26
+  zig build test                    22
+  sweep.sh                          19
+  claude/great-wright-i7aste        15
+  long.sh                           14
+  sweep_test.sh                     13
+  master                            13
+  io.durable                        12
+  MUTATION.md                       11
+  floor_sim                         11
+  ops/check_zig                     10
+  sound.sh                          10
+  antithesis-sdk                    10
+  check.sh                          10
+  readAt                             9
+  rest                               9
+  FAULT_SEED                         9
+  report.py                          9
+  same.sh                            8
+  replace                            8
+  properties                         8
+  zig build properties               8
+  VOLUME_CUT_AFTER                   8
+  fat_sim                            7
+  zig fmt --check src                7
+  fat16_test                         7
+  gates.sh                           7
+  interrupts                         7
+  scsi.zig                           6
+  -Dcoverage                         6
+  zig build explore                  6
+  check                              6
+  box/v18                            6
+  main                               6
+  BadName                            5
