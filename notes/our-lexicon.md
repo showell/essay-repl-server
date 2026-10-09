@@ -135,22 +135,62 @@ distinction that only became sayable once we had two words.
 ## Words to add
 
 The brief was at least one noun and one verb that don't appear in the
-docs. I checked each one against all three documents.
+docs. I checked each one against all three documents. ("Source" in this
+sense, and the roles, don't appear either.)
 
-### Noun: **owner** (0 uses)
+### Noun: **source**, and the roles of a copy
 
-*The one place a fact lives; every other copy is a cache of it.*
+*The first draft proposed "owner". Steve's objection: ownership suggests a
+hierarchy this system doesn't have, and the familiar idea is the
+"authoritative source". Sharpened, the word is **source**, and it comes with
+a short list of the roles any other copy can play. Each role has its own
+rule for a disagreement.*
 
-> "The FAT's owner is the first copy on disk; the held FAT and the second
-> copy are caches, and the mirror weighing is a cache that disagreed with
-> its owner."
+| role | what it is | when it disagrees | in the kernel |
+|---|---|---|---|
+| **source** | the authoritative copy | it settles the disagreement | the FAT's first copy on disk; a file's bytes on the media |
+| **mirror** | a redundant copy, kept for repair | it's brought back to the source; it stands in only when the source can't be read | the FAT's second copy |
+| **cache** | a copy kept for speed | it's dropped and read again, never written back | the held FAT, the folder cache, the page cache |
+| **derived** | a value that can be worked out from the source | it's recomputed rather than trusted | the kept free count |
+| **hint** | a starting guess, allowed to be wrong | being wrong is never damage | FSInfo's free count and next-free cluster |
 
-Today's best idea was "one fact, one place, one atomic step", and it needs
-this word. Without "owner" we say "which copy is authoritative" every time,
-and we said it badly four times about the FAT copies. With it, a design
-question gets short: **who owns this fact?** A copy with no owner is a bug
-waiting for its first disagreement, like the kept free count, the two
-cache flags or `.lastauthor`.
+> "The two cache flags disagree because one is derived and stored as if
+> it were a source."
+
+Most of this week's disk bugs were a copy whose role was unclear:
+- the FAT weighing broke four times because neither copy was named the
+  source, so a tie had no rule;
+- fsck's "uninitialized" FSInfo failed every seed because the judge read a
+  hint as a source.
+
+The design question becomes short: **what is this fact's source, and what
+role does every other copy play?**
+
+**For the kernel, the rule is: the disk is the source of every durable
+fact, and RAM holds only caches, derived values and hints.** A reboot is then
+the ultimate reconcile, and it can lose nothing the kernel said was saved.
+TCP's state is another kind of fact: its source is in RAM, and it isn't
+meant to outlive a boot.
+
+*Above the kernel the chain goes on: the app's facts have their sources in
+files, and the chat participant is the source of what they said. Keeping
+chat out of this is deliberate. The kernel should hold to the rule for any
+consumer.*
+
+### ACID, at the kernel's level
+
+The database word for the same ground, applied to the store with no app
+in mind:
+
+| | what it means here | where it lives |
+|---|---|---|
+| **Atomic** | one sector write is the commit point | rename; since 935104f, an overwrite |
+| **Consistent** | every crash point leaves a state the next boot accepts | STORE.md's table, the stop-at-every-write test |
+| **Isolated** | no request sees another's half-done change | HOST.md: one handler at a time, run to completion; ours by construction |
+| **Durable** | "saved" is said only once the source holds it | `durable.zig`, WCE=0 |
+
+Isolation is the one we get without trying, which is worth saying before
+anyone adds a second handler.
 
 ### Verb: **falsify** (0 uses)
 
@@ -174,8 +214,8 @@ falsifiable on a guest and never tried.
   without a witness is a phenomenon" puts your old rule in one sentence. A
   queue item would then carry its witness, as most of the good ones already
   do.
-- **reconcile** (verb, 0 uses). *To bring every copy of a fact back to its
-  owner.* Mirror repair, the folder cache dropping a failed sector, boot
+- **reconcile** (verb, 0 uses). *To bring every copy of a fact back in line
+  with its source, each by its role's rule.* Mirror repair, the folder cache dropping a failed sector, boot
   re-deriving the free count, and the plan's "reconciliation at boot is
   normal operation" all do this. Today they have no common name, so they
   get designed one at a time.
@@ -210,7 +250,8 @@ falsifiable on a guest and never tried.
 | floor | a ratchet: a list that may only grow |
 | class | a kind of mistake, hunted across all the code |
 | fact | one thing the system holds true about itself |
-| owner | the one place a fact lives; the rest are caches |
-| reconcile | bring every copy of a fact back to its owner |
+| source | the authoritative copy of a fact; for anything durable, the disk |
+| mirror / cache / derived / hint | the roles any other copy plays, each with its rule for a disagreement |
+| reconcile | bring every copy of a fact back in line with its source |
 | witness | the smallest thing that lets someone else check a claim |
 | falsify | try to show a stated claim false |
