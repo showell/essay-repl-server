@@ -135,7 +135,7 @@ These don't ship, but a v23 run is judged by them:
 
 **The decision for you:** what goes into v23. Three choices:
 
-1. **Now:** B42, the rename fix and 148, once the leak plant and a floor
+1. **Now:** B42, the rename fix and 148, once a floor
    run are clean and the "Truncating" false red is fixed. Roughly 1.5 h of
    box time, most of it unattended.
 2. **Wait for 152** as well, so `/admin/host` shows every count and the
