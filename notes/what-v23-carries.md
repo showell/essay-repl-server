@@ -127,7 +127,7 @@ These don't ship, but a v23 run is judged by them:
 
 | step | state | time |
 |---|---|---|
-| plants on the merge (`0e737b8`) | clean ✓, swallowed write ✓, TCP byte ✓, **CC's leak plant: running** | ~5 min left |
+| plants on the merge (`0e737b8`) | all pass: clean, swallowed write, TCP byte, and CC's leak plant (caught in all 3 runs it fired in) | done, 14 min |
 | plants with the judge's new floor | not run | ~20 min |
 | **known false red:** a chain past its size that the kernel counted still fails the judge (fsck's "Truncating" line isn't excused yet) | the box's next fix | small |
 | QUEUE 152 (`orphaned_runs`, exact names) | CC, queued | — |
