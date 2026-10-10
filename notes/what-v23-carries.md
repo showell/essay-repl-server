@@ -135,8 +135,8 @@ These don't ship, but a v23 run is judged by them:
 
 **The decision for you:** what goes into v23. Three choices:
 
-1. **Now:** B42, the rename fix and 148, once a floor
-   run are clean and the "Truncating" false red is fixed. Roughly 1.5 h of
+1. **Now:** B42, the rename fix and 148, once a plants run with the floor
+   is clean and the "Truncating" false red is fixed. Roughly 1.5 h of
    box time, most of it unattended.
 2. **Wait for 152** as well, so `/admin/host` shows every count and the
    judge holds orphaned names exactly. That adds CC's turnaround plus a
