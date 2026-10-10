@@ -7,6 +7,32 @@ a key/value store is the first thing to build, it lives in angry-gopher,
 values may be Zig structures rather than JSON, and English means some
 ASCII bias is fine. Mostly about the store; search is its first user.*
 
+## Decisions since this draft (Steve, 2026-10-10)
+
+This draft proposed the store first. Its first user turned out not to need it:
+
+- **Search's index lives in memory, derived from the transcripts**, which
+  stay the only source. It needs no log: lost on restart, it is rebuilt.
+- **Built at boot.** If that gets annoying, it becomes lazy: requests come in
+  first, and the index is built at the first search or in the first **idle
+  window**.
+- **An idle window, eventually a first-class host feature**: chat is bursty
+  and idle most of the time, and work that isn't time-critical (an index
+  build, compaction, a check) belongs there, in slices, between requests.
+- **A new message updates the index as it's appended**, in memory, with no
+  disk writes, so there's no N-second lag after all.
+- **Search covers what `visibleConvs` lists** (angry-gopher `chat_store`):
+  DMs with other members who have passwords, and the viewer's channels. No
+  self-DMs, no DMs with passwordless accounts, for now.
+- **`/admin/search` is the baseline** (angry-gopher `017b6801`): no index,
+  reads every transcript the admin can see. Every smarter search must agree
+  with it.
+- **The key/value store waits for a user that is a source**, not a derived
+  value: the sidecars (`last-seen`, `last-sessions`, `.count`), if we fold
+  them together.
+
+The rest of this draft stands as the store's design for that day.
+
 ## What production says about memory
 
 From `/admin/host` tonight:
