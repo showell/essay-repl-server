@@ -1,4 +1,4 @@
-# Gopher as a platform: what Dog Park needs, and the order to free it
+# A web server in a box: what Dog Park needs, and the order to free it
 
 *2026-10-11. A proposal before any Dog Park code. Two read-only surveys
 mapped what a second application would need from angry-gopher and from
@@ -40,9 +40,12 @@ proving behaviour doesn't change. Very little is new code.
 
 ## The end state
 
-Three kinds of repo, with dependencies pointing one way:
+**The library is called `webbox`** ("web server in a box"): no "gopher" in
+anything Dog Park sees (Steve, 2026-10-11). angry-gopher keeps its name, and
+gopher-metal may become something like zig-droplet-unikernel. Three roles,
+with dependencies pointing one way:
 
-- **`gopher`, the library.** Serving requests, streams and SSE, the store,
+- **`webbox`, the library.** Serving requests, streams and SSE, the store,
   signed cookies and the session secret, the Linux host, the app contract.
   Each of these is one copy, held in by a lint.
 - **gopher-metal, the service.** It exports `addAppKernel` and
@@ -51,13 +54,13 @@ Three kinds of repo, with dependencies pointing one way:
 - **Applications:** dog-park first, angry-gopher eventually. Each one is
   routes, pages, JS and a `build.zig` that pulls from the other two.
 
-**Recommendation: carve the library inside angry-gopher first, and lift it
-into its own repo later.** In place, every move is checked by angry-gopher's
-2,700 unit tests and the metal gates as they stand. Lifting it out is then a
-directory move, not a redesign. This morning's first step already works that
-way: angry-gopher's server is a package exporting `gopher`, with `http`,
-`edge` and `signed`, and a lint fails any library file that imports
-something the library doesn't name.
+**`webbox` is carved in place, inside angry-gopher's server** (`webbox.zig`
+names its files). Lifting it into its own repo is a long way off (Steve). In
+place, every move is checked by angry-gopher's 2,700 unit tests and the metal
+gates as they stand. This morning's first step already works that way:
+angry-gopher's server is a package exporting `webbox`, with `http`, `edge`
+and `signed`, and a lint fails any library file that imports something
+`webbox.zig` doesn't name.
 
 ## The order
 
@@ -73,7 +76,7 @@ the gates.
    router reaches.
 2. **The store and its counter.** `store.zig` reaches `roots` only in two
    tests (checked); those tests stop doing that.
-3. **The app contract.** `gopher.App(Site)` generates `start`, `route` and
+3. **The app contract.** `webbox.App(Site)` generates `start`, `route` and
    the names the kernel uses, wrapping the serving machinery around the
    application's own handler.
    - `host_start` keeps only chat's startup steps.
@@ -93,7 +96,7 @@ cookies. **Its SSE needs step 6.**
 
 **Phase B: gopher-metal as a service.**
 
-1. **The kernel imports `app` and `gopher`, not `router.zig`.** The five
+1. **The kernel imports `app` and `webbox`, not `router.zig`.** The five
    angry-gopher bits become hooks the application supplies.
 2. **The port becomes a build step.** A small Zig tool, run by the build
    over any source folder. port.sh calls the same tool. The tool also
@@ -135,10 +138,7 @@ phase that touches the file.
 
 ## What I'd like from you
 
-Two calls:
-1. **Carve in place, then lift out.** Is that right, or do you want the
-   `gopher` repo now?
-2. **Phase A, in order, starting now.** Each step is committed and checked
-   on its own, and nothing ships until the gates say so.
+One call: **Phase A, in order, starting now.** Each step is committed and
+checked on its own, and nothing ships until the gates say so.
 
 The Dog Park code waits for step 5.
