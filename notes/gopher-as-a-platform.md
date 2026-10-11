@@ -111,6 +111,54 @@ Then dog-park's `build.zig` gets a `metal` step. **Later:** a generic "judge
 my app on metal against my app on Linux", and angry-gopher builds the same
 way dog-park does.
 
+## Phase A, as it goes
+
+**Step 1 (angry-gopher `225f0e15`).** Joined the library: `html`, `bus`,
+`mem_meter`, and `host_status`, renamed `host_facts`, the name the router
+already exported it by. The portability lint checks from two roots, the route
+table and `webbox.zig`, so a library file the site never reaches must still
+port.
+
+**Step 2 (`ad52ccd7`).** Joined the library: `store` and `counter`.
+- The store's tests stop borrowing the app's `roots`; it has its own
+  `saveBases`.
+- Its prose says what it promises any application. Angry-gopher's folder
+  inventory (how far each folder can grow against FAT's limit) moved whole
+  to `roots.zig`.
+
+**Step 2b, the library reads as a library (in progress).** A cold review of
+step 1 found no behaviour change, but found two other problems:
+- **The library's prose still named chat, routes, ops scripts and
+  gopher-metal.** A prose-only pass moves each such sentence to the app file
+  that owns it.
+- **The lints had blind spots:**
+  - an import split over lines (a form `zig fmt` keeps);
+  - a `"http://"` string hiding the rest of its line;
+  - a `'{'` character literal holding a test block open, so the code after
+    it went unchecked.
+
+  Both lints now read source through one shared reader, `tools/zig_source.py`.
+  Each blind spot has a test that fails against the old lint. The library lint
+  also refuses `@embedFile`, because what a page serves is the application's.
+
+**Open decisions, each waiting for the step that owns it:**
+- **`edge.RejectKind`** (step 3, the app contract). It mixes generic kinds
+  with one of this app's (`malformed_markdown`). Its names are keys in
+  `/version`, so renaming would change behaviour. The contract could let an
+  application bring its own kinds.
+- **`Bus.peer`** (step 3 or 4). Request context (the client's address, for
+  the app's per-address limits) riding on the pub/sub handle.
+- **The keepalive setting** (step 4, the Linux host). A mutable global, read
+  from a `GOPHER_*` variable.
+- **Globals in the library.** `host_facts`' report and log, and the memory
+  meter's single instance. These are defensible as process singletons, but
+  they should be named as such.
+- **Names to weigh:** `html.htmlEscape` reads "html" twice (`html.escape`);
+  `signed.Kind` might read better as `signed.Scheme`.
+- **The other lints** (`lint_store_absence`, `lint_head_access`) still read
+  source line by line, and scan only angry-gopher's tree. That's step 8,
+  lints for more than one application.
+
 ## Cleanup notes, found along the way
 
 None of these blocks anything. Each is small, and most fall out of the
