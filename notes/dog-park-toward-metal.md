@@ -13,7 +13,7 @@ salvage from. The live version is small and is all mine:
 
 - **The page**, `dog-park/solo/park.js`: plain JavaScript, about 550 lines,
   one canvas.
-- **The server**, `dog-park/src/play/`: a webbox application, about 600
+- **The server**, `dog-park/src/play/`: a webbox application, about 750
   lines of Zig with unit tests, running as a Linux process on the box (port
   9103).
 
