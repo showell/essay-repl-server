@@ -245,6 +245,23 @@ What changed:
   behaviour behind it.
 - **The kernel edit is the `started.app.…` lines only.**
 
+**Step 3, done.**
+- **3a (`923416e7`):** `client_address.zig` and `free_space.zig` joined the
+  library, out of `game_limits`; the path helpers are `http.pathUnder` and
+  `http.pathOf`.
+- **3b (`610a30a6`):** `site.zig` serves any application. `route` and its
+  machinery moved whole, and a stand-in application's test proves `Site`
+  without angry-gopher. `zig test src/webbox.zig` passes alone.
+- **3c (`f1839378`, gopher-metal `7273829`):** `Site.start`, `Host` and
+  `Roots` are the library's; angry-gopher's own startup steps are
+  `app_start.zig`.
+- **The proof:**
+  - **A real boot:** a fresh port and kernel; the members judge, 15 of 15
+    requests answered as Linux answered.
+  - **A cold code review:** no behaviour change.
+  - **Its fixes (`42b93741`):** six mutants of the mutation tester had gone
+    stale with the move. Repointed, all six are killed.
+
 **Open decisions, each waiting for the step that owns it:**
 - **`edge.RejectKind`** (step 3, the app contract). It mixes generic kinds
   with one of this app's (`malformed_markdown`). Its names are keys in
