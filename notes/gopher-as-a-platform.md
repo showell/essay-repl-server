@@ -400,6 +400,63 @@ three claims about today's behaviour were wrong. The revision:
   source line by line, and scan only angry-gopher's tree. That's step 8,
   lints for more than one application.
 
+## Injection or pull: the three relationships that smell most
+
+A cold review across the four repos (Steve's question: where does one repo
+inject services into another that should pull, or the reverse, by accident
+or in a way that makes sharing with Dog Park impractical?). Its three, and
+what I take from each:
+
+1. **gopher-metal pulls angry-gopher's tree; angry-gopher already offers
+   to inject.**
+   - **Today:** `port.sh` copies `src/*.zig` and rewrites
+     `const Io = std.Io;` with sed. A regex scrapes the asset table.
+     `build.zig` runs git against angry-gopher at configure time, and
+     `verdicts.py` hard-codes angry-gopher's served directories.
+   - **What goes unused:** angry-gopher's build already exports `webbox`
+     and takes `-Dcommit`, and the metal side uses neither.
+   - **Why it matters:** a `std.Io.Dir` that skips the alias escapes the
+     rewrite silently, and with two applications each would need its own
+     copy, scraper and directory list.
+   - **The fix:** inject. The application's build asks gopher-metal for a
+     kernel, handing it the app module, the library, its assets, its commit
+     and its content directories. **New to the plan:** the `Io` alias
+     becomes an injected module (`host_io`: `std.Io` on Linux, `metal.io`
+     on metal), so there's no copy and no sed, and an escape fails to
+     compile.
+   - **Conceded:** for gopher alone, "the port is angry-gopher's HEAD" is a
+     strong release guarantee. Cost: large; it is Phase B's steps 2 to 4.
+2. **The kernel reaches the library through the application's router.**
+   - **Today:** the router re-exports the library's names beside its own
+     (`request_limits`, chat's upload cap as the page-cache default,
+     `dataRoot`), and the kernel reads the application's report field by
+     field (`started.app.backfilled`).
+   - **The fix:** hosts import `webbox` directly and receive the application
+     as a site. **Step 4 has just done this for Linux:** the application
+     prints its own report through a callback. The kernel should do the
+     same, and the largest-body figure becomes something the application
+     declares.
+   - Cost: small to medium; it is Phase B's first step.
+3. **The judge and the image builder hold angry-gopher inside gopher-metal.**
+   - **Today:** `judge_gopher.py` (3,467 lines) knows chat's routes, its
+     files and its `GOPHER_*` dialect, and `droplet/chat.py` imports the
+     judge to build disks.
+   - **The fix:** split it. gopher-metal keeps the generic machinery (boot
+     both hosts, replay, compare, build disks); each application injects a
+     manifest and its own checks.
+   - **Conceded:** a judge written against one application is why it
+     catches bugs. Cost: large; it is the plan's "Later".
+
+**Judged fine:**
+- the `Host` struct handed to `start` (injection, correctly);
+- the library's process-wide settings, each set in one place with
+  save/restore for tests;
+- `roots.zig`'s globals, inside the application;
+- metal-vmm's plants and sweeps (they read gopher-metal by path and take
+  their request shapes as data);
+- the coverage SDK as a sibling. Hash-pinning it in `build.zig.zon` would
+  take git out of `build()` once Dog Park depends on gopher-metal.
+
 ## Cleanup notes, found along the way
 
 None of these blocks anything. Each is small, and most fall out of the
