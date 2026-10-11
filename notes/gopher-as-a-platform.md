@@ -208,6 +208,43 @@ report its own startup lines.
 - **`edge.RejectKind`'s app kind.** It stays as is; its keys are
   `/version`'s.
 
+**The design, revised after a cold review.** The review found eight
+problems. The two serious ones:
+- **Every router test would have pointed at the wrong store.** They set
+  their data through `roots.pointForTest` and never call `start`.
+- **Tests of the private machinery would have stopped compiling.** The tests
+  of `Sent`, `settle` and the 500 call it directly.
+
+What changed:
+- **The store's bases.** `Site.start` sets them, and `roots.point` stops
+  doing so. `roots.pointForTest` sets them itself, so every test that points
+  the roots points the store too.
+- **The machinery's tests move with it** into the library. Those that need
+  the whole application stay in `router.zig`.
+- **The application is a private struct inside `router.zig`**
+  (`const App = struct { pub const routes = routed; ... }`), not the router
+  itself. `routed` stays private, so no host can call the table without the
+  serving machinery around it. Only `route` and `start` are generic; `Sent`,
+  `settle` and the 500 are plain library declarations.
+- **angry-gopher reaches the library by relative path,
+  `@import("webbox.zig")`, never as the module `webbox`.** The same files in
+  two modules is a compile error. Dog-park on metal will need the library
+  ported as its own module; that's Phase B.
+- **`client_address.zig`, not `client.zig`.** "Client" reads as an HTTP
+  client. It exports `addr_max`, which the per-address table also uses.
+- **`free_space.zig`, not `disk_space.zig`,** and the union `Floor` becomes
+  `FreeSpace`. The quarter-free floor stays the game's policy, worded as
+  such.
+- **`http.pathUnder`, not `matchPrefix`.** chat.zig has a private
+  `matchPrefix` with another meaning (no `/` boundary); the same name would
+  invite a swap that silently changes chat's routes.
+- **Names:** `App.routes` (the whole table; every surface already has a
+  `handle`), `App.setup`, and `App.StartReport` (not `Setup`, which reads as
+  the setup's input). `Started` is `{ hub, app: App.StartReport }`.
+- **`Roots` keeps its name** (`Host.roots`). Renaming it is churn with no
+  behaviour behind it.
+- **The kernel edit is the `started.app.…` lines only.**
+
 **Open decisions, each waiting for the step that owns it:**
 - **`edge.RejectKind`** (step 3, the app contract). It mixes generic kinds
   with one of this app's (`malformed_markdown`). Its names are keys in
