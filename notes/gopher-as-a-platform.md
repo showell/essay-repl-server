@@ -337,6 +337,51 @@ lint's root (`webbox.zig`) would then reach it and fail. So **two roots**:
 build.zig exports both modules; Dog Park on Linux imports both, and on metal
 only `webbox`. The library lint checks both roots' closures.
 
+**Step 4's design, revised after its cold review.** The review found that
+the module shape contradicted itself: two modules sharing files don't
+compile, and would give two `Hub` types even if they did. It also found
+three claims about today's behaviour were wrong. The revision:
+- **One module, `webbox`, which names `linux_host`.** Zig analyses only what
+  is used, so the metal kernel never compiles it. The portability lint
+  learns a named set of host-only files (`linux_host.zig`, `bind.zig`,
+  `linux_config.zig`) that only `webbox.zig` may import; any other file
+  reaching one is a finding.
+- **A bad `GOPHER_PORT` still falls back to 9001.** It never refused, and
+  the gates use `GOPHER_PORT` to mean a directory, so refusing would break
+  any server that inherits their environment. Refusing a bad port is a
+  change for after Phase A, once that directory variable is renamed.
+- **Today's order, exactly, in one call.**
+  `linux_host.Server(App).run(init, options)` does, in order:
+  1. note the start time;
+  2. read the config and print its lines;
+  3. `start`;
+  4. the application's report (a callback, in its own words);
+  5. keepalive, checked and set;
+  6. bind, checked;
+  7. listen, then the banner;
+  8. serve.
+
+  A bad bind or keepalive refuses at the same point as today. The one
+  move: the start time is taken just after the application's own floor
+  line, where it was just before, which is microseconds.
+- **Variable names are given whole** (`.port = "GOPHER_PORT"`, …), not as a
+  prefix, so a grep finds each one where it is read.
+- **Free space:** the library exports `linux_host.freeSpaceAt(path)`
+  (`statfs`). angry-gopher's reader is two lines over `router.dataRoot()`,
+  and `GOPHER_GAME_FLOOR` stays in angry-gopher's `main`.
+- **`config.zig` joins as `linux_config.zig`.** It is over `site.Roots`, with
+  the `~/Auth` default an argument and the shown text built from the
+  variable's name, so angry-gopher's text is today's.
+- **The application's name ("zig-server") reaches every line that says it,**
+  the `/proc` fact "Linux, zig-server, pid N" included.
+- **`head_bytes` moves to `http`.** `limits.zig` re-exports it above `body`:
+  the Caddy check evaluates everything after `body`, and would crash on it.
+- **`turn` and the other process singletons sit at `linux_host`'s top
+  level,** not inside the generic.
+- **The spawn-failure fallback moves whole.** It serves inline, which blocks
+  the accept loop for a kept stream's whole life; that is existing behaviour,
+  noted here.
+
 **Open decisions, each waiting for the step that owns it:**
 - **`edge.RejectKind`** (step 3, the app contract). It mixes generic kinds
   with one of this app's (`malformed_markdown`). Its names are keys in
