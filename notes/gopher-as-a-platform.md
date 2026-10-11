@@ -408,6 +408,24 @@ three claims about today's behaviour were wrong. The revision:
 new droplet needs one; angry-gopher's was seeded by hand), and `Secure` on
 the cookie (it would change angry-gopher's bytes now).
 
+**Step 6, done: Phase A is complete (`38446b66`; review fixes `1e5bea00`,
+`d4b42744`).**
+- **`sse.zig`:** open a stream, push frames, `forward` a key's blobs, and
+  where a reconnect resumes. Chat keeps its transcript stream.
+- **The proof:** the judge with the streams gates (members, streams-linux,
+  streams-metal) on a fresh kernel; a cold code review with no behaviour
+  change.
+- **A real gap, found and closed:** a new mutant on `push`'s drain-then-flush
+  survived, because no test could see a frame left in a buffer. Now one
+  does.
+- **The same review, from Dog Park's chair:**
+  - `site_secret.create` makes a first secret, so a first-visit cookie can be
+    issued at all;
+  - four docs that would mislead a stranger say what is so.
+- **Onto the plan for Dog Park:** a per-address bound on what a first visit
+  creates. The hourly table exists twice already (`login_throttle`,
+  `game_limits`); the third user extracts it.
+
 **Open decisions, each waiting for the step that owns it:**
 - **`edge.RejectKind`** (step 3, the app contract). It mixes generic kinds
   with one of this app's (`malformed_markdown`). Its names are keys in
