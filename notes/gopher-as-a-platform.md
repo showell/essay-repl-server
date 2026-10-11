@@ -444,6 +444,53 @@ the cookie (it would change angry-gopher's bytes now).
   source line by line, and scan only angry-gopher's tree. That's step 8,
   lints for more than one application.
 
+## Phase B, as it goes
+
+Worked in worktrees (branches `phase-b0`, `phase-b2`, `phase-b1`, stacked),
+each step cold-reviewed; nothing merged until gopher-metal's unit tests and a
+gate run pass on the stack.
+
+**Step 0 (new: the prerequisite the plan missed). The library is its own
+module, and the application imports it only by name.** 55 application files
+imported library files by path, which made "the kernel takes `webbox` and the
+app as two modules" impossible (one file, one module). Now:
+- `webbox` (portable) and `webbox_linux` (the Linux host, reaching the
+  portable half as the module) are two modules;
+- every application file says `@import("webbox").x`;
+- the lints enforce both, over every file in the folder.
+
+The review caught the store-absence lint silently checking nothing after the
+rewrite (it only knew `@import("store.zig")`); it reads the module form now,
+with tests that fail against the old lint.
+
+**Step 2a. The one-file swap (Steve's "swap only one file").** Every file takes
+`const Io = @import("host_io").Io;`. angry-gopher's build hands it
+`host_io_std.zig` (std's); gopher-metal's hands it `host_io_metal.zig` (the
+machine's). `port.sh` still copies but edits nothing, and refuses a file that
+reaches std's `Io` any other way (`@import("std").Io` too). The store judge
+compiles `store.zig` both ways and passes.
+
+**Step 1. The kernel takes the application as `app` and the library as
+`webbox`.** `app` exports `site` (its `Site(App)`) and `hosting`: `data_name`,
+`whole_read_max`, `cache_largest_most`, and `describeStart` (its setup's
+report in words, one function both hosts print). The kernel checks those
+exports at compile time, by name.
+
+**Left for step 4, from the reviews** (each makes a second application work on
+metal, none matters for chat):
+- the judges hard-code "chat's data" (the console and `/admin/host` labels);
+- `admin_reset` assumes chat's user layout (uid 1 is the admin): `hosting`
+  should declare whether there is such an admin;
+- the build still roots `app` at `{port}/router.zig` and reads assets from
+  angry-gopher's build: `addAppKernel` takes the root, the library and the
+  assets from the application's build;
+- angry-gopher's exported `webbox` module is wired to std's `host_io`, so a
+  dependent (dog-park) can't hand it the machine's: the library's build
+  needs a `host_io` option, or `addAppKernel` builds the modules from source.
+
+**Next: step 2b**, no copy at all: gopher-metal compiles the application's
+sources where they are, and the port folder and its freshness stamps retire.
+
 ## Injection or pull: the three relationships that smell most
 
 A cold review across the four repos (Steve's question: where does one repo
