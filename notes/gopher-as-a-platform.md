@@ -126,7 +126,7 @@ port.
   inventory (how far each folder can grow against FAT's limit) moved whole
   to `roots.zig`.
 
-**Step 2b, the library reads as a library (in progress).** A cold review of
+**Step 2b, the library reads as a library.** A cold review of
 step 1 found no behaviour change, but found two other problems:
 - **The library's prose still named chat, routes, ops scripts and
   gopher-metal.** A prose-only pass moves each such sentence to the app file
@@ -140,6 +140,73 @@ step 1 found no behaviour change, but found two other problems:
   Both lints now read source through one shared reader, `tools/zig_source.py`.
   Each blind spot has a test that fails against the old lint. The library lint
   also refuses `@embedFile`, because what a page serves is the application's.
+
+**Step 2b (`a30bcf38`).** Done as described above. With comments
+stripped, the 17 changed files are byte-identical to before.
+
+### Step 3, the app contract: the design, before any code
+
+**Terms.** A *host* is what owns the machine: Linux's `server.zig`, or
+gopher-metal's kernel. An *application* is what a site serves: angry-gopher's
+route table, or Dog Park's. A **site** is an application made servable:
+`webbox.Site(App)` generates everything a host calls, around the
+application's own handler. A host never names the application's modules.
+
+**What an application provides** (a Zig type with these declarations, all
+required, so no default is a decision nobody made):
+- `handle(req, io, alloc, bus) !void`: its route table. Today this is
+  `router.routed`, prelude included (the client's address, the cookie
+  re-sign).
+- `setup(io, base, dirs: ?Dirs) !Setup`: its one-time steps, in its own
+  order. For angry-gopher that's the roots, the secret's move, the backfill
+  and search's index.
+- `Setup`: what those steps did, for the host's log.
+
+**What `Site(App)` gives a host:**
+- `route(req, io, alloc, bus) !?Kept`. The serving machinery moves here
+  unchanged from `router.zig`: the writer that knows whether a byte went
+  out, `settle`, the 500 that names nothing, and the malformed-form 400.
+- `start(io, Host) !Started`. In today's exact order:
+  1. the store's bases;
+  2. `App.setup`;
+  3. the host's facts and log;
+  4. the free space and the trusted proxy;
+  5. the Hub.
+
+  `Started` is `{ hub, app: App.Setup }`.
+- `Host` stays the same struct, with `roots` renamed `dirs` (a `Dirs` is
+  `{ data_dir, auth_dir }`, today's `Roots`).
+
+**What moves into the library on the way** (step 3a, before the contract):
+- **`client.zig`:** `trusted_proxy`, `clientAddress` and
+  `plausibleAddress`, out of `game_limits`. Which address a request comes
+  from is a fact about the connection and the proxy in front, not a game
+  rule.
+- **`disk_space.zig`:** `Space` and the host's `free_space` reading, out of
+  `game_limits`. The quarter-free floor stays `game_limits`' policy.
+- **Routing helpers:** `matchPrefix` and `stripQuery`, into `http`.
+
+**The order of commits:**
+- **3a:** the moves above.
+- **3b:** `Site(App)` and `route`. angry-gopher's `router.zig` becomes its
+  route table, plus a `site` it exports under today's names.
+- **3c:** `start`'s split.
+
+Each is checked by angry-gopher's tests, gopher-metal's `zig build check`
+and the gates.
+
+**What gopher-metal sees:** the same names from `router.zig`, except
+`started.backfilled`, `started.search` and `started.search_ms`, which become
+`started.app.…`. That's a three-line kernel edit, and the kernel's serial
+lines stay the same. Phase B later removes even that: the application will
+report its own startup lines.
+
+**Not in step 3, on purpose:**
+- **`router.localTarget` to `http.internalTarget`.** It would be stricter
+  about backslashes and control characters, which is a behaviour change. It
+  comes after Phase A, as its own commit.
+- **`edge.RejectKind`'s app kind.** It stays as is; its keys are
+  `/version`'s.
 
 **Open decisions, each waiting for the step that owns it:**
 - **`edge.RejectKind`** (step 3, the app contract). It mixes generic kinds
