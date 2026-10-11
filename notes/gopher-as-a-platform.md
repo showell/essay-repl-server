@@ -382,6 +382,32 @@ three claims about today's behaviour were wrong. The revision:
   the accept loop for a kept stream's whole life; that is existing behaviour,
   noted here.
 
+**Step 4, done (`474d42fc`, review fixes `82beeefe`).**
+- `linux_host.Server(site).run` is the Linux process, moved whole;
+  `server.zig` is angry-gopher's 60-line `main`.
+- **The proof:** every log line byte-identical, the refusals at the same
+  points, the judge on a fresh kernel (15 of 15), and a cold code review.
+- **The review's fixes:** the portability lint's front door
+  (`@import("webbox.zig").linux_host` from a portable file) is shut, with
+  red tests; keep-alive's history moved back to `server.zig`; stale names
+  fixed in ten places.
+
+**Step 5, done (`df41bd9d`, review fixes `beb12774`).**
+- **`site_secret.zig`:** the secret's files: load, previous, rotate.
+- **`signed_cookie.zig`:** read a cookie (a named `Reading`: none,
+  no_secret, invalid, verified), `issue` it, `renew` it when used.
+- **What stays `uid_cookie`'s:** its markers, the legacy window, the
+  re-sign bound.
+- **The proof:** a cold code review found no behaviour change. Its fixes
+  removed an order kept by hand (null meant four things) and added what a
+  second application would otherwise copy (`issue`, `renew`).
+- **Mutants:** six had gone stale; repointed, the cookie and secret rules
+  are 11 of 11 killed.
+
+**Deferred to Dog Park, from step 5's review:** creating a first secret (a
+new droplet needs one; angry-gopher's was seeded by hand), and `Secure` on
+the cookie (it would change angry-gopher's bytes now).
+
 **Open decisions, each waiting for the step that owns it:**
 - **`edge.RejectKind`** (step 3, the app contract). It mixes generic kinds
   with one of this app's (`malformed_markdown`). Its names are keys in
