@@ -262,6 +262,81 @@ What changed:
   - **Its fixes (`42b93741`):** six mutants of the mutation tester had gone
     stale with the move. Repointed, all six are killed.
 
+### Step 4, the Linux host: the design, before any code
+
+**Today.** `server.zig` (315 lines), `config.zig`, `bind.zig` and `bus.zig`'s
+keepalive setting make up the Linux host. Almost all of it is generic:
+- reading the environment;
+- the config file that names `data_dir` and `auth_dir`;
+- the listener;
+- one task per connection;
+- the small body read before the turn;
+- the turn itself (**one handler at a time**, as on metal);
+- serving a kept stream;
+- the peer's address;
+- `statfs` for free space;
+- `/proc` for the host's facts.
+
+**The application-specific parts are four:**
+- the startup lines about chat's backfill and search;
+- the route list in the banner (`/driving, /puzzles, /game, /chat,
+  /channel`);
+- `GOPHER_GAME_FLOOR` (the game's floor);
+- free space measured at the game store's folder, not the data folder.
+
+**The names that must not move.** `GOPHER_PORT`, `GOPHER_BIND`,
+`GOPHER_CONFIG`, `GOPHER_TRUSTED_PROXY`, `GOPHER_KEEPALIVE_MS` and
+`GOPHER_GAME_FLOOR` are set by gopher-metal's judge and gates, the deploy
+service, the stress harness, the cutover drill and metal-vmm's plants.
+Nothing reads the server's log text, but the variables are a contract with
+all of those.
+
+**The design.** A library module, `linux_host.zig` (`webbox.linux_host`), in
+three parts:
+1. **`Settings.fromEnv(io, alloc, env, prefix)`** reads the variables under
+   a prefix the application names: angry-gopher's `"GOPHER_"`, Dog Park's
+   `"DOGPARK_"`. It covers port, bind, keepalive, trusted proxy and config
+   (the config file's `data_dir`/`auth_dir`; today's `config.zig` moves
+   whole). A bad value refuses to start, as today. The defaults are
+   arguments, not hidden: angry-gopher passes port 9001 and proxy
+   `127.0.0.1`.
+2. **`Host(App).start(io, alloc, settings, free_space)`** runs `Site(App).start`
+   with this host's facts (pid, started, up for, data directory, memory from
+   `/proc`). It answers `Started`, so the application can say its own report
+   in its own words before serving.
+
+   `free_space` is how the application says where to measure: a function
+   answering a path, read with `statfs` at each call. angry-gopher passes
+   `router.dataRoot`, as today, or `.unknown` when `GOPHER_GAME_FLOOR=off`,
+   which stays angry-gopher's variable, read in its own `main`.
+3. **`serve(io, alloc, hub, settings, banner)`** is the listener and the
+   per-connection task, moved whole: the head copy, the small body before
+   the turn, the 431, the turn, the kept stream. The banner line is
+   `"<name>: http://localhost:<port>, bound to <addr>  <banner>"`, with the
+   application's name and words, so angry-gopher's line is byte for byte
+   today's.
+
+`server.zig` becomes angry-gopher's `main`, about 30 lines: read the settings
+under `GOPHER_`, read `GOPHER_GAME_FLOOR`, start, print the two report
+lines, serve. `bind.zig` and `config.zig` join the library. `head_bytes`
+moves to `http`, since it is the size of a request head for any host, and
+`limits.zig` re-exports it, so the Caddy check and the kernel still read it
+where they do.
+
+**What a reader of `linux_host.zig` must see:** that it is a Linux process
+host, not portable. The portability lint already leaves it out, because no
+portable root reaches it. The library lint must allow it as a member that
+isn't reached from `webbox.zig`'s portable part.
+
+**The question this raises: one module or two?** `webbox.zig` naming
+`linux_host` makes the library's root import the host, and the portable
+lint's root (`webbox.zig`) would then reach it and fail. So **two roots**:
+- `webbox.zig`, the portable library, which the metal port carries;
+- `webbox_linux.zig`, the Linux host, importing `webbox.zig`.
+
+build.zig exports both modules; Dog Park on Linux imports both, and on metal
+only `webbox`. The library lint checks both roots' closures.
+
 **Open decisions, each waiting for the step that owns it:**
 - **`edge.RejectKind`** (step 3, the app contract). It mixes generic kinds
   with one of this app's (`malformed_markdown`). Its names are keys in
