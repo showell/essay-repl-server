@@ -488,8 +488,47 @@ metal, none matters for chat):
   dependent (dog-park) can't hand it the machine's: the library's build
   needs a `host_io` option, or `addAppKernel` builds the modules from source.
 
-**Next: step 2b**, no copy at all: gopher-metal compiles the application's
-sources where they are, and the port folder and its freshness stamps retire.
+**Step 2b (2026-10-13). No copy.** gopher-metal compiles angry-gopher from its
+checkout (`-Dgopher-root`); the port folder and its stamp are gone. The copy
+was also a *snapshot*, which kept a gate honest while the checkout moved, so
+that job passes to the verdicts: a gate names angry-gopher by the checkout's
+live content id when it starts and when it ends, and keeps no verdict if the
+two differ. Planted, before and after: a `std.Io` alias in the app, a stale
+asset list, an edit mid-gate, each refused.
+
+**Step 3 (2026-10-13). What an application serves besides its code is a build
+input.** Its `zig-server/assets.zon`, read by every build of it (its own
+build.zig, the kernel's, the asset checker, the image and the judge), in two
+kinds:
+- `.embedded`: front-end files compiled in by name (the table that used to
+  live inside angry-gopher's build.zig, copied into gopher-metal by a script);
+- `.site`: directories read **at request time** (`pages/home.txt` is the home
+  page, parsed per request; `gallery/`), laid whole onto the site disk.
+  Steve's catch: the judge named four `pages/` files by hand, so a fifth
+  would have been served on Linux and missing on metal.
+
+`port.sh`, `gen/assets.zig` and `extract_assets.py` are gone; building is
+`zig build gopher -Dgopher-root=<checkout>` and nothing before it.
+
+**Step 4 (2026-10-13). Any application, as a kernel.** `addAppKernel` takes an
+application's root (exporting `site` and `hosting`), its `assets.zon`, and
+the directory its embedded paths are relative to; `probe/gopher.zig` hosts
+every one, on the same webbox and the same machine. `gopher.elf` is the
+first; **`zig build dogpark` is the second, and Dog Park's play server boots
+on metal**, answering `/`, `/park.js`, `/me`, `/tiles`, `/leash` and a 405
+exactly as on Linux. What it took on Dog Park's side: a `hosted.zig` root, its
+`Io` from `host_io`, its page read through webbox's store (so from the site
+disk), an `assets.zon` naming `solo/`, and no `std.debug.print` (a kernel has
+no stderr, and the print dragged std's threaded `Io` into a freestanding
+build). On metal's side: an exclusive write and a rename that won't replace,
+which a new site's first secret needs and chat, provisioned by hand, never
+asked for. The step-1 leftovers went with it: `addAppKernel` builds the
+modules from source with the machine's `host_io`; the "chat" labels read
+`hosting.data_name`; `admin_reset` only runs when a boot disk asks for it.
+
+**Next:** a judge that boots `dogpark.elf` and compares it with Linux's play
+server (as `judge_gopher.py` does chat); a Dog Park boot image; then webbox to
+its own repository, and gopher-metal's rename.
 
 ## Injection or pull: the three relationships that smell most
 
