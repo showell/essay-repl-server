@@ -178,14 +178,20 @@ to the bit only through the same compiled code.
 Both, as you decided: a critter is awake if it stands in a **subscribed
 tile** *and* within **500 px of the leashed dog**, at the tick's start.
 
-**The subscribed tiles become an input to the physics.** They depend on
-the screen, its size and where you've scrolled. So the server must know
-exactly which tiles were subscribed at each tick, or its re-run wakes a
-different set of dogs:
-- **When the subscription changes,** the report says so, at the tick it
-  takes effect: a `tiles` line (below).
-- **The server re-runs with the report's tiles,** not the ones it last
-  heard of from `/tiles`.
+**The subscribed tiles become an input to the physics**, and the
+mechanism for them already exists: `/tiles`, the page sending the whole
+set, each tile new or held, the server answering with the critters in
+the new ones. Nothing about that changes. What the physics adds is
+*when* a set applies, since `/tiles` and the reports are separate
+requests that could arrive in either order:
+- **Each `/tiles` request carries a version,** counting up; the server
+  keeps the current one.
+- **A new set takes effect at a tick boundary, after the server acks
+  it.** The page ticks under the old set until the answer comes, then
+  switches from its next tick.
+- **The report's header names the version** its ticks used. If that is
+  not the server's current one, the server answers `differ` with its
+  board, and the page catches up.
 
 One player and one window, so nothing disagrees. Two windows of
 different sizes on one park would each be right about their own physics.
@@ -205,9 +211,8 @@ checks it line by line.
 
 ```
 dogpark 1 physics 1
-from 1040
+from 1040 tiles 7
 leash 219
-tiles 6,9 7,9 8,9 6,8 7,8 8,8
 t 1041 drag d80.00,1216.00 d7f.00,1216.00 d7d.00,1217.00
  dog 219 d80.00,1216.00 > d7d.00,1217.00
  cow 23 d1c.33,120e.1a > d1c.33,1210.1a
@@ -223,9 +228,8 @@ rest 1060
 | line | says |
 |---|---|
 | `dogpark 1 physics 1` | the language's version and the physics' version. A mismatch means "reload", nothing else |
-| `from T` | the tick the report starts after: the last one the server kept |
+| `from T tiles V` | the tick the report starts after (the last one the server kept), and the version of the subscribed tiles (as last acked by `/tiles`) its ticks used: the other half of who is awake |
 | `leash D`, `release D` | the human's leash: leashing wakes the park around D, releasing (or the 5 s running out) puts it to sleep |
-| `tiles c,r c,r …` | the subscribed tiles from this tick on, whenever they change: the other half of who is awake |
 | `t T` | tick T begins. `drag` and its points, when the human dragged during it: the leashed dog's path in whole pixels, written as positions |
 | `dog N a > b`, `cow N a > b` | a critter that moved during tick T, from a to b, in cascade order: the leashed dog, then cows by number, then dogs by number. A cow's line is its net move over the tick's drag segments, since cows react to each segment. A critter not listed did not move |
 | `t A..B` | ticks A to B in which nothing moved: the human still, every awake dog content. Only possible once the board has settled, so it marks the stretch before `rest` |
@@ -289,7 +293,8 @@ snapshots alone are enough to resume.
 1. **Alphas never yield.** A herd jammed against an alpha stays jammed;
    that's a puzzle for the player.
 2. **Awake:** in a subscribed tile *and* within 500 px of the leashed dog.
-   The tiles go in the report.
+   Subscriptions stay with `/tiles`, which gains a version; a report names
+   the version its ticks used.
 3. **The anchor:** the nearest more-alpha dog of the breed. As people
    follow the person right in front of them, not the one at the head of
    the line.
