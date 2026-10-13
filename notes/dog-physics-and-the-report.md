@@ -12,6 +12,13 @@ today as given:*
 - *physics stays local to the leashed dog, with nothing acting more than
   a tile's width away.*
 
+*Revised the same day with your later choices:*
+- *four breeds, the dogs with legs;*
+- *positions in 256ths of a pixel;*
+- *16 ticks a second;*
+- *a report that lists every critter that moved, before and after, in
+  cascade order, instead of hashes.*
+
 ## The short version
 
 - **Each tick is a pure function:** the board before, plus what the human
@@ -33,15 +40,17 @@ today as given:*
 
   It moves only while something is outside its band. Once all three are
   satisfied, it rests.
-- **About 1 px a second,** kept in thousandths of a pixel so a slow dog
-  really is slow. That's 50 thousandths per tick at 20 ticks a second.
+- **About 1 px a second,** with positions kept in 256ths of a pixel so a
+  slow dog really is slow. At 16 ticks a second that is exactly 16/256 of a
+  pixel per tick.
 - **Awake means close.** Only critters within one tile's width (500 px) of
   the leashed dog take part. With no dog leashed, the park sleeps, and
   when every awake dog is resting, the page stops ticking and sends
   nothing.
-- **The report is text,** one line per tick with the human's input, and a
-  hash of the awake critters every few ticks. The server answers `kept`,
-  `differ` with its own state, or `reload`.
+- **The report is text,** one line per tick with the human's input, then
+  every critter that moved, before and after, in the order the cascade
+  moved them: a proof the server checks line by line. The server answers
+  `kept`, `differ` (naming the first line it disagrees with), or `reload`.
 
 ## The cascade, and why it settles
 
@@ -111,16 +120,22 @@ every awake dog rests and the human isn't dragging, the page stops
 ticking altogether: no reports, no work for the server, until the next
 drag.
 
-**Breeds.** Today's five looks, which take turns by number (dog n has look
-n mod 5). Same breed means the same look, so a breed's dogs are every
-fifth number, spread through the park. Herds would form as you lead an
-alpha among its kind.
+**Breeds.** Four, the dogs with legs: 🐕 🐩 🦮 🐕‍🦺. Dog n has look n
+mod 4, so a breed's dogs are every fourth number, spread through the
+park. Herds would form as you lead an alpha among its kind.
+- **What it costs:** today's park deals out five looks, the face 🐶
+  among them.
+- **Why it matters:** the server refuses to start if a kept dog's look
+  isn't the one its number gives.
+- **So:** going to four needs a one-time change to `dogs.json`, or a fresh
+  park.
 
 **Starting numbers,** all to be tuned by playing:
 
 | | |
 |---|---|
-| speed | 1 px a second: 50 thousandths of a pixel a tick at 20 ticks a second |
+| tick | 16 a second (62.5 ms) |
+| speed | 1 px a second: 16/256 of a pixel a tick |
 | awake | within 500 px (one tile) of the leashed dog, centre to centre, at the tick's start |
 | wary of another breed | 150 px centre to centre |
 | follow: looks for an anchor within | 400 px |
@@ -136,11 +151,16 @@ the rule needs one. Take a fixed answer: the beta steps east, or north if
 east is the wall. It will almost never happen, but a determinism bug
 waits in exactly that kind of corner.
 
-**Arithmetic.** Positions in thousandths of a pixel, as integers, with an
-integer square root for distances. The cows taught us that page and
-server agree to the bit only through the same compiled code. Integers
-also make the report readable: a position is written as `3441.250`, and
-that is exactly what is kept.
+**Arithmetic.** Every critter's position is an integer count of 256ths of
+a pixel, the cows' too (they are in halves today), with an integer
+square root for distances. The cows taught us that page and server agree
+to the bit only through the same compiled code.
+- **The whole pixel** is the position shifted right by 8.
+- **On the wire,** a position is hex with a point: `d80.40` is 3456 and
+  64/256, or 3456.25 px. Exact, fixed-width, and truncated by dropping
+  what follows the point.
+- **Where you read it,** in the page's debugging overlay or a log meant
+  for you, it is shown in decimal pixels.
 
 ## What "awake" should mean
 
@@ -163,77 +183,89 @@ alone, as you put it.
 ## The report
 
 One report per round trip, as moves are sent today: everything since the
-last tick the server kept. Lines, one thing per line, readable by you, by
-an agent, and by a five-line parser:
+last tick the server kept. For now it says a lot. It names every critter
+that moved, where it was and where it went, **in the order the cascade
+moved them**, so the report is the calculation written out and the server
+checks it line by line.
 
 ```
 dogpark 1 physics 1
-from 1040 3c1f09a2
+from 1040
 leash 219
-t 1041 3456,4630 3455,4630 3453,4631
-t 1042 3452,4631
-t 1043
-t 1044 3450,4633
-h 1044 0c88f913
-t 1045..1063
-h 1063 77e1b0c4
-rest 1063
+t 1041 drag d80.00,1216.00 d7f.00,1216.00 d7d.00,1217.00
+ dog 219 d80.00,1216.00 > d7d.00,1217.00
+ cow 23 d1c.33,120e.1a > d1c.33,1210.1a
+ dog 4 a10.00,1180.80 > a0f.f0,1180.80
+ dog 220 d41.40,1204.00 > d40.80,1203.c0
+t 1042
+ dog 4 a0f.f0,1180.80 > a0f.e0,1180.80
+ dog 220 d40.80,1203.c0 > d40.70,1203.b0
+t 1043..1060
+rest 1060
 ```
 
 | line | says |
 |---|---|
 | `dogpark 1 physics 1` | the language's version and the physics' version. A mismatch means "reload", nothing else |
-| `from T H` | the tick the report starts after (the last one the server kept) and the hash the page has for it: both sides check they start from the same board |
+| `from T` | the tick the report starts after: the last one the server kept |
 | `leash D`, `release D` | the human's leash, which decides who is awake |
-| `t T x,y …` | tick T, and the whole pixels the leashed dog was dragged through during it. `t T` alone: a tick with no drag |
-| `t A..B` | ticks A to B, none with a drag: the board settling. A long stretch costs one line |
-| `h T H` | the hash of every awake critter after tick T (each one's number, kind and position, in cascade order). One every few ticks, and always the last |
+| `t T` | tick T begins. `drag` and its points, when the human dragged during it: the leashed dog's path in whole pixels, written as positions |
+| `dog N a > b`, `cow N a > b` | a critter that moved during tick T, from a to b, in cascade order: the leashed dog, then cows by number, then dogs by number. A cow's line is its net move over the tick's drag segments, since cows react to each segment. A critter not listed did not move |
+| `t A..B` | ticks A to B in which nothing moved: the human still, every awake dog content. Only possible once the board has settled, so it marks the stretch before `rest` |
 | `rest T` | after tick T every awake dog rests: the page stops ticking until the next drag |
 
-Optional, for people more than for the server, every so often or after a
-correction:
+**Why before-and-after, and not a hash.** A hash says *whether* page and
+server agree. Lines say *where they first don't*: the tick, the critter,
+and which coordinate. The before positions repeat what the previous line
+already implies. That redundancy is the point: each line is checkable on
+its own, and reads as a diff of the board. Once the physics is trusted,
+dropping the before positions, or going to a hash every few ticks, is a
+small change to the language. Its version number is there for that.
 
-```
-at 1044 dog 220 3441.250,4612.000 dog 221 3466.500,4659.000 cow 23 3354.0,4622.5
-```
+**The size.** While dogs are moving, a tick is maybe 5 to 20 lines of
+about 30 bytes. At 16 ticks a second and a report every few hundred
+milliseconds, that's a few KB a report. Dog Park's body limit (4 KiB)
+goes up to about 64 KiB; metal's body rule is built for that.
 
 **The server's answers:**
 
 ```
-kept 1063
+kept 1060
 ```
 ```
-kept 1043
-differ 1044
-board 1044 dog 219 3450,4633 dog 220 3441.250,4612.000 cow 23 3354.0,4622.5 …
+kept 1041
+differ 1042 dog 220 d40.80,1203.c0 > d40.70,1203.a0
+board 1042 dog 4 a0f.e0,1180.80 dog 220 d40.70,1203.a0 dog 219 d7d.00,1217.00 cow 23 d1c.33,1210.1a …
 ```
 ```
 reload physics 2
 ```
 
 - **`kept T`:** checked, written to the game's log on disk, and safe.
-- **`differ T`** with a **`board`:** the first tick the server's re-run
-  disagreed. Everything before it is kept. The board is the server's,
-  every awake critter, and the page rewinds to it and replays its own
-  ticks from there.
+- **`differ T`:** the first line the server's re-run disagreed with, with
+  the server's own version of it, then the server's `board` at that tick:
+  every awake critter. Everything before tick T is kept. The page
+  rewinds to the board and replays its own ticks from there.
 - **`reload`:** the page's physics is not the server's. Reload and resume
   from the last kept tick.
 
 **Why it's cheap to check.** The server keeps the board at its last kept
 tick and re-runs the report's ticks: the cascade over the awake critters,
-each looking only at neighbours within 500 px. With tens of awake dogs,
-40 ticks is a small amount of arithmetic, a few milliseconds even on
+each looking only at neighbours within 500 px, comparing each line it
+produces with the report's. With tens of awake dogs, a report's worth of
+ticks is a small amount of arithmetic, a few milliseconds even on
 metal's one core. The judge can hold that to a number.
 
 **The log is the reports, as written.** The server appends each kept
-report to the game's log file. Its sizes:
-- **A drag:** about 30 bytes a tick.
-- **A settling stretch:** one `t A..B` line, however long.
-- **A hash:** a few per report.
+report to the game's log file:
+- **While dogs move:** a few KB a second.
+- **While the board rests:** nothing.
 
 Every few seconds the server also writes a snapshot of the whole board.
 A restart then loads the last snapshot and replays the log after it,
-which is exactly the re-run the server does for every report anyway.
+which is exactly the re-run the server does for every report anyway. If
+the log grows too big to keep, it is the first thing to trim: the
+snapshots alone are enough to resume.
 
 ## What this leaves open
 
@@ -251,8 +283,6 @@ which is exactly the re-run the server does for every report anyway.
 5. **The numbers.** All of them are guesses. Since the board settles and
    nothing is random, a page-only "replay this drag at 10× speed" would
    make tuning fast. That would be a debugging tool, not a game feature.
-6. **The hash's cadence.** Every 10 ticks and at the end of each report?
-   More often pinpoints a bug faster; less often makes reports shorter.
-7. **What a tick is when nothing is leashed.** The proposal: no ticks at
+6. **What a tick is when nothing is leashed.** The proposal: no ticks at
    all, and the park is frozen. A dog let go stays awake for the leash's
    5 s, then the park sleeps. Or should it keep settling until it rests?
