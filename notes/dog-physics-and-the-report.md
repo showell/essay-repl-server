@@ -17,7 +17,8 @@ today as given:*
 - *positions in 256ths of a pixel;*
 - *16 ticks a second;*
 - *a report that lists every critter that moved, before and after, in
-  cascade order, instead of hashes.*
+  cascade order, instead of hashes;*
+- *your answers to the open questions (now "Settled", at the end).*
 
 ## The short version
 
@@ -43,10 +44,11 @@ today as given:*
 - **About 1 px a second,** with positions kept in 256ths of a pixel so a
   slow dog really is slow. At 16 ticks a second that is exactly 16/256 of a
   pixel per tick.
-- **Awake means close.** Only critters within one tile's width (500 px) of
-  the leashed dog take part. With no dog leashed, the park sleeps, and
-  when every awake dog is resting, the page stops ticking and sends
-  nothing.
+- **Awake means close and watched.** A critter takes part only if it
+  stands in a subscribed tile *and* within 500 px of the leashed dog. Any
+  unleashing puts the whole park to sleep: a release, or the leash's 5 s
+  running out. When every awake dog rests, the page stops ticking and
+  sends nothing.
 - **The report is text,** one line per tick with the human's input, then
   every critter that moved, before and after, in the order the cascade
   moved them: a proof the server checks line by line. The server answers
@@ -103,7 +105,16 @@ anchor, it is the herd's head and only keeps its room. Against the anchor:
 
 **3. Room from the leashed dog and the cows.** The same as 1, with its own
 distances. The leashed dog is the human's, so everyone gives it room.
-Cows are big, so they get room too.
+
+**Cows push dogs.** A cow is bigger than an unleashed dog and isn't afraid
+of it; it respects only the leashed dog, which has a human guiding it.
+So the cows move first and ignore the other dogs, and a cow step may land
+a cow on top of one. That dog then gets out from under it at once:
+- **the step:** the least that puts its square clear of the cow's;
+- **not the usual speed:** it isn't limited to 1 px a second;
+- **then the usual wishes,** including room for the cows.
+
+It's a little jump, and that's fine (your call).
 
 **The step.**
 1. Add up the wishes.
@@ -162,23 +173,27 @@ to the bit only through the same compiled code.
 - **Where you read it,** in the page's debugging overlay or a log meant
   for you, it is shown in decimal pixels.
 
-## What "awake" should mean
+## What "awake" means
 
-You said: asleep outside the subscribed tiles, and asleep inside them too
-when the leashed dog is far enough away. One part of that needs a
-decision.
+Both, as you decided: a critter is awake if it stands in a **subscribed
+tile** *and* within **500 px of the leashed dog**, at the tick's start.
 
-**Subscriptions depend on the screen,** its size and where you've
-scrolled. If they decided who is awake, the size of a browser window
-would change the physics. The server would then need the subscriptions as
-an input to every tick, and two windows of different sizes would disagree.
+**The subscribed tiles become an input to the physics.** They depend on
+the screen, its size and where you've scrolled. So the server must know
+exactly which tiles were subscribed at each tick, or its re-run wakes a
+different set of dogs:
+- **When the subscription changes,** the report says so, at the tick it
+  takes effect: a `tiles` line (below).
+- **The server re-runs with the report's tiles,** not the ones it last
+  heard of from `/tiles`.
 
-So I'd define awake purely as **within 500 px of the leashed dog**. Then
-the page keeps one promise: it always subscribes at least 500 px around
-the leashed dog. That already holds while the dog is on screen and the
-margins are a tile; where it doesn't, the page subscribes the extra
-tiles. The physics stays a function of the board and the human's input
-alone, as you put it.
+One player and one window, so nothing disagrees. Two windows of
+different sizes on one park would each be right about their own physics.
+That only matters when there are two players.
+
+**Any unleashing puts the park to sleep:** a release, or the leash's 5 s
+after you let go running out. Every critter stops where it is, and the
+page stops ticking until the next leash.
 
 ## The report
 
@@ -192,6 +207,7 @@ checks it line by line.
 dogpark 1 physics 1
 from 1040
 leash 219
+tiles 6,9 7,9 8,9 6,8 7,8 8,8
 t 1041 drag d80.00,1216.00 d7f.00,1216.00 d7d.00,1217.00
  dog 219 d80.00,1216.00 > d7d.00,1217.00
  cow 23 d1c.33,120e.1a > d1c.33,1210.1a
@@ -208,7 +224,8 @@ rest 1060
 |---|---|
 | `dogpark 1 physics 1` | the language's version and the physics' version. A mismatch means "reload", nothing else |
 | `from T` | the tick the report starts after: the last one the server kept |
-| `leash D`, `release D` | the human's leash, which decides who is awake |
+| `leash D`, `release D` | the human's leash: leashing wakes the park around D, releasing (or the 5 s running out) puts it to sleep |
+| `tiles c,r c,r …` | the subscribed tiles from this tick on, whenever they change: the other half of who is awake |
 | `t T` | tick T begins. `drag` and its points, when the human dragged during it: the leashed dog's path in whole pixels, written as positions |
 | `dog N a > b`, `cow N a > b` | a critter that moved during tick T, from a to b, in cascade order: the leashed dog, then cows by number, then dogs by number. A cow's line is its net move over the tick's drag segments, since cows react to each segment. A critter not listed did not move |
 | `t A..B` | ticks A to B in which nothing moved: the human still, every awake dog content. Only possible once the board has settled, so it marks the stretch before `rest` |
@@ -267,22 +284,18 @@ which is exactly the re-run the server does for every report anyway. If
 the log grows too big to keep, it is the first thing to trim: the
 snapshots alone are enough to resume.
 
-## What this leaves open
+## Settled (your answers, 2026-10-13)
 
-1. **The asymmetry.** Betas yield and alphas never do. That's what makes
-   it settle, and it reads naturally ("the alpha doesn't move for you").
-   But a big herd jammed against an alpha won't budge it. Is that the
-   behaviour you want?
-2. **Awake by distance alone,** 500 px from the leashed dog, with
-   subscriptions only promising to cover it?
-3. **The anchor.** The *nearest* more-alpha dog of the breed gives chains
-   and clumps. Following the herd's head, the most alpha in range, gives
-   tighter herds that all orbit one dog. I'd start with nearest.
-4. **Cows ignore dogs other than the leashed one.** Simple, and keeps cows
-   near the top of the cascade. Should other dogs ever push cows?
-5. **The numbers.** All of them are guesses. Since the board settles and
-   nothing is random, a page-only "replay this drag at 10× speed" would
-   make tuning fast. That would be a debugging tool, not a game feature.
-6. **What a tick is when nothing is leashed.** The proposal: no ticks at
-   all, and the park is frozen. A dog let go stays awake for the leash's
-   5 s, then the park sleeps. Or should it keep settling until it rests?
+1. **Alphas never yield.** A herd jammed against an alpha stays jammed;
+   that's a puzzle for the player.
+2. **Awake:** in a subscribed tile *and* within 500 px of the leashed dog.
+   The tiles go in the report.
+3. **The anchor:** the nearest more-alpha dog of the breed. As people
+   follow the person right in front of them, not the one at the head of
+   the line.
+4. **Cows push unleashed dogs.** They ignore them, and a dog a cow lands
+   on gets out from under it at once.
+5. **The numbers** are guesses, to tune by playing; you'll suggest tools
+   for tuning and debugging.
+6. **Any unleashing puts the park to sleep,** including the leash's 5 s
+   running out.
