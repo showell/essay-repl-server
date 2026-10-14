@@ -171,22 +171,100 @@ so you can play each on :9103 side by side. The property tests already
 hold under any of the three. The symmetry tests, for one, hold because all
 three distances look the same mirrored or turned.
 
-## What I'd hand to CC
 
-1. **Measure first:** in the packed-herd drag, the share of wish
-   evaluations that end in no move, and how many dogs a ripple actually
-   reaches per pixel-tick. That's one bench run and decides whether
-   Option A pays.
-2. **If it pays, Option A:** the to-do set walked in rank order, on top
-   of today's lists. It must stay exact, so the identity test holds
-   unchanged. It's the pure speed option.
-3. **The metric knob (Option C)** as a build option, for you to play.
-   Chebyshev first, since it matches the squares.
-4. **Option B only after you've played C,** because B is the biggest
-   change to how herds behave and the hardest to undo. We could also try a
-   small version of it first: a cap on how many strangers a dog heeds,
-   without changing anything else, as one more knob.
+## Your answers (2026-10-14), and what they change
 
-**What I need from you:** which of these to send to CC. My pick is 1 and
-2 as one item, and 3 as a second, with B waiting on how the park feels
-under Chebyshev.
+- **Rank order is a misfeature.** Dogs sometimes look paralysed by a
+  pecking order you can't see, instead of just reacting to the dog beside
+  them. CC may relax it. What must survive: **a chain still follows the
+  leashed dog,** rather than everyone clumping into one mass.
+- **A packed crowd isn't a real problem for B.** Breeds repel, so a crowd
+  loosens until a dog drifts toward its own kind. And herds *shouldn't*
+  form on their own: **the leashed dog is the catalyst.** What matters
+  most is that **a herd, once formed, is fairly stable.**
+- **Try Chebyshev** (Option C).
+- **Hidden physics is bad game design** unless the player has a fair way
+  to discover it. Today nothing on screen says which dog is more alpha,
+  yet rank decides who follows whom and who yields to whom.
+- **Measure the herds.** You can spot them on the page at a glance, but
+  there's no number for them yet.
+
+## What a herd is, as a number
+
+A proposal for CC to refine:
+- **The herd graph:** join two dogs of the same breed when their centres
+  are within the herd band's outer edge plus a little slack (say 120 px,
+  against the band's 100). A **herd** is a connected group of that graph
+  with at least three dogs.
+- **What to measure:**
+  - **Herds per breed** in the awake area. The goal is about one each:
+    four distinct herds.
+  - **A herd's size** (dogs) and its **length:** the most hops between
+    two of its dogs along the graph (its diameter).
+  - **Chain or clump:** the average number of same-breed neighbours per
+    dog. A chain is about 2; a clump is 4 or more. Length divided by size
+    says the same: near 1 is a chain, small is a clump.
+  - **Stability:** after the human lets go, how much of each herd's
+    membership is the same 10 and 30 seconds later. Herds that come apart
+    on their own fail this.
+  - **Catalysed, not organic:** the same measures on a park nobody has
+    touched for a minute should show few or no herds.
+- **How to use it:** a few fixed play scripts (recorded drags: gather
+  breed 0 along a line, swing it round, let go). Run each script under
+  every variant below, and report the numbers, so a rule change is judged
+  on the same play every time and not only by eye. Your eye stays the
+  final judge.
+
+## A progression toward B
+
+Each step is one build knob, measured with the herd numbers and played on
+:9103 before the next. Each can be kept or thrown away alone.
+
+1. **The herd numbers and the play scripts,** on today's physics. This is
+   the baseline every later step is compared with.
+2. **Chebyshev distance** (`-Dmetric`): squares instead of circles, no
+   roots. Measure, then you play it.
+3. **Everyone thinks at once.** Each pixel-tick, every awake dog works out
+   its wish from the same snapshot, and only then do they move. Rank
+   survives only as the tie-break for who yields when two would step into
+   each other, which is invisible and harmless. This removes the
+   paralysis: a dog reacts to its neighbour, not to its neighbour's rank.
+   It needs watching for back-and-forth jitter, which the 1 px dead zone
+   should damp.
+4. **Follow upstream, not up the ranks.** A dog's anchor becomes the
+   nearest dog of its breed that is **closer to the herd's head along
+   the herd**, instead of the nearest more-alpha one.
+   - **The head is the dog you last leashed in that herd.** That's
+     visible, and you made it so. While leashed, the leashed dog is the
+     head.
+   - Chains still point at the leashed dog, because every link follows a
+     dog nearer the front.
+   - Herds stay stable, because a dog keeps its anchor until another is
+     clearly better: nearer by a margin, say 20 px. That stops anchors
+     flickering.
+   - **Discoverable:** the head could wear a small mark, a collar or a
+     ring, so the player sees which dog leads each herd. Then rank is
+     gone from the rules entirely.
+5. **Bounded attention (B itself).** A dog heeds:
+   - its anchor;
+   - its **nearest few strangers** (say 3) within the wary distance,
+     instead of all of them;
+   - its **nearest cow.**
+
+   Measure whether herds hold together better in a crowd, and play it.
+   Your point stands that a crowd loosens anyway, so this step may turn
+   out unnecessary. The herd numbers will say.
+6. **Then the speed pass (Option A):** only dogs whose neighbourhood
+   changed re-think. It's done last because steps 2-5 change what "a
+   neighbourhood changed" means, and the exactness test only proves a
+   speed-up against rules that have stopped moving.
+
+**What stays true throughout:**
+- **The tests still state properties:**
+  - no overlaps;
+  - symmetry and translation;
+  - page and server agree to the bit;
+  - `-Dknobs=alt`.
+- **The reference changes deliberately:** each step that changes the
+  rules updates `physics_reference.zig` in the same commit, and the
+  physics hash moves with it.
