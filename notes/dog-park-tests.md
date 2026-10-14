@@ -14,7 +14,7 @@ has 2 cores.
 | what you do | wall time |
 |---|---|
 | edit `engine.js` or another page file, then `zig build test` | **4.9 s** |
-| edit `physics.zig`, then `zig build test` | **9.3 s** |
+| edit `physics.zig`, then `zig build test` | **9.3 s**, now **6.6 s** (see below) |
 | edit `physics.zig`, then `zig build check` (before a commit) | **18 s** |
 | `zig build test` with nothing changed | 4.7 s |
 | `zig build test` from an empty cache | 19 s |
@@ -79,11 +79,11 @@ break them:
 
 ## What could make the loop faster, if it ever matters
 
-- **The page's wasm in the edit loop (4 s of the 9).** `test` builds the
-  ReleaseSafe wasm only because the server tests embed it. A Debug wasm
-  for `test`, with ReleaseSafe kept for `check` and the server, would cut
-  the physics edit loop to about 5–6 s. The catch is that two builds of
-  the wasm would exist. Not worth it yet.
+- **The page's wasm in the edit loop: DONE (Steve asked).** `test` now
+  builds and uses a Debug wasm (`zig-out/web-debug`, about 1 s to compile
+  against 2.5 s); `check`, `slow` and the server keep the served
+  ReleaseSafe build. The physics edit loop went from 9.3 s to 6.6 s,
+  measured with another agent building alongside (dog-park `6843e26`).
 - **`slow` in ReleaseSafe natively.** The identity test and the full fuzz
   run in Debug, and they would probably run several times faster in
   ReleaseSafe, at the cost of a few seconds more compile. I'd try it if
