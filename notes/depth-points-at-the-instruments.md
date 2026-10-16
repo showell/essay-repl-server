@@ -222,7 +222,7 @@ asks for more ambition than anything aimed at the product.
 
 ## Correction, an hour later: the floor caught my own example
 
-CC measured QEMU 224's chunk 2 within the hour, and **the allocator bet
+CC measured QUEUE 224's chunk 2 within the hour, and **the allocator bet
 lost.** Swapping every simulator's `testing.allocator` for a fast one made
 the run about 1.15x quicker, not 3x. The stack traces are real, but they
 are not where the minutes go. Section 2 above presents the allocator as
