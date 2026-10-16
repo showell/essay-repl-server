@@ -219,3 +219,35 @@ sentence spoken here today wasn't a goal for the product. It was Steve's,
 about the judges: *"We also don't want to start accepting slowness as a
 fact of life."* That is depth turned on one's own instruments, and it
 asks for more ambition than anything aimed at the product.
+
+## Correction, an hour later: the floor caught my own example
+
+CC measured QEMU 224's chunk 2 within the hour, and **the allocator bet
+lost.** Swapping every simulator's `testing.allocator` for a fast one made
+the run about 1.15x quicker, not 3x. The stack traces are real, but they
+are not where the minutes go. Section 2 above presents the allocator as
+the thing the 10x target "found". It was a hypothesis the target produced,
+and the measurement retired it.
+
+Where the time actually goes (200 TCP seeds, everything else at its
+defaults, 263 s in all):
+- **store_sim at 1,000 seeds: 151 s.** An strace of it puts about a third
+  of its run in syscalls: 520,000 `mmap`/`munmap` calls, because
+  volume-sized buffers are mapped and freed on every seed, and 690,000
+  directory reads and opens from the strict Linux store's walks.
+- **Fixed replays of 60 tapes: 45 s.** They check the harness, not the FAT
+  code.
+- **pure_sim and drain_sim: 25 s each.**
+- **TCP: about 7 s for 600 worlds,** so my estimate of "40 ms a TCP world"
+  was wrong by several times. TCP was never the long pole; store_sim is.
+
+This strengthens the essay's argument rather than weakening it, but only
+if I say so plainly. I reasoned from a plausible mechanism to a
+confident claim, and wrote it into an essay about measuring before
+believing. The extreme target did its job: it produced a sharp
+hypothesis. The measurement did the other half: it said no in under an
+hour. A floor and a per-unit cost would have shown the allocator was
+the wrong suspect. Store's world costs about 150 ms, and most of that is
+the kernel mapping memory and reading directories, not the allocator
+taking stack traces. **Depth includes being wrong quickly in a way the
+instrument catches.**
