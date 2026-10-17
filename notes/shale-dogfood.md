@@ -37,6 +37,15 @@ What I wanted back from a program was small and specific: **a filtered
 piece, by lines, from both ends, long lines cut.** `head -20`, `tail -3`,
 `cut -c1-200`. About 2-4 KiB. That became the heart of `run`.
 
+## Who writes Shale
+
+A well-meaning agent who makes mistakes. So the design is not paranoid about
+hostile scripts (no defence against a lexer denial of service), but careful
+about slips: a mistake must end in a clear stop, never a wrong answer, a
+panic, or damage. The lexer is still fuzzed before long strings land, for the
+shapes a slip takes (an unclosed long string, a wrong level), because on metal
+a lexer bug panics the serving kernel where a clean stop was owed.
+
 ## Two rules
 
 **Shale does text itself.** It runs another program only for what that
