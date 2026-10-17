@@ -1,6 +1,6 @@
 # Shale, dogfooded
 
-*2026-10-18. The design for Steve's thought experiment, "ban Claude from
+*2026-10-17. The design for Steve's thought experiment, "ban Claude from
 running bash and Python, which forces us to dogfood Shale", after six rounds
 with cold reviewers: five to build it, and a sixth by an adversary who cared
 only about metal. The full design, with every detail settled, is zig-webbox's
