@@ -143,3 +143,33 @@ read-only mount. So it goes into 235's mounts chunk as a must-fix.
 Throughout, CC measures both images after each chunk and writes one
 FEEDBACK entry per chunk, so whatever finishes can be merged even if the
 night stops partway.
+
+## Decided (Steve, later the same evening)
+
+1. **The split is `router.zig`, with the box choosing the cuts.** The file
+   turned out to be about 340 lines of route table and 61 tests (not 77,
+   as I first said). So the split sorts tests into files by what would
+   be deleted together:
+   - pages, identity, games, admin, search, chat;
+   - the store-failure class;
+   - the script route;
+   - request edges;
+   - **the legacy cookie names' migration**, a file deleted whole the day
+     those names retire.
+
+   A harness holds what two or more files share. The two tests of private
+   functions stay in `router.zig`. The judges:
+   - `gopher.elf` byte-identical once its embedded angry-gopher commit is
+     set aside (only test code moves);
+   - the same test names;
+   - the gates.
+
+   The split also adds a check I found missing: every test block in
+   angry-gopher must be enrolled in a test root, the hole that once hid a
+   whole test file. QUEUE 236.
+2. **The doc checker checks paths and names now, line numbers later**,
+   and stays out of the gates until its first report is fixed. QUEUE 237.
+3. **Symlinks: refuse any.** It's folded into 235's mounts chunk.
+
+The night's order is in QUEUE's Now line: 235, 236, 237, then the
+host hunt if there's time.
