@@ -14,7 +14,8 @@ a few large builtins, and say what it did.
 ## A builtin, from the Zig side
 
 First the bottom layer, because it explains what the programs above it
-can lean on. This is `strip_suffix`, one of about 150 builtins, whole:
+can lean on. This is `strip_suffix`, one of core Shale's 68 builtins
+(the preludes and the Linux host add more), whole:
 
 ```zig
 /// **`strip_suffix(s, t)`**: `s` without `t` at its end, or `s` as it is.
@@ -28,15 +29,19 @@ fn stripSuffix(run: *Run, pos: ast.Pos, args: []const Value) Error!Value {
 
 ```
 
-That's the whole implementation. Three other places name it:
+That's the whole implementation. Four other places name it:
 
 - **its name**, one line in `ast.zig`'s `Builtin` enum (`strip_suffix,`),
   so the parser knows it;
 - **its arity**, `spec(.strip_suffix, 2, 2, stripSuffix)` in the topic's
   table: the interpreter refuses a call with the wrong number of
   arguments before the function runs;
-- **its docs**, a row in SHALE.md's table, which a test checks against
-  the list.
+- **its cost**, a line in `charge_test.zig`'s table. That table must name
+  every builtin, checked at compile time, so none can skip having its
+  charge tested;
+- **its docs**, a row in SHALE.md's table, which people read. Nothing
+  checks the table itself, but every code block in SHALE.md runs as a
+  test.
 
 Every builtin has the same few habits:
 - **Arguments are checked by type through one helper** (`stringArg`),
