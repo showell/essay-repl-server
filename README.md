@@ -4,7 +4,7 @@ The ladder droplet's public web surface: rendered markdown essays with
 accounts and paragraph-anchored notes. The online Codex REPL will ride
 on this same server; that is milestone 2 and not started.
 
-The essay mechanics are ported from `claude-collab/server/` (Go, the
+The essay mechanics are ported from `<laptop>/claude-collab/server/` (Go, the
 laptop's localhost surface) into Python; the inline-notes widget is
 that server's, minus the type-your-own-name author box — here a note is
 signed by the logged-in account.
