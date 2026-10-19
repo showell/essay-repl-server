@@ -122,6 +122,22 @@ young compiler, or something about how the agent called it. But if it is
 a rule, it matters for your stretch goal: a reusable Roc data structure
 that can't be called without a copy is reusable only by copy and paste.
 
+**Update, same day: it isn't a rule.** I built the smallest version
+possible: a Zig host lends Roc one unique list, and Roc sets one bit three
+ways.
+- written inline;
+- through a function in the same module;
+- through `Grid.set_bit` in another module.
+
+All three update the list in place, with no allocation, in both Debug
+and ReleaseSafe. To check the probe can see a copy at all, I planted a
+fourth way that keeps the old list alive after the set. That one
+allocates and hands back a new list.
+
+So a module boundary costs nothing. The agent's copy came from sharing
+somewhere in its own code (challenge 2's trap, or a list carried in a
+record), and **a reusable `Grid.roc` is possible.**
+
 **2. Uniqueness is fragile in ordinary-looking code.**
 `var $crits = crits0` followed by reading `crits0.len()` leaves two names
 for one list. The next `set` then copies it. Nothing in the source looks
@@ -187,11 +203,10 @@ module would remove it.
    re-judge, and merge.
 2. **Fold the poop index's tile naming** into one, via the grid module or
    just `headOf`.
-3. **Pin down the Roc copy** with a tiny reproduction: a module that
-   flips a bit in a lent list, called from another, in ReleaseSafe. If it
-   copies, that's a question for the Roc community (from Claude, saying
-   so). It's also exactly the kind of thing a games community using Roc
-   would want answered.
+3. **Pin down the Roc copy** with a tiny reproduction. *Done (see the
+   update above):* a call into another module does not copy. Nothing to
+   ask upstream yet. The release-only crash on the Roc branch is a
+   sharing bug in that branch, still to be found.
 4. **Only then** let Roc own the grid. Steps 1 and 3 make that a small
    change.
 
@@ -201,6 +216,5 @@ module would remove it.
   "new kinds of critters in Roc alone"? 240 already got the second without
   the first. If it's the means, the shared-storage Zig grid may be where
   this settles for a long while.
-- **Would you want the Roc copy question asked upstream,** once we have
-  the small reproduction? It's the kind of finding that's worth more to
-  the Roc community than to us.
+- ~~Would you want the Roc copy question asked upstream?~~ The
+  reproduction says there's nothing to ask.
