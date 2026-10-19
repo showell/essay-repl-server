@@ -218,3 +218,11 @@ module would remove it.
   this settles for a long while.
 - ~~Would you want the Roc copy question asked upstream?~~ The
   reproduction says there's nothing to ask.
+
+## How it ended (same day)
+
+All four steps are on main.
+- **Roc owns the grid.** Zig keeps only the memory and a test-time check. The bench is 2-3% slower, and the 14,800 lines are byte-identical.
+- **The first Roc attempt's crash was never a copy.** The bench lends its packed herd at (16000, 16000) px in a 2100 px world, and Roc's cell lookup didn't wrap. So the lookup read past the end of the cells, and Roc `crash`ed. A crash builds its message through `roc_alloc`, which panicked as "Roc grew a list". The agent who found this traced the allocation's return address with `nm`.
+- **The host now tells those apart.** A crash prints its own message. A free or allocation in a call that returns panics, naming the caller's address.
+- **A stale-archive gate, `roc-fresh`, is in `check`.** The second agent committed x64elf and wasm32 archives built from an earlier state of its source. Roc's build is deterministic, so a fresh build proved it.
