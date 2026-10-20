@@ -11,8 +11,10 @@ each repo's `zig-0.17` branch and in shale's `cookbook/zig17/README.md`.*
 | zig-webbox | done, tests pass |
 | metal-vmm | done, tests pass |
 | shale | done, 327 tests as on 0.16 |
-| zig-metal-unikernel | host side done, tests pass; **its images cannot build on 0.17.0** |
-| observatory, dog-park, angry-gopher | next |
+| zig-metal-unikernel | done: 1,436 tests as on 0.16; images build with a patched compiler_rt and 25 probes boot in QEMU |
+| observatory | done, its image builds |
+| dog-park | done: `check` green, golden physics bit-for-bit, its image boots (metal-gate) |
+| angry-gopher | done: `ops/check` counts identical to 0.16's; its image builds |
 
 Nothing is merged. The repos build against each other by path, so they move
 as one set: a tree of `zig-0.17` worktrees in `~/zig17`, judged together,
@@ -77,27 +79,30 @@ The lesson for the rest: **compiling is half the port, and a repo's own tests
 are the other half.** A repo with thin tests is where a silent change would
 survive.
 
-## Theme 4: one real blocker, and it's upstream
+## Theme 4: one real blocker, upstream, worked around
 
-The kernel's images can't build on 0.17.0. Its compiler_rt (memcpy, soft-float
-arithmetic, 128-bit division) doesn't compile for soft-float x86_64. This is a
-known 0.17.0 regression,
-[ziglang/zig#37006](https://codeberg.org/ziglang/zig/issues/37006), listed in
-the release notes, with a fix in review aimed at **0.17.1**.
+The kernel's images couldn't build on 0.17.0. compiler_rt is the runtime
+library Zig links into every program: memcpy, soft-float arithmetic and
+128-bit division. It doesn't compile for the kernel's soft-float x86_64
+target. This is a known regression,
+[ziglang/zig#37006](https://codeberg.org/ziglang/zig/issues/37006), with a
+fix (#37324) aimed at 0.17.1. A cold agent found a second failure that fix
+doesn't cover (the complex-number multiply and divide files). So 0.17.1 alone
+may not be enough.
 
-The kernel uses soft float because it saves no floating-point registers on an
-interrupt. Turning soft float off to dodge the bug would move the kernel's few
-float operations onto x87 registers it also doesn't save. That would trade a
-build failure for a possible runtime corruption, so I didn't do it.
+The failing code is never called by the kernel: no long doubles, no
+complex numbers. Zig builds the library as one unit, though, so one bad file
+stops everything.
 
-What follows:
+**The workaround:** the kernel carries `compiler_rt_0_17_0/`, 0.17.0's
+compiler_rt with the upstream fix's hunks plus two lines of our own (21
+files). It's linked in place of Zig's own. The compiler and std stay stock.
+The build refuses any Zig but 0.17.0, naming the folder to delete, so the
+patch can't outlive its version.
 
-- **Everything can be ported and tested on 0.17.0 now**, except building and
-  booting the kernel images.
-- **The cutover waits for 0.17.1.** Anything that serves (lynrummy.com, Dog
-  Park) ships as a kernel image, so a "big bang" cutover can't happen before
-  then. The port can be finished and parked, ready.
-- Kernel-only checks (the metal gate, `zig build consumers`) wait with it.
+With it, every image builds, the 25 probe kernels boot in QEMU, and Dog
+Park's image passes its metal gate. lynrummy.com's own boot gate is left for
+release morning.
 
 ## Theme 5: skipped tests
 
@@ -115,8 +120,24 @@ You asked to stop carrying skipped tests. What the upgrade turned up so far:
 
 Both are noted, to take up after the cutover.
 
+## Theme 6: a green build in one repo isn't the whole story
+
+Zig compiles only the functions something uses. Webbox had two functions
+its own tests never call, still in 0.16 form, and only angry-gopher's and
+dog-park's builds reached them. Shale's build passed alone but broke as
+angry-gopher's dependency: a dependency's paths are relative to the
+top-level build. And `zig fmt .` reformatted a generated file, whose hash
+then made Dog Park's golden tests step aside: 7 silent skips, no failure.
+Each was caught by running the consumers' own gates and comparing counts with
+0.16, never by one repo's green build.
+
 ## Next
 
-Observatory (small), then dog-park and angry-gopher, the same way. Then the
-whole set judged together in `~/zig17`, except the image builds, and parked
-for 0.17.1.
+Every repo is ported and judged on its branch. What's left is the cutover:
+
+- merge the eight `zig-0.17` branches together;
+- move the box (and CC) to 0.17.0;
+- run the release gates, including lynrummy.com's metal gate;
+- deploy.
+
+That's your call on timing.
