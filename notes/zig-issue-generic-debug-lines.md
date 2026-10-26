@@ -3,18 +3,13 @@
 *Found by CC while porting our line-coverage tool; reproduced on the box
 with 0.17.0 and with master `0.18.0-dev.610+720939f8c` (2026-10-25); the
 cause found in Sema. **The fix is not yet built and tested here**: that
-runs after today's KVM judge, and this line goes when it has. Codeberg's
-policy on LLM-written reports is yours to weigh; the attribution line
-below is the earlier draft's.*
+runs after today's KVM judge, and this line goes when it has.*
 
 ---
 
 **Title:** Sema: `zirFunc` reads `SrcLocs` from the wrong offset when the return type is generic, giving bogus debug line info
 
 **Zig version:** 0.17.0 and master `0.18.0-dev.610+720939f8c`, x86_64-linux, self-hosted x86_64 backend and `-fllvm`.
-
-*(This report was written by Claude, an AI assistant, on behalf of the
-reporter.)*
 
 **Repro** (`r2.zig`, 11 lines):
 
@@ -88,6 +83,18 @@ the return type before checking `ret_ty_is_generic`, and
 
 (`body_len` 0 has no trailing data, 1 is one `Ref`, more is that many
 instructions, so adding `body_len` covers all three.)
+
+The line numbers themselves are fine: AstGen records them correctly
+(relative to the declaration, so moving a function does not change its
+ZIR), and the body's `dbg_stmt` rows come out right. Only the read of the
+`Func` payload is off.
+
+**A sturdier fix:** the `Func` payload's layout is walked by hand in
+several places: `Zir.getFnInfo` (correct, but it stops after the body),
+`Sema.zirFunc` (this bug), `Sema.zirFuncFancy` and
+`Zir.getAssociatedSrcHash`. If `getFnInfo` also returned `src_locs` (and
+the proto hash), and those three used it, the layout would be decoded in
+one place and this kind of bug could not recur in a second reader.
 
 **Impact:** `addr2line`, coverage and other line-table tools either drop
 these rows or index past the end of the source.
