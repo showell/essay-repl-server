@@ -1,19 +1,20 @@
-# Draft: a Zig 0.17.0 issue, for Steve to file on Codeberg
+# Draft: a Zig issue with its fix, for Steve to file on Codeberg
 
-*Found by CC (Cloud Claude) while porting our line-coverage tool, and
-reproduced on the box. No one here has a Codeberg login, so this is the
-text to paste at https://codeberg.org/ziglang/zig/issues/new. I searched
-first and found no existing report.*
+*Found by CC while porting our line-coverage tool; reproduced on the box
+with 0.17.0 and with master `0.18.0-dev.610+720939f8c` (2026-10-25); the
+cause found in Sema. **The fix is not yet built and tested here**: that
+runs after today's KVM judge, and this line goes when it has. Codeberg's
+policy on LLM-written reports is yours to weigh; the attribution line
+below is the earlier draft's.*
 
 ---
 
-**Title:** Debug line info: a generic function's prologue/epilogue rows carry line numbers past the end of its file
+**Title:** Sema: `zirFunc` reads `SrcLocs` from the wrong offset when the return type is generic, giving bogus debug line info
 
-**Zig version:** 0.17.0 (x86_64-linux). It happens with the self-hosted x86_64 backend and with `-fllvm`.
+**Zig version:** 0.17.0 and master `0.18.0-dev.610+720939f8c`, x86_64-linux, self-hosted x86_64 backend and `-fllvm`.
 
 *(This report was written by Claude, an AI assistant, on behalf of the
-reporter. It found the problem while building a line-coverage tool on Zig's
-DWARF.)*
+reporter.)*
 
 **Repro** (`r2.zig`, 11 lines):
 
@@ -33,23 +34,60 @@ test "pick" {
 
 ```sh
 zig test r2.zig --test-no-exec -femit-bin=bin
-readelf --debug-dump=decodedline bin | awk '$1=="r2.zig" && $2+0>11'
+readelf --debug-dump=decodedline bin | awk '$1=="r2.zig"'
 ```
 
-**Actual:** rows naming `r2.zig` at lines 24 and 25 (self-hosted x86_64);
-line 24 with `-fllvm`. The raw line program for `pick`'s instance sets the
-file to entry 0 (`r2.zig`), the column to 24, and advances the line to 24
-for the prologue, then has the body at line 5 and line 25 for the epilogue.
+**Actual:** `pick`'s rows are at lines 24, 5, 25 (self-hosted) and 24, 5
+(`-fllvm`), past the end of the file. **Expected:** 3, 5, 6.
 
-**Expected:** the prologue at line 3 (the `fn` line) and the epilogue
-at line 6 (the closing brace), all within the file.
+A smaller one, no `std`:
 
-**Notes:**
-- It looks like the source location of the generic instance's entry and
-  exit, not a backend's: both backends agree on line 24.
-- A plain function with a comptime parameter but a simple return type shows
-  it too (rows at 15, 16 and 36 in a 12-line file).
-- In a larger file, a generic `pick` at line 227 of a 1,221-line file gets
-  lines 1291, 1292, 1541 and 1542, column 1081.
-- **Impact:** coverage and line-table tools (`addr2line`, our ptrace line
-  coverage) either drop these rows or crash indexing the source by them.
+```zig
+pub fn pick(x: anytype) @TypeOf(x) {
+    return x;
+}
+
+test "pick" {
+    _ = pick(@as(u32, 3));
+}
+```
+
+gives 9, 2, 10 in a 7-line file.
+
+**Cause:** in `src/Sema.zig` `zirFunc`, when `ret_ty.is_generic` is set
+the return type's trailing data (one `Ref`, or a body of `body_len`
+instructions) is not skipped, so `extra_index` stays short by
+`ret_ty.body_len`, and `src_locs` is read from the last words of the
+function body. `lbrace_line`/`rbrace_line` become two consecutive
+instruction indices (hence 21/22 above, after the decl line). That fits
+what is seen: the bogus lines move with the declaration but not with the
+body's length, are always one apart, both backends agree, and a function
+whose return type does not name a parameter is fine. `zirFuncFancy` skips
+the return type before checking `ret_ty_is_generic`, and
+`Zir.getAssociatedSrcHash` adds `ret_ty.body_len` unconditionally; only
+`zirFunc` misses it.
+
+**Fix:**
+
+```diff
+--- a/src/Sema.zig
++++ b/src/Sema.zig
+@@ fn zirFunc(
+     var extra_index = extra.end;
+ 
+-    const ret_ty: Type = if (extra.data.ret_ty.is_generic)
+-        .generic_poison
+-    else switch (extra.data.ret_ty.body_len) {
++    const ret_ty: Type = if (extra.data.ret_ty.is_generic) blk: {
++        // Skip the return type's trailing `Ref` or body, or `src_locs` below is read from the body.
++        extra_index += extra.data.ret_ty.body_len;
++        break :blk .generic_poison;
++    } else switch (extra.data.ret_ty.body_len) {
+         0 => .void,
+```
+
+(`body_len` 0 has no trailing data, 1 is one `Ref`, more is that many
+instructions, so adding `body_len` covers all three.)
+
+**Impact:** `addr2line`, coverage and other line-table tools either drop
+these rows or index past the end of the source.
