@@ -2,8 +2,9 @@
 
 *Found by CC while porting our line-coverage tool; reproduced on the box
 with 0.17.0 and with master `0.18.0-dev.610+720939f8c` (2026-10-25); the
-cause found in Sema. **The fix is not yet built and tested here**: that
-runs after today's KVM judge, and this line goes when it has.*
+cause found in Sema. The fix is the structural one (one decoder of a
+function's ZIR payload), built and tested here; attach
+[zig-fnpayload.patch](zig-fnpayload.patch) or paste it as a PR.*
 
 ---
 
@@ -51,50 +52,97 @@ gives 9, 2, 10 in a 7-line file.
 
 **Cause:** in `src/Sema.zig` `zirFunc`, when `ret_ty.is_generic` is set
 the return type's trailing data (one `Ref`, or a body of `body_len`
-instructions) is not skipped, so `extra_index` stays short by
-`ret_ty.body_len`, and `src_locs` is read from the last words of the
-function body. `lbrace_line`/`rbrace_line` become two consecutive
-instruction indices (hence 21/22 above, after the decl line). That fits
-what is seen: the bogus lines move with the declaration but not with the
-body's length, are always one apart, both backends agree, and a function
-whose return type does not name a parameter is fine. `zirFuncFancy` skips
-the return type before checking `ret_ty_is_generic`, and
-`Zir.getAssociatedSrcHash` adds `ret_ty.body_len` unconditionally; only
-`zirFunc` misses it.
+instructions) is not skipped:
 
-**Fix:**
-
-```diff
---- a/src/Sema.zig
-+++ b/src/Sema.zig
-@@ fn zirFunc(
-     var extra_index = extra.end;
- 
--    const ret_ty: Type = if (extra.data.ret_ty.is_generic)
--        .generic_poison
--    else switch (extra.data.ret_ty.body_len) {
-+    const ret_ty: Type = if (extra.data.ret_ty.is_generic) blk: {
-+        // Skip the return type's trailing `Ref` or body, or `src_locs` below is read from the body.
-+        extra_index += extra.data.ret_ty.body_len;
-+        break :blk .generic_poison;
-+    } else switch (extra.data.ret_ty.body_len) {
-         0 => .void,
+```zig
+const ret_ty: Type = if (extra.data.ret_ty.is_generic)
+    .generic_poison
+else switch (extra.data.ret_ty.body_len) {
+    1 => blk: { ...; extra_index += 1; ... },
+    else => blk: { ...; extra_index += ret_ty_body.len; ... },
+    ...
+};
+...
+extra_index += extra.data.body_len;
+src_locs = sema.code.extraData(Zir.Inst.Func.SrcLocs, extra_index).data;
 ```
 
-(`body_len` 0 has no trailing data, 1 is one `Ref`, more is that many
-instructions, so adding `body_len` covers all three.)
+so `src_locs` is read `ret_ty.body_len` words early, from the end of the
+function body, and `lbrace_line`/`rbrace_line` are two consecutive
+instruction indices (21/22 above, after the decl line). That fits what is
+seen: the bogus lines move with the declaration but not with the body's
+length, are always one apart, both backends agree, and a function whose
+return type does not name a parameter is fine.
 
 The line numbers themselves are fine: AstGen records them correctly
 (relative to the declaration, so moving a function does not change its
 ZIR), and the body's `dbg_stmt` rows come out right. Only the read of the
 `Func` payload is off.
 
-**A sturdier fix:** the `Func` payload's layout is walked by hand in
-several places: `Zir.getFnInfo` (correct, but it stops after the body),
-`Sema.zirFunc` (this bug), `Sema.zirFuncFancy` and
-`Zir.getAssociatedSrcHash`. If `getFnInfo` also returned `src_locs` (and
-the proto hash), and those three used it, the layout would be decoded in
-one place and this kind of bug could not recur in a second reader.
+**Why it could happen:** the trailing data of `func`/`func_inferred`
+(`Inst.Func`) and `func_fancy` (`Inst.FuncFancy`) is walked by hand in six
+places, each with its own `extra_index` arithmetic: `Zir.getFnInfo`,
+`Zir.getAssociatedSrcHash`, `Zir.findTrackableInner`, `Sema.zirFunc`,
+`Sema.zirFuncFancy`, and `print_zir`'s `writeFunc`/`writeFuncFancy`. Five
+get it right; `zirFunc` skips a step on one branch.
+
+**Fix: decode the payload in one place.** A new `Zir.getFnPayload` walks
+either layout once and returns every part of it:
+
+```zig
+pub const FnPayload = struct {
+    param_block: Inst.Index,
+    cc_ref: Inst.Ref, // .none when cc_body is used or the convention is omitted
+    cc_body: []const Inst.Index,
+    ret_ty_ref: Inst.Ref, // .void_type when omitted; .none when ret_ty_body is used
+    ret_ty_body: []const Inst.Index,
+    ret_ty_is_generic: bool,
+    is_inferred_error: bool,
+    is_var_args: bool,
+    is_noinline: bool,
+    noalias_bits: u32,
+    body: []const Inst.Index, // empty for a prototype
+    src_locs: ?Inst.Func.SrcLocs, // present exactly when body is not empty
+    proto_hash: ?std.zig.SrcHash, // likewise
+};
+```
+
+and all six readers use it; none keeps an `extra_index` of its own. In
+`zirFunc` the return type and the brace lines become:
+
+```zig
+const payload = sema.code.getFnPayload(inst);
+...
+const ret_ty: Type = if (payload.ret_ty_is_generic)
+    .generic_poison
+else if (payload.ret_ty_body.len != 0) blk: {
+    const ret_ty_val = try sema.resolveGenericBody(block, ret_ty_src, payload.ret_ty_body, inst, .type, .{ .simple = .fn_ret_ty });
+    break :blk ret_ty_val.toType();
+} else if (payload.ret_ty_ref == .void_type)
+    .void
+else
+    try sema.resolveType(block, ret_ty_src, payload.ret_ty_ref);
+
+const has_body = payload.body.len != 0;
+const src_locs = payload.src_locs orelse undefined;
+```
+
+`getAssociatedSrcHash`'s two hand-walks become `return
+zir.getFnPayload(inst).proto_hash`, `findTrackableInner`'s two branches
+become one, and `print_zir`'s two writers become one. Net: +169 / -328
+lines over `lib/std/zig/Zir.zig`, `src/Sema.zig` and `src/print_zir.zig`;
+the whole diff, against master `720939f8c`:
+[zig-fnpayload.patch](zig-fnpayload.patch).
+
+One visible change: `print_zir` now prints an omitted return type as
+`void_type` for `func_fancy` too, as it already did for `func`. Nothing
+compares printed ZIR.
+
+**Tested** with a Debug build of the patched compiler (no LLVM): the repro
+gives 3, 5, 6, the `anytype` one 1, 2, 3, and a function moved down or
+given a longer body moves its rows with it; `zig test test/behavior.zig
+-fno-llvm -fno-lld`: 2194 passed, 27 skipped, 0 failed, the same result
+test by test as unpatched master.
 
 **Impact:** `addr2line`, coverage and other line-table tools either drop
 these rows or index past the end of the source.
