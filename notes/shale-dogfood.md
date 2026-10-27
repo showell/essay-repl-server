@@ -3,8 +3,9 @@
 *2026-10-17. The design for Steve's thought experiment, "ban Claude from
 running bash and Python, which forces us to dogfood Shale", after six rounds
 with cold reviewers: five to build it, and a sixth by an adversary who cared
-only about metal. The full design, with every detail settled, is zig-webbox's
-`docs/designs/DESIGN-shale-dogfood.md`; this is the version to read.*
+only about metal. The full design was zig-webbox's design note, now gone (its
+rules that still hold are in shale's `docs/SHALE.md`, "What was decided, and what was refused");
+this is the version to read.*
 
 ## The answer, in one paragraph
 

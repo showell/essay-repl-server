@@ -14,7 +14,7 @@ Nothing limits login attempts today, on Linux or on metal. On metal it is
 also a stall: each guess is a deliberately slow bcrypt on its one processor,
 so a flood of guesses holds up everyone.
 
-CC's design (`gopher-metal/docs/designs/DESIGN-login-throttle.md`): after N
+CC's design (it shipped as angry-gopher's `zig-server/src/login_throttle.zig`): after N
 failed logins in a window, refuse further tries **before** the bcrypt, with
 a cheap 429. Two counters: per address (stops one flooder, and the stall)
 and per name (stops many addresses guessing one account, which really means
