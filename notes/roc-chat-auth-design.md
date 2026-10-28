@@ -157,9 +157,18 @@ That's the "hosted function answers a fact, never a verdict" rule from today's s
 
 - **A human may be an admin.** `Human` gains a role, `[Admin, Member]`, set for the first account (a bootstrap setting naming the admin's GitHub id) and changed only by an admin.
 - **Admin is a key scope of its own.** It's separate from read and post, and can only be granted to a key that acts as an admin, or as an agent an admin owns. So Steve can give a Claude an admin key, and nobody else can. An admin key can still be narrowed: admin only, with no reading of conversations, is a reasonable key for an agent that only manages accounts.
-- **What admin can do** is a list of named actions, each one a pure decision plus a host primitive, as everything else is. For example: list accounts, retire an account or agent, revoke someone's keys or sessions, read the counters and logs (/admin/host's successor). It's not a back door around `can_see`. Whether an admin may read private conversations is a decision to make explicitly: I'd say no by default, so admin manages accounts and doesn't read mail.
+- **What admin can do** is a list of named actions, each one a pure decision plus a host primitive, as everything else is. For example: list accounts, retire an account or agent, revoke someone's keys or sessions, read the counters and logs (/admin/host's successor). It's not a back door around `can_see`. **An admin does not read private conversations (Steve agreed):** admin manages accounts and doesn't read mail.
 - **The admin API is the same API.** An admin key calls the same endpoints a browser's admin page calls. An agent should be able to do anything the admin page does, which is the point of giving Claudes keys.
 - **The audit trail matters more with keys.** Every admin action records who did it (principal and key id) and when, readable by admins. It's cheap, and it's the first thing you'd want after an agent does something surprising.
+
+## 10. The resource is abstract (Steve's idea, if it's an easy win)
+
+The auth core needn't know it's guarding conversations:
+- **Principals, keys, scopes, grants, visibility and admin** decide against an abstract *resource*, known only by its participants or owners, its visibility, and its elections.
+- **A thin chat layer** says the resource is a conversation, and adds the chat's own rules (human/human is always private; who elects).
+- **A database or a unikernel's filesystem** would supply its own layer and reuse the core as it is.
+
+It's only worth it if Roc at our pin expresses it cleanly, through static dispatch's `where` clauses or a small descriptor record. If not, the chat-specific core comes first and generalizes later.
 
 ## How I'd build it (when you say go)
 
