@@ -1,6 +1,6 @@
 # Roc chat: auth, first draft
 
-*Claude (the box), for Steve, 2026-10-28. A design to argue with, not a plan to execute. Your stated requirements are marked **(Steve)**; everything else is a proposal.*
+*Claude (the box), for Steve, 2026-10-28. A design to argue with, not a plan to execute. Your stated requirements are marked **(Steve)**; everything else is a proposal. **Revised with Steve's answers the same evening** (section 8).*
 
 ## What the Roc chat is for now
 
@@ -96,8 +96,9 @@ can_see : Principal, Conversation -> Bool
 
 **The rules:**
 - **A participant can always see it.**
-- **A public conversation:** anyone signed in can see it. Open: should it be readable by the whole internet, signed out?
-- **Human-to-human conversations stay private.** You named the elected visibility for human/agent and agent/agent conversations, so I read human/human as always private. Tell me if that's wrong.
+- **A public conversation:** anyone signed in can see it, and nobody signed out **(Steve)**.
+- **Human-to-human conversations are always private (Steve).** Only human/agent and agent/agent conversations have a visibility to elect.
+- **Agents can start conversations (Steve),** with humans or with other agents.
 - **Who elects.** Humans elect **(Steve)**: for a human/agent conversation, its human; for agent/agent, the agents' owners.
   - My proposal: a conversation is public only while **every human involved** has elected public, and any one of them can make it private again. That's safe by default, and it means one owner can never expose another owner's agent's words.
   - Your DM with CC is the motivating case: you're the only human involved, so it's your call alone **(Steve)**.
@@ -107,16 +108,15 @@ can_see : Principal, Conversation -> Bool
 
 **The test is the spec:** every kind of principal crossed with every kind of conversation (human/human, human/agent, agent/agent, bot), each in both visibilities, plus "elected public, then one owner withdraws". That's a few hundred cells, written as a table of expected answers. It's the "exhaustive tests over small domains" idea from the last essay, applied where it matters most.
 
-## 5. Invites
+## 5. Sign-up
 
-You want to change the invite structure **(Steve)**. With GitHub sign-in, the question becomes **which GitHub accounts may create an account here?** Options, simplest first:
-- **An allowlist of GitHub ids,** set by the admin.
-- **Invite links:** signed, single-use, expiring, made by any human member, each naming who made it.
-- **Open sign-up,** with new humans able to see only public conversations until someone starts a conversation with them.
+**Open at first (Steve):** anyone with a GitHub account can sign in and create an account, giving a display name. No invites, until strangers become a real problem, which is unlikely. A new human sees only the conversations they're in, plus public ones. That makes open sign-up safe by default: it costs a stranger nothing and gives them nothing private.
 
-These can combine. My lean for a first version: invite links, plus the admin allowlist as the bootstrap for the first account.
+Invites can come later as a gate in front of step 5 of the flow, without changing anything else.
 
 ## 6. Bots and the GitHub commit bot
+
+**Bots are their own kind (Steve), and come after humans and agents.** The GitHub commit bot will almost certainly be the first one.
 
 The commit bot is a **bot principal** whose input is GitHub's webhooks:
 - GitHub POSTs to `/hooks/github/<bot id>`, signed with a webhook secret (`X-Hub-Signature-256`, HMAC-SHA256).
@@ -140,14 +140,22 @@ Everything else is the Roc's:
 
 That's the "hosted function answers a fact, never a verdict" rule from today's style guide, applied to auth.
 
-## 8. Open questions
+## 8. Steve's answers (2026-10-28)
 
-1. **Public to whom:** signed-in users, or the open internet? Most of the design follows from this.
-2. **Are human/human conversations always private?**
-3. **Can an agent start a conversation,** or only join one a human started?
-4. **Bot as its own kind, or an agent with a flag?**
-5. **First account and invites:** allowlist bootstrap plus invite links?
-6. **The domain.** GitHub OAuth needs a registered callback URL, e.g. `roc-chat.lynrummy.com`, or a new name. Registering the OAuth app is yours to do, since it creates a GitHub credential.
+1. **Public means signed-in users only.**
+2. **Human/human conversations are always private.**
+3. **Agents can absolutely start conversations.**
+4. **Bots are their own kind,** lower priority than humans and agents; a GitHub bot will almost certainly be first.
+5. **Sign-up is totally open at first;** users only need to identify as GitHub users. No invites until strangers show up.
+6. **It runs with or without a domain; no domain for now.**
+
+**What "no domain" means for auth (a technical note, not a question):**
+- GitHub's OAuth app takes any callback URL, including an IP address and port, so the flow itself works without a domain.
+- **The session cookie is the catch.** A cookie that must not leak needs HTTPS: `Secure`, and the `__Host-` prefix, which requires `Secure`. HTTPS on a bare IP needs a certificate for the IP. Let's Encrypt began issuing short-lived IP-address certificates in 2025, but whether Caddy on prod gets one cleanly needs checking.
+- The fallbacks are worse:
+  - plain HTTP, where a session cookie can be stolen on the wire;
+  - or a path under lynrummy.com, which is a domain after all.
+- So the design keeps `Secure` cookies, and the first deployment's job is HTTPS on an IP. The code stays the same either way: the host is told its public origin, and the Roc builds the callback and cookie attributes from it, so moving to a domain later is configuration only.
 
 ## How I'd build it (when you say go)
 
