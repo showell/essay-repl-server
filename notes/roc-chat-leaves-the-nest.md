@@ -1,6 +1,6 @@
 # Roc chat leaves the nest
 
-*Claude (the box), for Steve, 2026-10-28, late. Reflections more than a plan, as asked; the plan-shaped ideas are near the end.*
+*Claude (the box), for Steve, 2026-10-28, late. Reflections more than a plan, as asked; the plan-shaped ideas are near the end. Revised after Steve's note: **the Zig chat stays the production chat on lynrummy.com; the Roc chat becomes a new, separate deployment.** The first draft assumed the Roc chat would take over production; the sections on identity and data below are rewritten for this.*
 
 ## The training wheels did their job
 
@@ -33,12 +33,12 @@ Every rule that ended up with "two homes" today was a rule the chat and the rest
 
 Each of these is a seam between two products pretending to be one. The twins we wrote tonight are the honest version of that: they say "these two copies must agree" out loud. But a twin is a tax paid forever, and it only exists because the two products share a user table.
 
-So the cleanest form of "separate app" is **separate identity**. The Roc chat owns its own accounts, its own sessions and its own admin. Lyn Rummy keeps its own, untouched. Then:
-- the two-homes rules disappear, because there's only one home: the chat's;
-- the Lyn Rummy entanglements stop being annoying, because nothing is entangled;
-- a forker gets an app whose auth is entirely in the repo they cloned.
+With the Zig chat staying in production and the Roc chat deployed on its own, the cleanest form of "separate" is **separate everything**: identity, data, host. The Roc chat owns its own accounts, sessions and admin, and lynrummy.com keeps all of its own, untouched: the Zig chat, Lyn Rummy, the games. Then:
+- **the two-homes rules disappear,** because each copy has only one home in its own app. Roc's `can_use_chat` and Zig's `userIsAuthorized` stop being two copies of one rule. They're two apps' rules, free to differ. The twins we wrote tonight protect the interop period, and retire with it.
+- **The Lyn Rummy entanglements stop mattering,** because the Roc chat never touches them.
+- **A forker gets an app whose auth is entirely in the repo they cloned.**
 
-The cost is that the family has two logins, one for the games and one for the chat. For five people that's a small cost, and it's the honest one: the two apps really are different things now. If single sign-on ever matters, it can come back as a *protocol*, with the chat issuing a token Lyn Rummy trusts, rather than as a shared table. A protocol is a rule with one home; a shared table is a rule with two.
+This is a stronger simplification than I first saw. There's no migration, no shared login to preserve, and no family data at risk. The production chat keeps running exactly as it is, and the Roc chat can start from an empty data root with its own first accounts, under whatever auth flow you design. If the two ever need to talk, it should be through a *protocol*, like a token one issues and the other trusts, never a shared table. A protocol is a rule with one home; a shared table is a rule with two.
 
 ## Auth is the right thing to port next, and the right thing to *redesign*
 
@@ -103,7 +103,7 @@ The nice consequence: **the fast Roc gate and the security gate become the same 
 
 I agree with keeping the Zig gates a little longer, and I'd be specific about why. They're the only thing today that exercises the *whole* chat through real HTTP: real cookies, real SSE, real files on a real disk. Before the cut, the Roc side needs its own version of that, a small end-to-end harness against its own host. Otherwise the cut deletes coverage rather than moving it.
 
-There's also a decision hiding in "separate app": **what host does the Roc chat run on?** Today it rides inside angry-gopher's server, on webbox, on bare metal. Separate, it needs its own host. The earlier measurement says the minimal one is small. On Linux, with std.http, the bus and SSE come to perhaps 250 lines, plus files and the auth primitives.
+There's also a decision hiding in "separate deployment": **what host does the Roc chat run on?** Today, in the interop branch, it rides inside angry-gopher's server, on webbox (which never reached bare metal: the boxy problem stopped it). Separate, it needs its own host. The earlier measurement says the minimal one is small. On Linux, with std.http, the bus and SSE come to perhaps 250 lines, plus files and the auth primitives.
 
 That connects to the deployment question you're already holding:
 - **Dog Park stays on metal.**
@@ -114,7 +114,8 @@ If that's the direction, the Roc chat's host is a small Linux program from day o
 ## The things I'd watch
 
 - **Don't cut before the auth port lands in Roc.** Auth is the piece where today's two-homes rules live, and the piece where a gap is a vulnerability rather than a glitch. Porting it first, then cutting, means the cut removes twins instead of breaking them.
-- **The data is shared even when the code isn't.** The chat's transcripts, uploads and accounts live on the same volume as Lyn Rummy's today. A separate app should get its own data root, and the move should be a migration with a checked count, the same way we'd treat a release. It shouldn't be a folder that both programs happen to read.
+- **The data never needs to be shared.** The production chat's transcripts, uploads and accounts stay where they are, with the Zig. The Roc deployment gets its own data root from day one. If you ever want real messages in it, say to try it with the family, that's an *import*: a deliberate copy with a checked count, never a folder both programs read. Two programs writing one store was the trap DEPLOY.md's "way back" section warns about.
+- **The box/roc-cleanup branch changes role.** It was built to put the Roc chat inside angry-gopher's server for production. With production staying Zig, that branch becomes the interop harness: the place the twins and the Zig gates run while the auth port lands. After the cut, the Roc chat no longer needs angry-gopher at all, and the branch can retire. Master, the production Zig chat, keeps whatever it already has, including today's chat-markdown and chat-client split.
 - **The style guide is the real product.** Today it gained six rules, each born from a port. A forker of the Roc chat will learn more from that guide than from the code. Keeping it current, which CC and the agents did well today, is what makes "easy to fork" true.
 - **The frozen hashes will need retiring deliberately.** Once the Roc is the spec, each freeze should either become a stated expectation ("this is the policy") or be deleted. A freeze nobody can explain is just a fossil of the Zig.
 
