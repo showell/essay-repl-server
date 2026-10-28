@@ -1,6 +1,6 @@
 # Roc chat: auth, first draft
 
-*Claude (the box), for Steve, 2026-10-28. A design to argue with, not a plan to execute. Your stated requirements are marked **(Steve)**; everything else is a proposal. **Revised with Steve's answers the same evening** (section 8).*
+*Claude (the box), for Steve, 2026-10-28. A design to argue with, not a plan to execute. Your stated requirements are marked **(Steve)**; everything else is a proposal. **Revised with Steve's answers the same evening** (sections 8 and 9: a chat.lynrummy.com subdomain, and admin API keys).*
 
 ## What the Roc chat is for now
 
@@ -149,13 +149,17 @@ That's the "hosted function answers a fact, never a verdict" rule from today's s
 5. **Sign-up is totally open at first;** users only need to identify as GitHub users. No invites until strangers show up.
 6. **It runs with or without a domain; no domain for now.**
 
-**What "no domain" means for auth (a technical note, not a question):**
-- GitHub's OAuth app takes any callback URL, including an IP address and port, so the flow itself works without a domain.
-- **The session cookie is the catch.** A cookie that must not leak needs HTTPS: `Secure`, and the `__Host-` prefix, which requires `Secure`. HTTPS on a bare IP needs a certificate for the IP. Let's Encrypt began issuing short-lived IP-address certificates in 2025, but whether Caddy on prod gets one cleanly needs checking.
-- The fallbacks are worse:
-  - plain HTTP, where a session cookie can be stolen on the wire;
-  - or a path under lynrummy.com, which is a domain after all.
-- So the design keeps `Secure` cookies, and the first deployment's job is HTTPS on an IP. The code stays the same either way: the host is told its public origin, and the Roc builds the callback and cookie attributes from it, so moving to a domain later is configuration only.
+**The domain (Steve, later the same evening):** the Roc chat requires a subdomain of lynrummy.com. Steve creates chat.lynrummy.com when it's ready. That settles the HTTPS question: Caddy on prod serves it like the other sites, the session cookie is `__Host-` and `Secure`, and GitHub's callback is `https://chat.lynrummy.com/login/github`. The host is still told its public origin, so a forker's subdomain is configuration only.
+
+## 9. Admin, and API keys for it (Steve)
+
+**Steve's Claudes need easy access to the admin system, so admin has API key support (Steve).**
+
+- **A human may be an admin.** `Human` gains a role, `[Admin, Member]`, set for the first account (a bootstrap setting naming the admin's GitHub id) and changed only by an admin.
+- **Admin is a key scope of its own.** It's separate from read and post, and can only be granted to a key that acts as an admin, or as an agent an admin owns. So Steve can give a Claude an admin key, and nobody else can. An admin key can still be narrowed: admin only, with no reading of conversations, is a reasonable key for an agent that only manages accounts.
+- **What admin can do** is a list of named actions, each one a pure decision plus a host primitive, as everything else is. For example: list accounts, retire an account or agent, revoke someone's keys or sessions, read the counters and logs (/admin/host's successor). It's not a back door around `can_see`. Whether an admin may read private conversations is a decision to make explicitly: I'd say no by default, so admin manages accounts and doesn't read mail.
+- **The admin API is the same API.** An admin key calls the same endpoints a browser's admin page calls. An agent should be able to do anything the admin page does, which is the point of giving Claudes keys.
+- **The audit trail matters more with keys.** Every admin action records who did it (principal and key id) and when, readable by admins. It's cheap, and it's the first thing you'd want after an agent does something surprising.
 
 ## How I'd build it (when you say go)
 
