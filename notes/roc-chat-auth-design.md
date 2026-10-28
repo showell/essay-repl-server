@@ -170,6 +170,16 @@ The auth core needn't know it's guarding conversations:
 
 It's only worth it if Roc at our pin expresses it cleanly, through static dispatch's `where` clauses or a small descriptor record. If not, the chat-specific core comes first and generalizes later.
 
+## 11. Decided after the first adversarial review (Steve: "yes to all")
+
+The review of the pure core (branch box/auth) found five implementation bugs, which are being fixed, and raised five policy questions. Steve took the conservative answer to each:
+
+1. **An owner sees and posts what their agents see.** An owner can always mint a key acting as their agent, so hiding the agent's conversations from its owner was never a real barrier. The rule is now the honest one.
+2. **An admin key on an agent can't act on another admin, or on another admin's agents.** That takes a human admin's own session. One stolen Claude admin key can't remove every other admin.
+3. **Public means humans and agents.** A bot sees only the conversations it's in.
+4. **Retiring a human withdraws their public votes,** so the conversations that relied on them go private.
+5. **Keys are minted only from a browser session, never from a key.** A Claude's admin key can do admin actions, but can't create new keys.
+
 ## How I'd build it (when you say go)
 
 - **First, the pure core, with no network:**
