@@ -4,7 +4,7 @@
 
 ## The old question and the new one
 
-Until about a day ago the question was: *how much of the production chat can move into Roc?* The work on angry-gopher's `box/roc-cleanup` answered it well. All 50 routes became Roc's, and the live chat Zig shrank from roughly 28,700 tokens to about 21,200. Every step was held to Zig twins and a gold corpus of 10,970 real messages.
+Until about a day ago the question was: *how much of the production chat can move into Roc?* The work on angry-gopher's `box/roc-cleanup` answered it well. On that branch, all 50 routes became Roc's, and the chat's Zig shrank from roughly 28,700 tokens to about 21,200. Every step was held to Zig twins and a gold corpus of 10,970 real messages. None of it was ever released: lynrummy.com ran, and still runs, angry-gopher's master, which is all Zig.
 
 The new question is: *what would a chat look like if it were Roc from the start, for people who want their own?* That is a different project. The two-day pivot is mostly the discovery that the first question had been a rehearsal for the second.
 
