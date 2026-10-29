@@ -194,7 +194,7 @@ Steve's conservative defaults, applied by the round-two fixer:
   - bar their GitHub id;
   - remove the account.
 
-  Sessions, keys and votes are bound to the account's creation time, so re-creating an account revives nothing. A barred id stays out until an admin's `Unbar`, which takes a human admin's session.
+  Sessions, keys and votes are bound to the account's creation time, so re-creating an account revives nothing. **Retirement is a ban for life (Steve, 2026-10-29):** a barred GitHub id never signs up again, and there is no un-bar action. Soft bans and un-bans are for later. The generation binding stays as defence in depth.
 - **The bootstrap admin can't be demoted or retired by another admin,** and no plan may leave zero admins. Plans are decided against a snapshot and applied one at a time.
 - **When a login is reused by a different GitHub id, the old account's login is cleared.**
 - **Display names:** UTF-8, 1-64 bytes, trimmed. Refused: control, format and default-ignorable characters, line and paragraph separators, non-ASCII spaces, and a name with nothing visible. That includes the zero-width joiner, so emoji built by joining characters are refused. Look-alikes are handled by showing the login or kind beside every name.
