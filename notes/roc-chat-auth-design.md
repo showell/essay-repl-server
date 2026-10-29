@@ -180,6 +180,29 @@ The review of the pure core (branch box/auth) found five implementation bugs, wh
 4. **Retiring a human withdraws their public votes,** so the conversations that relied on them go private.
 5. **Keys are minted only from a browser session, never from a key.** A Claude's admin key can do admin actions, but can't create new keys.
 
+## 12. After the second adversarial review (built on box/auth, commit 7200e15)
+
+Steve's conservative defaults, applied by the round-two fixer:
+
+- **One record per account.** An account id must be held by exactly one record. Lookups match only a unique record, and loading the accounts refuses duplicates. Roles are always read from the accounts, never from a caller's copy.
+- **A chat key decides only on a conversation.** `ApiKey.Key(r, id)` is bound to its resource type, and `ConvKey` is the chat's entry point.
+- **No session or key from a hand-built record.** A session starts only from the sign-in flow's opaque `Admission`. A stored session or key is loaded only from its codec's `Line`.
+- **Retirement is one plan:**
+  - revoke the human's sessions and keys;
+  - retire their agents and bots;
+  - withdraw their votes;
+  - bar their GitHub id;
+  - remove the account.
+
+  Sessions, keys and votes are bound to the account's creation time, so re-creating an account revives nothing. A barred id stays out until an admin's `Unbar`, which takes a human admin's session.
+- **The bootstrap admin can't be demoted or retired by another admin,** and no plan may leave zero admins. Plans are decided against a snapshot and applied one at a time.
+- **When a login is reused by a different GitHub id, the old account's login is cleared.**
+- **Display names:** UTF-8, 1-64 bytes, trimmed. Refused: control, format and default-ignorable characters, line and paragraph separators, non-ASCII spaces, and a name with nothing visible. That includes the zero-width joiner, so emoji built by joining characters are refused. Look-alikes are handled by showing the login or kind beside every name.
+- **Known residual holes, accepted:**
+  - another admin can revoke the bootstrap admin's sessions and keys, a nuisance and not a takeover;
+  - a handler that writes a fake type into an explicit annotation could decode a stored key line at it;
+  - lying host facts are beyond any type's reach.
+
 ## How I'd build it (when you say go)
 
 - **First, the pure core, with no network:**
