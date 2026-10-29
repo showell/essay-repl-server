@@ -203,6 +203,27 @@ Steve's conservative defaults, applied by the round-two fixer:
   - a handler that writes a fake type into an explicit annotation could decode a stored key line at it;
   - lying host facts are beyond any type's reach.
 
+## 13. After the third adversarial review (box/auth, commit 4285218)
+
+Round three found nothing high. Its fixes:
+
+- **Generations.** One counter in the settings: every account takes the next value when it's made. Every session, key, vote and conversation participant records its account's generation, and the generation of the human it answers to. A re-created account, even in the same second, revives nothing: it sees no old conversation, posts in none, and holds no old key, session or vote.
+- **The viewer is opaque.** It's minted only from a live session the accounts admit, or from a key that still stands, carrying its scope. Electing a conversation public takes a session's viewer. A hand-built identity doesn't compile.
+- **Every key expires within 365 days,** at a time the store can write; `Never` is gone. Every path into the store's time encoding refuses an unwritable time, rather than crashing.
+- **Sign-in hands back steps** (`SetLogin`, `ClearLogin`, `AddAccount`, `AdvanceGeneration`), never whole account records, and each is safe to apply twice.
+- **The retirement plan bars the id first and removes the account last,** and every step is idempotent. There's no `Unbar`: a bar is for life (Steve).
+- **The audit carries the whole plan:** for a retirement, the agents and bots that went with it and the votes withdrawn. Refused sign-ins and refused keys are audited too. No line holds a secret.
+
+**Left for the host, by design:**
+- proof that stored bytes came from the store needs an opaque read from the platform;
+- the host stores `AdvanceGeneration` and numbers agents from the same counter.
+
+**Noted:**
+- the commit bot's key needs rotating yearly;
+- a human's key can't elect, only their session;
+- an agent that survives a half-applied retirement could be keyed by the re-created owner, though its old keys and conversations stay dead;
+- the Zig-era `Retire.roc` on the interop branch must never run beside this core.
+
 ## How I'd build it (when you say go)
 
 - **First, the pure core, with no network:**
