@@ -160,3 +160,23 @@ join the channels plan, as a second container beside channels.
 3. **Human DMs with topics,** beside channels.
 4. **Human invites, the redeem page, 30-day device sessions and re-invites,**
    with e2e steps and a planted fault per refusal.
+
+## Steve's decisions (2026-10-31)
+
+**The principle:** all humans are equal users, with or without GitHub. The
+only policies that differ between Debbie and Apoorva are the initial sign-up
+rules. Agents differ from humans only where it's clearly about permissions
+or interface (agents use curl), so they share the human namespace.
+
+So, on the six questions:
+1. **One namespace** for humans, agents and bots, unique.
+2. **"The same name"** is equal after folding case and collapsing runs of
+   spaces; look-alikes from other scripts stay allowed (the kind-and-owner
+   label is the defence).
+3. **Invite codes live 7 days;** at most 10 unredeemed invites per human.
+4. **Every human's session expires after 30 days idle**, GitHub or not.
+   This replaces the proposed split; equal treatment rules it out.
+5. **Signing a lost invited human back in** (a re-invite) is their
+   inviter's or an admin's. It's a sign-up rule, so it may differ.
+6. **Invited humans may invite others.** "Too many users would be a good
+   problem to have."
