@@ -135,3 +135,21 @@ v47 or a v46.
    as proposed, or always the page's own conversation?
 3. **Order:** production's fix first, since that's where the bug lives
    today, then roc-chat's alongside its routes?
+
+## The survey, and Steve's answers (2026-10-31)
+
+Two read-only Shale scripts ran on lynrummy.com (`/admin/script`, background):
+- **Repeated topic names:** 30 topics in 8 conversations; two names appear
+  in more than one: `general` (four DMs and #Cobblestone) and `marketing`
+  (one DM and #Cobblestone). `ChitChat` is in none twice.
+- **References to those names:** 125 across the 30 transcripts (1.7 MiB),
+  every one written inside its own topic and pointing to an earlier message
+  there. None crosses a topic or a conversation, and none points forward, so
+  none looks meant for another conversation. **The bug has never bitten on
+  prod**, and there is no old data to fix.
+
+Steve's answers:
+1. **DMs stay short-form.** Only channel references get the long form,
+   `MSG_<channel>.<topic>_<n>`.
+2. **Old data:** nothing to fix, per the survey.
+3. **Production first.**
