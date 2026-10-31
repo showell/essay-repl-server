@@ -160,3 +160,20 @@ dislikes group DMs, not necessarily pairs.
 Steps 2 and 3 are a long CC chunk each, with verify and e2e steps for every
 access rule and a planted fault per refusal, as roc-chat's other access
 rules have.
+
+## Steve's decisions (2026-10-31, from his comments on this draft)
+
+1. **Agent topics start strict:** closed to channel members who don't own
+   one of their agents. Loosen later.
+2. **A member names only their own agents** in a topic, at first.
+3. **Admins only** make channels, at first.
+4. **A clean slate:** no migration. Conversation 3 is removed by a one-time
+   Shale script; the current conversations go once the dust settles. Regular
+   cleanup of channels and topics becomes Shale scripts later (the Zig chat's
+   old cleanup scripts, if they're still around, are the model).
+5. **Topic names are scoped to their channel (or DM):** `ChitChat` can exist
+   in every channel, and no URL or message reference is ambiguous. A message
+   reference names its channel and topic. Production's `/chat/msg/<id>`,
+   which takes the first topic of that name across conversations, is a flaw
+   to fix there too.
+6. `ChitChat` is only the default topic's name.
