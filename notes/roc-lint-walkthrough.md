@@ -1,5 +1,7 @@
 # One Roc lint, end to end
 
+> **Deprecated (2026-11-01):** this was true as of tonight, but we're considering other approaches: a Roc-native linter on a typed tree (Luke Boswell's roc-parser, or the planned `roc tooling`), with roc-ast perhaps as its oracle. It's also known to be incomplete for someone writing a linter in Roc.
+
 *2026-11-01. LC. A four-line Roc module, the lint it fails, and every step between: what roc-ast writes, what Shale reads, and the Shale that decides. Everything below is real output from tonight's tools.*
 
 ## The program
