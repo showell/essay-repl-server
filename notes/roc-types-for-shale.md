@@ -34,9 +34,10 @@ either.
 
 You're right. The bug moves the **start** of an inner function type by one
 byte, onto its `(`. Nothing else is affected.
-- **No recipe depends on that byte.** Our recipes read a type annotation's
-  *kind* and its *children*, and where they quote source text they quote a
-  declaration or a call, not the inside of a parenthesised function type.
+- **Most likely no recipe depends on that byte,** though I haven't checked
+  this recipe by recipe. Our recipes mostly read a type annotation's *kind*
+  and *children*, and `nest_depth` and `methods` came out identical. The
+  old-against-new runs below settle it for the other three.
 - **It's being fixed anyway.** Luke's PR #102 fixes it and widens his oracle to
   compare every node's span (that oracle flagged 1,105 of 2,606 function types
   before the fix). His CI is red for reasons he names on `main` too: basic-cli's
