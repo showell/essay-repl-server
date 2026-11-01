@@ -55,9 +55,11 @@ nest_depth (Roc): 1 files; nested 1 (min 3, strict); depth 3 1
 
 The nesting is visible at a glance: three `e-apply` nodes, each inside the one before. But the layout carries the structure (tabs, which things share a line), and strings are written unescaped. Until tonight Shale guessed the tree back out of this text, and that guessing is where the three reader bugs and the unescaped-string stop came from.
 
-**`roc-ast --tree` writes the same tree for a program:** one fact a line, tab-separated, every value escaped. `n parent kind line col end_line end_col` is a node; `a node name value` is an attribute on the node it names.
+**`roc-ast --flat` writes the same tree flat, for a program:** one fact a line, tab-separated, every value escaped. `n parent kind line col end_line end_col` is a node; `a node name value` is an attribute on the node it names.
 
 ```
+roc-ast flat 1 nightly-2026-10-30-0602c5f
+== Shout.roc
 n	0	file	1	1	4	68
 n	1	module	1	1	1	15
 n	2	exposes	1	8	1	15
@@ -95,11 +97,11 @@ n	23	e-string-part	4	65	4	66
 a	24	raw	!
 ```
 
-Nodes are numbered from 1 in the order they come, so `n 16 e-apply` is a child of node 16. A `0 0 0 0` span is a grouping node with no source of its own (`statements`, `args`).
+The first line names the format and whose parser wrote it; Shale refuses any other. Nodes are numbered from 1 in the order they come, so `n 16 e-apply` is a child of node 16. A `0 0 0 0` span is a grouping node with no source of its own (`statements`, `args`).
 
 ## Step 2: Shale's `roc_tree`
 
-`roc_tree(paths)` (Shale's Linux prelude) runs `roc-ast --tree` and hands the lines to the host. The host turns them into a list of nodes, each a table `{kind, depth, parent, kids, line, col, end_line, end_col}` plus its attributes. For this file:
+`roc_tree(paths)` (Shale's Linux prelude) runs `roc-ast --flat` and hands the lines to the host. The host turns them into a list of nodes, each a table `{kind, depth, parent, kids, line, col, end_line, end_col}` plus its attributes. For this file:
 
 ```
 1 file (parent 0)
