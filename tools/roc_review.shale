@@ -1,0 +1,131 @@
+-- **ONE ROC MODULE, FOR REVIEW ON THE ESSAY SURFACE**: the module in
+-- chunks of about 30 lines, each a code block followed by one paragraph
+-- naming its lines and what it defines, which carries the surface's note
+-- button: Steve replies under any chunk. Run it from the module's repo;
+-- it writes `notes/review-<repo>-<Module>.md`, commits and pushes it, and
+-- prints the URL.
+--
+--   cd ~/showell_repos/gopher-roc && shale ../essay-repl-server/tools/roc_review.shale file=app/Transcript.roc
+--
+-- **CHUNKS END AT NATURAL BOUNDARIES**, found dirtily: a chunk starts
+-- only after a blank line, at the best of the lines 20 to 42 on: a
+-- top-level line (no indent) first, then a doc comment (`##`), then any
+-- line after a blank, the nearest to 30 among equals. With no blank line
+-- in reach, it cuts at 30. A rest of at most 42 lines is the last chunk.
+--
+-- **A REVIEW WITH REPLIES IS NEVER OVERWRITTEN**: the surface keeps
+-- replies by paragraph number (data/comments/notes/<note>.comments.json),
+-- so a rewritten note would hang them under the wrong chunks. Such a run
+-- stops, naming the file; move or remove it first.
+
+const FILE = arg("file", "")
+if FILE == "" then fail("roc_review: file=<path to a .roc module>, run from its repo") end
+if not ends_with(FILE, ".roc") then fail("roc_review: " .. FILE .. " is not a .roc file") end
+const ESSAYS = real("repos:essay-repl-server")
+const TARGET = 30
+const LEAST = 20
+const MOST = 42
+
+function blank(l)
+  return trim(l) == ""
+end
+
+-- How good a start of a chunk line `i` is: 0 none (no blank line before
+-- it), 3 a top-level line, 2 a doc comment, 1 any other.
+function worth(ls, i)
+  if i < 2 or i > #ls then return 0 end
+  if not blank(ls[i - 1]) or blank(ls[i]) then return 0 end
+  local l = ls[i]
+  if not starts_with(l, "\t") and not starts_with(l, " ") then return 3 end
+  if starts_with(trim(l), "##") then return 2 end
+  return 1
+end
+
+function distance(a, b)
+  if a > b then return a - b end
+  return b - a
+end
+
+-- The chunks, `{from, to}` line numbers, every line in one.
+function chunks(ls)
+  local out = {}
+  local s = 1
+  while s <= #ls do
+    if #ls - s + 1 <= MOST then
+      push(out, {from = s, to = #ls})
+      break
+    end
+    local best = s + TARGET
+    local best_worth = 0
+    for i = s + LEAST, s + MOST do
+      local w = worth(ls, i)
+      if w > best_worth or (w > 0 and w == best_worth and distance(i - s, TARGET) < distance(best - s, TARGET)) then
+        best = i
+        best_worth = w
+      end
+    end
+    push(out, {from = s, to = best - 1})
+    s = best
+  end
+  return out
+end
+
+-- A chunk's lines with its blank edges dropped: `{from, to}`.
+function trimmed(ls, c)
+  local from = c.from
+  local to = c.to
+  while from < to and blank(ls[from]) do from = from + 1 end
+  while to > from and blank(ls[to]) do to = to - 1 end
+  return {from = from, to = to}
+end
+
+-- What a chunk defines, for its paragraph: annotated names (`name :`,
+-- `Type :=`), and its count of expects.
+function summary(ls, c)
+  local names = {}
+  local expects = 0
+  for i = c.from, c.to do
+    local l = ls[i]
+    if starts_with(l, "expect") then expects = expects + 1 end
+    local m = re_find(l, "^\t?([A-Za-z_][A-Za-z0-9_]*!?) :")
+    if m ~= nil and not starts_with(l, "\t\t") then push(names, "`" .. m.groups[1] .. "`") end
+  end
+  local said = {}
+  if #names > 0 then push(said, join(names, ", ")) end
+  if expects == 1 then push(said, "1 expect") end
+  if expects > 1 then push(said, expects .. " expects") end
+  if #said == 0 then return "" end
+  return ": " .. join(said, "; ")
+end
+
+const text = read(FILE)
+const ls = lines(text)
+const repo = basename(real("."))
+const module = strip_suffix(basename(FILE), ".roc")
+const slug = "review-" .. repo .. "-" .. module
+const note_path = ESSAYS .. "/notes/" .. slug .. ".md"
+const comments_path = "repos:essay-repl-server/data/comments/notes/" .. slug .. ".md.comments.json"
+if exists(comments_path) then fail("roc_review: " .. comments_path .. " holds replies to the last review of " .. FILE .. "; a new one would hang them under the wrong chunks. Move it aside first.") end
+
+const head = must(run({"git", "log", "-1", "--format=%h %s", "--", FILE}, {timeout_ms = 10000, whole = 10000, want = "git: the module's last commit"})).out
+const dirty = trim(must(run({"git", "status", "--short", "--", FILE}, {timeout_ms = 10000, whole = 10000, want = "git: whether the module has changes"})).out) ~= ""
+const parts = chunks(ls)
+
+local fence = "```"
+if contains(text, "```") then fence = "~~~~" end
+local note = "# Review: " .. repo .. " `" .. FILE .. "`\n\n"
+  .. #ls .. " lines in " .. #parts .. " chunks, as of commit " .. trim(head) .. (dirty and ", with uncommitted changes" or "") .. ". Reply under any chunk; this paragraph is for the module as a whole.\n\n"
+for k = 1, #parts do
+  local c = trimmed(ls, parts[k])
+  note = note .. fence .. "roc\n" .. join(slice(ls, c.from, c.to), "\n") .. "\n" .. fence .. "\n\n"
+    .. "**Lines " .. c.from .. "–" .. c.to .. "**" .. summary(ls, c) .. "\n\n"
+end
+
+must(run({"tee", note_path}, {stdin = note, timeout_ms = 5000, whole = 10000000, want = "write: the note"}))
+must(run({"git", "-C", ESSAYS, "add", "notes/" .. slug .. ".md"}, {timeout_ms = 10000, whole = 10000, want = "git: add the note"}))
+const staged = run({"git", "-C", ESSAYS, "diff", "--cached", "--quiet"}, {timeout_ms = 10000, whole = 10000})
+if staged.code ~= 0 then
+  must(run({"git", "-C", ESSAYS, "commit", "-q", "-m", "notes/" .. slug .. ": " .. FILE .. " for review"}, {timeout_ms = 10000, whole = 10000, want = "git: commit the note"}))
+  must(run({"git", "-C", ESSAYS, "push", "-q"}, {timeout_ms = 60000, whole = 10000, want = "git: push the note"}))
+end
+print(#parts .. " chunks: http://143.244.172.148:9100/notes/" .. slug .. ".md")
