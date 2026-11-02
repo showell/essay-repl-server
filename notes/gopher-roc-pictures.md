@@ -18,18 +18,28 @@ digraph modules {
   "ConversationSpec" -> "Message";
   "ConversationSpec" -> "Sample";
   "ConversationSpec";
+  "DateTime" -> "Ascii";
+  "DateTime";
+  "Escape" -> "TrustedHtml";
+  "Escape";
+  "HtmlElement" -> "Ascii";
+  "HtmlElement" -> "DateTime";
+  "HtmlElement" -> "TrustedHtml";
+  "HtmlElement";
   "md.Md" [shape=box3d];
-  "Html" -> "md.Md";
-  "Html" -> "Timestamp";
-  "Html";
+  "Markdown" -> "md.Md";
+  "Markdown" -> "SecureImageTag";
+  "Markdown" -> "TrustedHtml";
+  "Markdown";
   "Message" -> "Author";
-  "Message" -> "Timestamp";
-  "Message" -> "Topic";
+  "Message" -> "DateTime";
   "Message";
   "Page" -> "Conversation";
-  "Page" -> "Html";
+  "Page" -> "HtmlElement";
+  "Page" -> "Escape";
+  "Page" -> "Markdown";
   "Page" -> "Message";
-  "Page" -> "Topic";
+  "Page" -> "TrustedHtml";
   "Page";
   "PageSpec" -> "Conversation";
   "PageSpec" -> "Page";
@@ -38,29 +48,33 @@ digraph modules {
   "Sample" -> "Author";
   "Sample" -> "Conversation";
   "Sample" -> "Message";
-  "Sample" -> "Timestamp";
+  "Sample" -> "DateTime";
   "Sample" -> "Topic";
   "Sample";
+  "SecureImageTag";
+  "SecureImageTagSpec" -> "Markdown";
+  "SecureImageTagSpec";
   "Separator";
   "Specs" -> "ConversationSpec";
   "Specs" -> "PageSpec";
+  "Specs" -> "SecureImageTagSpec";
   "Specs" -> "TranscriptSpec";
   "Specs";
-  "Timestamp" -> "Ascii";
-  "Timestamp";
   "Topic" -> "Ascii";
   "Topic";
   "Transcript" -> "Author";
   "Transcript" -> "Conversation";
   "Transcript" -> "Message";
   "Transcript" -> "Separator";
-  "Transcript" -> "Timestamp";
+  "Transcript" -> "DateTime";
   "Transcript" -> "Topic";
   "Transcript";
   "TranscriptSpec" -> "Conversation";
+  "TranscriptSpec" -> "Message";
   "TranscriptSpec" -> "Sample";
   "TranscriptSpec" -> "Transcript";
   "TranscriptSpec";
+  "TrustedHtml";
 }
 ```
 
@@ -93,10 +107,26 @@ digraph types {
     style=rounded;
     "ConversationSpec" [label="ConversationSpec ::", shape=box, style=bold];
   }
-  subgraph "cluster_Html" {
-    label="Html.roc";
+  subgraph "cluster_DateTime" {
+    label="DateTime.roc";
     style=rounded;
-    "Html" [label="Html ::", shape=box, style=bold];
+    "DateTime" [label="DateTime ::", shape=box, style=bold];
+  }
+  subgraph "cluster_Escape" {
+    label="Escape.roc";
+    style=rounded;
+    "Escape" [label="Escape ::", shape=box, style=bold];
+  }
+  subgraph "cluster_HtmlElement" {
+    label="HtmlElement.roc";
+    style=rounded;
+    "HtmlElement" [label="HtmlElement ::", shape=box, style=bold];
+    "HtmlElement.Token" [label="Token ::", shape=box, style=bold];
+  }
+  subgraph "cluster_Markdown" {
+    label="Markdown.roc";
+    style=rounded;
+    "Markdown" [label="Markdown ::", shape=box, style=bold];
   }
   subgraph "cluster_Message" {
     label="Message.roc";
@@ -119,6 +149,16 @@ digraph types {
     style=rounded;
     "Sample" [label="Sample ::", shape=box, style=bold];
   }
+  subgraph "cluster_SecureImageTag" {
+    label="SecureImageTag.roc";
+    style=rounded;
+    "SecureImageTag" [label="SecureImageTag ::", shape=box, style=bold];
+  }
+  subgraph "cluster_SecureImageTagSpec" {
+    label="SecureImageTagSpec.roc";
+    style=rounded;
+    "SecureImageTagSpec" [label="SecureImageTagSpec ::", shape=box, style=bold];
+  }
   subgraph "cluster_Separator" {
     label="Separator.roc";
     style=rounded;
@@ -128,11 +168,6 @@ digraph types {
     label="Specs.roc";
     style=rounded;
     "Specs" [label="Specs ::", shape=box, style=bold];
-  }
-  subgraph "cluster_Timestamp" {
-    label="Timestamp.roc";
-    style=rounded;
-    "Timestamp" [label="Timestamp ::", shape=box, style=bold];
   }
   subgraph "cluster_Topic" {
     label="Topic.roc";
@@ -149,8 +184,15 @@ digraph types {
     style=rounded;
     "TranscriptSpec" [label="TranscriptSpec ::", shape=box, style=bold];
   }
+  subgraph "cluster_TrustedHtml" {
+    label="TrustedHtml.roc";
+    style=rounded;
+    "TrustedHtml" [label="TrustedHtml ::", shape=box, style=bold];
+  }
   "Conversation" -> "Message";
-  "Conversation" -> "Message.Id";
   "Conversation" -> "Topic";
+  "Message" -> "Author";
+  "Message" -> "DateTime";
+  "Message" -> "Message.Id";
 }
 ```
