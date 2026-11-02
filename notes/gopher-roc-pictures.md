@@ -8,32 +8,59 @@ Drawn from the code by `tools/diagram.shale`; never edited by hand.
 digraph modules {
   rankdir=LR;
   node [shape=box, style=rounded, fontname="sans-serif"];
+  "Ascii";
+  "Author" -> "Ascii";
   "Author";
-  "md.Md" [shape=box3d];
-  "Conversation" -> "md.Md";
-  "Conversation" -> "Html";
   "Conversation" -> "Message";
-  "Conversation" -> "Sample";
   "Conversation" -> "Topic";
-  "Conversation" -> "Transcript";
   "Conversation";
+  "ConversationSpec" -> "Conversation";
+  "ConversationSpec" -> "Message";
+  "ConversationSpec" -> "Sample";
+  "ConversationSpec";
+  "md.Md" [shape=box3d];
+  "Html" -> "md.Md";
+  "Html" -> "Timestamp";
   "Html";
   "Message" -> "Author";
   "Message" -> "Timestamp";
+  "Message" -> "Topic";
   "Message";
+  "Page" -> "Conversation";
+  "Page" -> "Html";
+  "Page" -> "Message";
+  "Page" -> "Topic";
+  "Page";
+  "PageSpec" -> "Conversation";
+  "PageSpec" -> "Page";
+  "PageSpec" -> "Sample";
+  "PageSpec";
   "Sample" -> "Author";
+  "Sample" -> "Conversation";
   "Sample" -> "Message";
   "Sample" -> "Timestamp";
   "Sample" -> "Topic";
   "Sample";
+  "Separator";
+  "Specs" -> "ConversationSpec";
+  "Specs" -> "PageSpec";
+  "Specs" -> "TranscriptSpec";
+  "Specs";
+  "Timestamp" -> "Ascii";
   "Timestamp";
+  "Topic" -> "Ascii";
   "Topic";
   "Transcript" -> "Author";
+  "Transcript" -> "Conversation";
   "Transcript" -> "Message";
-  "Transcript" -> "Sample";
+  "Transcript" -> "Separator";
   "Transcript" -> "Timestamp";
   "Transcript" -> "Topic";
   "Transcript";
+  "TranscriptSpec" -> "Conversation";
+  "TranscriptSpec" -> "Sample";
+  "TranscriptSpec" -> "Transcript";
+  "TranscriptSpec";
 }
 ```
 
@@ -46,6 +73,11 @@ digraph types {
   rankdir=LR;
   compound=true;
   node [shape=box, fontname="sans-serif"];
+  subgraph "cluster_Ascii" {
+    label="Ascii.roc";
+    style=rounded;
+    "Ascii" [label="Ascii ::", shape=box, style=bold];
+  }
   subgraph "cluster_Author" {
     label="Author.roc";
     style=rounded;
@@ -55,6 +87,11 @@ digraph types {
     label="Conversation.roc";
     style=rounded;
     "Conversation" [label="Conversation ::", shape=box, style=bold];
+  }
+  subgraph "cluster_ConversationSpec" {
+    label="ConversationSpec.roc";
+    style=rounded;
+    "ConversationSpec" [label="ConversationSpec ::", shape=box, style=bold];
   }
   subgraph "cluster_Html" {
     label="Html.roc";
@@ -67,10 +104,30 @@ digraph types {
     "Message" [label="Message ::", shape=box, style=bold];
     "Message.Id" [label="Id ::", shape=box, style=bold];
   }
+  subgraph "cluster_Page" {
+    label="Page.roc";
+    style=rounded;
+    "Page" [label="Page ::", shape=box, style=bold];
+  }
+  subgraph "cluster_PageSpec" {
+    label="PageSpec.roc";
+    style=rounded;
+    "PageSpec" [label="PageSpec ::", shape=box, style=bold];
+  }
   subgraph "cluster_Sample" {
     label="Sample.roc";
     style=rounded;
     "Sample" [label="Sample ::", shape=box, style=bold];
+  }
+  subgraph "cluster_Separator" {
+    label="Separator.roc";
+    style=rounded;
+    "Separator" [label="Separator ::", shape=box, style=bold];
+  }
+  subgraph "cluster_Specs" {
+    label="Specs.roc";
+    style=rounded;
+    "Specs" [label="Specs ::", shape=box, style=bold];
   }
   subgraph "cluster_Timestamp" {
     label="Timestamp.roc";
@@ -85,12 +142,15 @@ digraph types {
   subgraph "cluster_Transcript" {
     label="Transcript.roc";
     style=rounded;
-    "Transcript" [label="Transcript :=", shape=box];
+    "Transcript" [label="Transcript ::", shape=box, style=bold];
+  }
+  subgraph "cluster_TranscriptSpec" {
+    label="TranscriptSpec.roc";
+    style=rounded;
+    "TranscriptSpec" [label="TranscriptSpec ::", shape=box, style=bold];
   }
   "Conversation" -> "Message";
+  "Conversation" -> "Message.Id";
   "Conversation" -> "Topic";
-  "Message" -> "Author";
-  "Message" -> "Message.Id";
-  "Message" -> "Timestamp";
 }
 ```
