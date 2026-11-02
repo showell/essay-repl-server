@@ -44,6 +44,39 @@ time,.ref{color:#777;font-size:.85em}
 
 ## The code
 
+### `app/Admin.roc`
+
+```
+## **AN ADMIN**: proof that the user acting may do what only an admin may,
+## for now creating a channel and choosing its members (`Directory`).
+## Steve is the only admin, and there are no levels: an admin may do all
+## that an admin does. Opaque, so `of` is the rule's one home and the only
+## way in, and a function only an admin may call asks for one in its type.
+import UserId
+
+Admin :: UserId.{
+
+	## The acting user `id`, as the edge checked it, as an admin; unless
+	## they are not one.
+	of : UserId -> Try(Admin, [NotAdmin])
+	of = |id| if (id == UserId.steve) Ok(Admin.(id)) else Err(NotAdmin)
+
+	is_eq : _
+}
+
+# ── tests
+## The id `count` after Steve's.
+after_steve : U64 -> UserId
+after_steve = |count| List.repeat({}, count).fold(
+	UserId.steve,
+	|at, {}| at.next() ?? crash "Admin's tests: a test's id fits",
+)
+
+# Steve is an admin; the id beside his, and the last, are not.
+expect Admin.of(UserId.steve) == Ok(Admin.(UserId.steve))
+expect [after_steve(1), after_steve(254)].map(Admin.of) == [Err(NotAdmin), Err(NotAdmin)]
+```
+
 ### `app/Ascii.roc`
 
 ```
@@ -113,63 +146,122 @@ expect [
 ### `app/Author.roc`
 
 ```
-## **AN AUTHOR**: who wrote a message, by their permanent name, exactly as
-## they signed up (names are case-sensitive). Opaque, so `from_str` is the
-## only way in: a name is never blank, never holds a control byte, which
-## could end the transcript's `from:` line early or hide in a page, and
-## never starts or ends with a space, so a permanent name looks like itself.
-import Ascii
+## **AN AUTHOR**: who wrote a message, by their permanent name (`Name`,
+## the one home of the rule a name obeys). An author is a user in the role
+## of writing, and the transcript records only the name, so an author is
+## only the name: the directory says whose it is (`Directory.User.author`,
+## `Directory.check`).
+import Name
 
-Author :: Str.{
+Author :: Name.{
 
-	## The author named `name`, or the first reason, in this order, it is
-	## refused: blank, a control byte, or a space at either end (Unicode's,
-	## as `Str.trim` takes them).
-	from_str : Str -> Try(Author, [Blank, ControlByte, Padded])
-	from_str = |name|
-		if (name.trim().is_empty())
-			Err(Blank)
-		else if (name.to_utf8().any(Ascii.is_control))
-			Err(ControlByte)
-		else if (name.trim() != name)
-			Err(Padded)
-		else
-			Ok(Author.(name))
+	## The author named `name`, refused as `Name.from_str` refuses it.
+	from_str : Str -> Try(Author, [Empty, ForbiddenCharacter, BadSpacing])
+	from_str = |name| Name.from_str(name).map_ok(Author.of)
+
+	## The author of that name.
+	of : Name -> Author
+	of = |given| Author.(given)
+
+	## The permanent name.
+	name : Author -> Name
+	name = |Author.(given)| given
 
 	## The name, exactly as given.
 	to_str : Author -> Str
-	to_str = |Author.(name)| name
+	to_str = |Author.(given)| given.to_str()
 
 	is_eq : _
 }
 
 # ── tests
-expect Author.from_str("") == Err(Blank)
-expect Author.from_str(" ") == Err(Blank)
-expect Author.from_str("\t") == Err(Blank)
-expect Author.from_str("\n") == Err(Blank)
-expect Author.from_str("\r") == Err(Blank)
-expect Author.from_str("\u(a0)") == Err(Blank)
-expect Author.from_str("Ste\nve") == Err(ControlByte)
-expect Author.from_str("Steve\r") == Err(ControlByte)
-expect Author.from_str(" Zoë\t") == Err(ControlByte)
-# Every control byte refused, the first and last of each run and DEL; the
-# printable bytes beside them, and a byte past ASCII, kept.
-expect Author.from_str("a\u(0)") == Err(ControlByte)
-expect Author.from_str("a\u(1f)") == Err(ControlByte)
-expect Author.from_str("a\u(7f)") == Err(ControlByte)
-expect Author.from_str("a ~").map_ok(Author.to_str) == Ok("a ~")
-expect Author.from_str("a¡").map_ok(Author.to_str) == Ok("a¡")
-expect Author.from_str("S").map_ok(Author.to_str) == Ok("S")
-expect Author.from_str("Steve Howell").map_ok(Author.to_str) == Ok("Steve Howell")
-# A space inside a name kept; at either end, ASCII or not, refused.
+# Refused as a name is, by each of its refusals; kept exactly as given.
+expect
+	[
+		"",
+		"Ste\u(200b)ve",
+		" Steve",
+	].map(Author.from_str)
+		== [
+			Err(Empty),
+			Err(ForbiddenCharacter),
+			Err(BadSpacing),
+		]
 expect Author.from_str("Zoë Ann").map_ok(Author.to_str) == Ok("Zoë Ann")
-expect Author.from_str(" Zoë ") == Err(Padded)
-expect Author.from_str(" Zoë") == Err(Padded)
-expect Author.from_str("Zoë ") == Err(Padded)
-expect Author.from_str("\u(a0)Zoë") == Err(Padded)
-expect Author.from_str("Zoë\u(2003)") == Err(Padded)
-expect Author.from_str("Zoë").map_ok(Author.to_str) == Ok("Zoë")
+expect {
+	steve = Name.from_str("Steve") ?? crash "Author's tests: a name"
+	(Author.of(steve).name(), Author.of(steve).to_str()) == (steve, "Steve")
+}
+```
+
+### `app/ChannelName.roc`
+
+```
+## **A CHANNEL'S NAME**: it becomes a folder's name and a URL, so it is a
+## strict name (`StrictName`), and it lives in the one namespace with the
+## users' names, where its place is its key (`Name.Key.of_strict`).
+## Opaque, so `from_str` is the only way in. A strict name starts with a
+## letter and holds no `_`, so no channel's name is ever a DM's (`7_11`).
+import Name
+import StrictName
+
+ChannelName :: StrictName.{
+
+	## The channel named `name`, refused as `StrictName.from_str` refuses
+	## it.
+	from_str : Str -> Try(ChannelName, [Empty, StartsWithNonLetter, TooLong, ForbiddenByte])
+	from_str = |name| StrictName.from_str(name).map_ok(|strict| ChannelName.(strict))
+
+	## The name, as a folder's name and a URL take it.
+	to_str : ChannelName -> Str
+	to_str = |ChannelName.(strict)| strict.to_str()
+
+	## Its place in the namespace it shares with the users.
+	key : ChannelName -> Name.Key
+	key = |ChannelName.(strict)| Name.Key.of_strict(strict)
+
+	is_eq : _
+	to_hash : _
+}
+
+# ── tests
+# Refused as a strict name is, by each of its refusals.
+expect
+	[
+		"",
+		"1plans",
+		"a".repeat(61),
+		"plans_2",
+	].map(ChannelName.from_str)
+		== [
+			Err(Empty),
+			Err(StartsWithNonLetter),
+			Err(TooLong),
+			Err(ForbiddenByte),
+		]
+# Kept as given, case and all, at both ends of the length; its key is a
+# strict name's.
+expect
+	[
+		"gopher-roc",
+		"Gopher-Roc",
+		"p",
+		"a".repeat(60),
+	].map(
+		|text| ChannelName.from_str(text).map_ok(|c| c.to_str()),
+	)
+		== [
+			Ok("gopher-roc"),
+			Ok("Gopher-Roc"),
+			Ok("p"),
+			Ok("a".repeat(60)),
+		]
+expect {
+	text = "Gopher-Roc"
+	channel = ChannelName.from_str(text) ?? crash "ChannelName's tests: a channel's name"
+	strict = StrictName.from_str(text) ?? crash "ChannelName's tests: a strict name"
+	channel.key() == Name.Key.of_strict(strict)
+}
 ```
 
 ### `app/Conversation.roc`
@@ -600,6 +692,913 @@ expect
 expect !is_leap(2026) and !is_leap(1900) and !is_leap(2100)
 ```
 
+### `app/Directory.roc`
+
+```
+## **THE DIRECTORY**: every user and every channel, in one namespace, the
+## one home of who and what exists. Opaque, so it grows only by its own
+## functions: `founded_by` starts it with Steve, id 1; `add_human` and
+## `add_agent` number each user by the next id; `create_channel` names a
+## channel; and each refuses a name already taken, in any case, by a human,
+## an agent or a channel (`Name.key`). So a directory with two users of one
+## id, two names alike but for case, or an agent whose owner is not one of
+## its humans, can't be built.
+##
+## **WHAT IT HANDS OUT IS UNFORGEABLE**: a `User` and a `Channel` are views
+## only this module makes, so holding one is proof a directory made it.
+## Names, ids and roles are permanent, so a user's view never goes stale.
+## What comes in from outside is an id, or an id with a name, which `check`
+## holds to match.
+##
+## **ONLY AN ADMIN SHAPES A CHANNEL**: creating one, and admitting or
+## removing a member, each asks for an `Admin`, the proof `Admin.of` alone
+## makes.
+import Admin
+import Author
+import ChannelName
+import Name
+import UserId
+import UserStem
+
+Directory :: {
+	users : List(Directory.User),
+	channels : List(Directory.Channel),
+	keys : Set(Name.Key),
+}.{
+
+	## **A USER**: a human or an agent whose identity the edge has checked,
+	## as this directory numbered and named them.
+	User :: {
+		id : UserId,
+		name : Name,
+		role : Directory.Role,
+	}.{
+
+		## Its id.
+		id : Directory.User -> UserId
+		id = |Directory.User.(u)| u.id
+
+		## Its permanent name.
+		name : Directory.User -> Name
+		name = |Directory.User.(u)| u.name
+
+		## A human, or an agent and its owner.
+		role : Directory.User -> Directory.Role
+		role = |Directory.User.(u)| u.role
+
+		## The user in the role of writing, as a message records them.
+		author : Directory.User -> Author
+		author = |Directory.User.(u)| Author.of(u.name)
+
+		## Its files' stem (`UserStem`).
+		stem : Directory.User -> Str
+		stem = |Directory.User.(u)| UserStem.of({ name: u.name, id: u.id })
+
+		is_eq : _
+	}
+
+	## **A HUMAN, OR AN AGENT AND ITS OWNER**: every agent has exactly one
+	## owner, always a human in the same directory.
+	Role : [Human, Agent({ owner : UserId })]
+
+	## **A CHANNEL**: its name and its members, humans and agents.
+	Channel :: {
+		name : ChannelName,
+		members : Set(UserId),
+	}.{
+
+		## Its name.
+		name : Directory.Channel -> ChannelName
+		name = |Directory.Channel.(c)| c.name
+
+		## Its members' ids, lowest first.
+		members : Directory.Channel -> List(UserId)
+		members = |Directory.Channel.(c)| c.members.to_list().sort_with(UserId.compare)
+
+		## Is `id` one of its members?
+		has_member : Directory.Channel, UserId -> Bool
+		has_member = |Directory.Channel.(c), id| c.members.contains(id)
+
+		is_eq : _
+	}
+
+	## **A USER JOINED**: the directory they joined, and the user.
+	Joined : { directory : Directory, added : Directory.User }
+
+	## **A CHANNEL CREATED**: the directory that holds it, and the channel.
+	Created : { directory : Directory, created : Directory.Channel }
+
+	## **A NAME AND AN ID, TOGETHER**, as a URL, a file's stem or a
+	## session gives them: `check` holds them to match.
+	Identity : { id : UserId, name : Name }
+
+	## **A CHANGE TO A CHANNEL'S MEMBERS**, by an admin: who joins or
+	## leaves which channel.
+	Membership : {
+		by : Admin,
+		channel : ChannelName,
+		member : UserId,
+	}
+
+	## **A DIRECTORY'S START: STEVE, ALWAYS ID 1**, named `name`, a human,
+	## and no channels.
+	founded_by : Name -> Directory
+	founded_by = |name|
+		Directory.(
+			{
+				users: [
+					Directory.User.(
+						{
+							id: UserId.steve,
+							name,
+							role: Human,
+						},
+					),
+				],
+				channels: [],
+				keys: Set.empty().insert(name.key()),
+			},
+		)
+
+	## The directory with the human named `name` added, at the next id, and
+	## that user; unless every id is taken (`Full`, asked first), or the
+	## name is, in any case (`NameTaken`).
+	add_human : Directory, Name -> Try(Directory.Joined, [Full, NameTaken])
+	add_human = |directory, name|
+		added({
+			directory,
+			name,
+			role: Human,
+		})
+
+	## The directory with the agent named `name`, owned by `owner`, added at
+	## the next id, and that user; unless, in this order, the owner is no
+	## user (`NoSuchOwner`) or is an agent (`OwnerIsAgent`), or the agent
+	## can't be added as a human can't (`Full`, `NameTaken`).
+	add_agent : Directory, { name : Name, owner : UserId } -> Try(Directory.Joined, _)
+	add_agent = |directory, { name, owner }| {
+		found = directory.user(owner) ? |NoSuchUser| NoSuchOwner
+		match found.role() {
+			Agent(_) => Err(OwnerIsAgent)
+			Human =>
+				added({
+					directory,
+					name,
+					role: Agent({ owner: owner }),
+				}).map_err(
+					|why|
+						match why {
+							Full => Full
+							NameTaken => NameTaken
+						},
+				)
+		}
+	}
+
+	## The user `id`, unless there is none.
+	user : Directory, UserId -> Try(Directory.User, [NoSuchUser])
+	user = |Directory.(d), id|
+		match d.users.find_first(|Directory.User.(u)| u.id == id) {
+			Ok(found) => Ok(found)
+			Err(NotFound) => Err(NoSuchUser)
+		}
+
+	## **WHERE A NAME AND AN ID COME TOGETHER, THEY MATCH**: the user `id`,
+	## if `name` is theirs exactly (names are case-sensitive); unless there
+	## is no such user, or the name is another's spelling.
+	check : Directory, Directory.Identity -> Try(Directory.User, [NoSuchUser, NameMismatch])
+	check = |directory, { id, name }| {
+		found = directory.user(id)?
+		if (found.name() == name) Ok(found) else Err(NameMismatch)
+	}
+
+	## Every user, in id order.
+	users : Directory -> List(Directory.User)
+	users = |Directory.(d)| d.users
+
+	## The directory with an empty channel named `name`, and that channel,
+	## created by an admin; unless the name is taken, in any case, by a
+	## user or a channel.
+	create_channel : Directory, { by : Admin, name : ChannelName } -> Try(Directory.Created, [NameTaken])
+	create_channel = |Directory.(d), { by: _, name }| {
+		key = name.key()
+		if (d.keys.contains(key))
+			Err(NameTaken)
+		else {
+			created = Directory.Channel.({ name, members: Set.empty() })
+			Ok({
+				directory: Directory.(
+					{
+						..d,
+						channels: d.channels.append(created),
+						keys: d.keys.insert(key),
+					},
+				),
+				created,
+			})
+		}
+	}
+
+	## The channel named `name`, exactly, unless there is none.
+	channel : Directory, ChannelName -> Try(Directory.Channel, [NoSuchChannel])
+	channel = |Directory.(d), name|
+		match d.channels.find_first(|Directory.Channel.(c)| c.name == name) {
+			Ok(found) => Ok(found)
+			Err(NotFound) => Err(NoSuchChannel)
+		}
+
+	## The directory with the user `member` admitted to `channel` by an
+	## admin; unless, in this order, there is no such channel, no such
+	## user, or they are already a member.
+	admit : Directory, Directory.Membership -> Try(Directory, _)
+	admit = |directory, change| {
+		Directory.Channel.(c) = directory.channel(change.channel)?
+		member = directory.user(change.member)?.id()
+		if (c.members.contains(member))
+			Err(AlreadyMember)
+		else
+			Ok(
+				with_channel(
+					directory,
+					Directory.Channel.({ ..c, members: c.members.insert(member) }),
+				),
+			)
+	}
+
+	## The directory with the user `member` removed from `channel` by an
+	## admin; unless, in this order, there is no such channel, no such
+	## user, or they are not a member.
+	remove : Directory, Directory.Membership -> Try(Directory, _)
+	remove = |directory, change| {
+		Directory.Channel.(c) = directory.channel(change.channel)?
+		member = directory.user(change.member)?.id()
+		if (c.members.contains(member))
+			Ok(
+				with_channel(
+					directory,
+					Directory.Channel.({ ..c, members: c.members.remove(member) }),
+				),
+			)
+		else
+			Err(NotMember)
+	}
+
+	is_eq : _
+}
+
+## `directory` with `changed` in place of its channel of that name, which
+## it holds: `admit` and `remove` found it there.
+with_channel : Directory, Directory.Channel -> Directory
+with_channel = |Directory.(d), changed| {
+	name = changed.name()
+	Directory.({ ..d, channels: d.channels.map(|c| if (c.name() == name) changed else c) })
+}
+
+## **THE ONE WAY A USER JOINS**: `directory` with the user named `name`,
+## in `role`, at the next id, and that user; unless every id is taken
+## (`Full`), or the name is, in any case (`NameTaken`).
+added : {
+	directory : Directory,
+	name : Name,
+	role : Directory.Role,
+} -> Try(Directory.Joined, [Full, NameTaken])
+added = |
+	{
+		directory: Directory.(d),
+		name,
+		role,
+	},
+| {
+	latest = d.users.last() ?? crash "Directory.added: Steve, its first user, is in every directory"
+	id = latest.id().next()?
+	key = name.key()
+	if (d.keys.contains(key))
+		Err(NameTaken)
+	else {
+		user = Directory.User.(
+			{
+				id,
+				name,
+				role,
+			},
+		)
+		Ok({
+			directory: Directory.(
+				{
+					..d,
+					users: d.users.append(user),
+					keys: d.keys.insert(key),
+				},
+			),
+			added: user,
+		})
+	}
+}
+```
+
+### `app/DirectorySpec.roc`
+
+```
+## **DIRECTORY'S TESTS**: users numbered and named in one namespace with
+## the channels, agents owned only by humans, a name and an id held to
+## match, and channels shaped by an admin.
+import Admin
+import ChannelName
+import Directory
+import Sample
+import UserId
+
+DirectorySpec :: [].{}
+
+## A user's id, name and role, as a test compares them.
+summary : Directory.User -> {
+	id : Str,
+	name : Str,
+	role : Str,
+}
+summary = |u| {
+	id: u.id().to_str(),
+	name: u.name().to_str(),
+	role: role_of(u),
+}
+
+## A user's role, in words.
+role_of : Directory.User -> Str
+role_of = |u|
+	match u.role() {
+		Human => "human"
+		Agent({ owner }) => "agent of ${owner.to_str()}"
+	}
+
+## The id `count` after Steve's.
+after_steve : U64 -> UserId
+after_steve = |count| List.repeat({}, count).fold(
+	UserId.steve,
+	|at, {}| at.next() ?? crash "DirectorySpec: a test's id fits",
+)
+
+## The sample directory's first id that is no user's.
+stranger : UserId
+stranger = after_steve(3)
+
+## The channel named `text`, which a test's always is.
+channel_name : Str -> ChannelName
+channel_name = |text| ChannelName.from_str(text) ?? crash "DirectorySpec: a test's channel name is one"
+
+## Steve, as an admin.
+admin : Admin
+admin = Admin.of(UserId.steve) ?? crash "DirectorySpec: Steve is an admin"
+
+## The sample directory with an empty channel, `plans`.
+with_plans : Directory
+with_plans = (
+	Sample.directory.create_channel({
+		by: admin,
+		name: channel_name("plans"),
+	}) ?? crash "DirectorySpec: plans is free"
+).directory
+
+## Who `text` would be, added as a human to `directory`, or why not.
+human_added : Directory,
+Str -> Try(
+	{
+		id : Str,
+		name : Str,
+		role : Str,
+	},
+	[Full, NameTaken],
+)
+human_added = |
+	directory,
+	text,
+| directory.add_human(Sample.name(text)).map_ok(|grown| summary(grown.added))
+
+## Who `text` would be, added to `directory` as an agent of `owner`, or why
+## not.
+agent_added : Directory,
+{ name : Str, owner : UserId } -> Try(
+	{
+		id : Str,
+		name : Str,
+		role : Str,
+	},
+	[
+		NoSuchOwner,
+		OwnerIsAgent,
+		Full,
+		NameTaken,
+	],
+)
+agent_added = |directory, { name, owner }| directory.add_agent({
+	name: Sample.name(name),
+	owner,
+}).map_ok(|grown| summary(grown.added))
+
+# Steve starts every directory, a human, id 1.
+expect Directory.founded_by(Sample.name("Steve Howell")).users().map(summary) == [
+	{
+		id: "1",
+		name: "Steve Howell",
+		role: "human",
+	},
+]
+# Each user takes the next id, humans and agents in one count.
+expect
+	Sample.directory.users().map(summary)
+		== [
+			{
+				id: "1",
+				name: "Steve",
+				role: "human",
+			},
+			{
+				id: "2",
+				name: "Apoorva",
+				role: "human",
+			},
+			{
+				id: "3",
+				name: "CC",
+				role: "agent of 1",
+			},
+		]
+expect human_added(Sample.directory, "Damian") == Ok({
+	id: "4",
+	name: "Damian",
+	role: "human",
+})
+expect agent_added(Sample.directory, { name: "LC", owner: UserId.steve }) == Ok({
+	id: "4",
+	name: "LC",
+	role: "agent of 1",
+})
+# A name taken by a human or an agent, in any case, is refused; a name
+# that differs by more than case is not.
+expect
+	[
+		"Apoorva",
+		"apoorva",
+		"APOORVA",
+		"CC",
+		"cC",
+		"sTEVE",
+	].map(|text| human_added(Sample.directory, text))
+		== List.repeat(Err(NameTaken), 6)
+expect
+	[
+		"Apoorvaa",
+		"Apoorv",
+		"C C",
+	].map(|text| human_added(Sample.directory, text).map_ok(|added| added.name))
+		== [
+			Ok("Apoorvaa"),
+			Ok("Apoorv"),
+			Ok("C C"),
+		]
+expect agent_added(Sample.directory, { name: "apoorva", owner: UserId.steve }) == Err(NameTaken)
+# A channel's name is in the same namespace: a user can't take it, in any
+# case, and a channel can't take a user's.
+expect
+	["plans", "Plans", "PLANS"].map(|text| human_added(with_plans, text))
+		== [
+			Err(NameTaken),
+			Err(NameTaken),
+			Err(NameTaken),
+		]
+expect agent_added(with_plans, { name: "Plans", owner: UserId.steve }) == Err(NameTaken)
+expect human_added(with_plans, "Plansy") == Ok({
+	id: "4",
+	name: "Plansy",
+	role: "human",
+})
+expect
+	[
+		"Steve",
+		"steve",
+		"apoorva",
+		"cc",
+	].map(
+		|text| Sample.directory.create_channel({
+			by: admin,
+			name: channel_name(text),
+		}).map_ok(|grown| grown.created.name()),
+	)
+		== List.repeat(Err(NameTaken), 4)
+expect
+	["plans", "Plans"].map(
+		|text| with_plans.create_channel({
+			by: admin,
+			name: channel_name(text),
+		}).map_ok(|grown| grown.created.name()),
+	)
+		== [Err(NameTaken), Err(NameTaken)]
+expect
+	with_plans.create_channel({
+		by: admin,
+		name: channel_name("general"),
+	}).map_ok(|grown| grown.created.name().to_str())
+		== Ok("general")
+# An agent's owner is a user, and a human, checked before its name.
+expect
+	agent_added(Sample.directory, { name: "Bot", owner: Sample.user("Apoorva").id() })
+		== Ok({
+			id: "4",
+			name: "Bot",
+			role: "agent of 2",
+		})
+expect agent_added(Sample.directory, { name: "Bot", owner: stranger }) == Err(NoSuchOwner)
+expect agent_added(
+	Sample.directory,
+	{ name: "Bot", owner: Sample.user("CC").id() },
+) == Err(OwnerIsAgent)
+expect agent_added(
+	Sample.directory,
+	{ name: "CC", owner: Sample.user("CC").id() },
+) == Err(OwnerIsAgent)
+expect agent_added(Sample.directory, { name: "CC", owner: stranger }) == Err(NoSuchOwner)
+# The last id at, under and over the highest: 254 users take one more,
+# the 255th, and then none, human or agent. `Full` is asked before the
+# name and after the owner.
+expect {
+	almost = Sample.crowded(251)
+	full = (almost.add_human(Sample.name("Last")) ?? crash "DirectorySpec: the 255th user fits").directory
+	{
+		count: almost.users().len(),
+		last: human_added(almost, "Last"),
+		full_count: full.users().len(),
+		human: human_added(full, "Zoë"),
+		agent: agent_added(full, { name: "Bot", owner: UserId.steve }),
+		taken: human_added(full, "Steve"),
+		no_owner: agent_added(full, { name: "Bot", owner: Sample.user("CC").id() }),
+	}
+		== {
+			count: 254,
+			last: Ok({
+				id: "255",
+				name: "Last",
+				role: "human",
+			}),
+			full_count: 255,
+			human: Err(Full),
+			agent: Err(Full),
+			taken: Err(Full),
+			no_owner: Err(OwnerIsAgent),
+		}
+}
+# A user found by id, or none.
+expect [
+	UserId.steve,
+	after_steve(2),
+].map(|id| Sample.directory.user(id).map_ok(summary).map_ok(|s| s.name)) == [Ok("Steve"), Ok("CC")]
+expect Sample.directory.user(stranger) == Err(NoSuchUser)
+# A name and an id together: theirs exactly, or refused, case included.
+expect Sample.directory.check({ id: UserId.steve, name: Sample.name("Steve") }) == Ok(Sample.steve)
+expect
+	[
+		Sample.name("steve"),
+		Sample.name("Apoorva"),
+		Sample.name("Steve Howell"),
+	].map(|name| Sample.directory.check({ id: UserId.steve, name }))
+		== List.repeat(Err(NameMismatch), 3)
+expect Sample.directory.check({ id: stranger, name: Sample.name("Steve") }) == Err(NoSuchUser)
+# A user as an author, and their files' stem.
+expect Sample.directory.users().map(|u| (u.author().to_str(), u.stem())) == [
+	("Steve", "steve-1"),
+	("Apoorva", "apoorva-2"),
+	("CC", "cc-3"),
+]
+# A channel starts empty, and is found by its exact name.
+expect
+	Sample.directory.create_channel({ by: admin, name: channel_name("plans") }).map_ok(
+		|grown| (
+			grown.created.name().to_str(),
+			grown.created.members(),
+		),
+	)
+		== Ok(("plans", []))
+expect with_plans.channel(channel_name("plans")).map_ok(|c| c.name().to_str()) == Ok("plans")
+expect with_plans.channel(channel_name("Plans")) == Err(NoSuchChannel)
+expect Sample.directory.channel(channel_name("plans")) == Err(NoSuchChannel)
+# Admitting: humans and agents, each once; the members in id order.
+## `directory`'s `plans` with each of `ids` admitted in turn.
+admitted : Directory, List(UserId) -> Directory
+admitted = |directory, ids|
+	ids.fold(
+		directory,
+		|so_far, member| so_far.admit({
+			by: admin,
+			channel: channel_name("plans"),
+			member,
+		}) ?? crash "DirectorySpec: a test's member is admitted",
+	)
+
+## The sample's `plans`, with all three of its users.
+everyone : Directory
+everyone = admitted(
+	with_plans,
+	[
+		after_steve(2),
+		after_steve(1),
+		UserId.steve,
+	],
+)
+
+## The ids of `directory`'s `plans`'s members.
+members_of : Directory -> Try(List(Str), [NoSuchChannel])
+members_of = |directory| directory.channel(channel_name("plans")).map_ok(|c| c.members().map(UserId.to_str))
+
+expect members_of(everyone) == Ok(["1", "2", "3"])
+expect members_of(admitted(with_plans, [after_steve(2)])) == Ok(["3"])
+expect
+	everyone.channel(channel_name("plans")).map_ok(
+		|c| (
+			c.has_member(UserId.steve),
+			c.has_member(stranger),
+		),
+	)
+		== Ok((Bool.True, Bool.False))
+expect
+	[
+		everyone.admit({
+			by: admin,
+			channel: channel_name("plans"),
+			member: UserId.steve,
+		}),
+		with_plans.admit({
+			by: admin,
+			channel: channel_name("general"),
+			member: UserId.steve,
+		}),
+		with_plans.admit({
+			by: admin,
+			channel: channel_name("plans"),
+			member: stranger,
+		}),
+		with_plans.admit({
+			by: admin,
+			channel: channel_name("general"),
+			member: stranger,
+		}),
+	].map(|answer| answer.map_ok(members_of))
+		== [
+			Err(AlreadyMember),
+			Err(NoSuchChannel),
+			Err(NoSuchUser),
+			Err(NoSuchChannel),
+		]
+# Removing: a member goes, once; the rest stay.
+expect
+	everyone.remove({
+		by: admin,
+		channel: channel_name("plans"),
+		member: after_steve(1),
+	}).map_ok(members_of)
+		== Ok(Ok(["1", "3"]))
+expect
+	[
+		with_plans.remove({
+			by: admin,
+			channel: channel_name("plans"),
+			member: UserId.steve,
+		}),
+		everyone.remove({
+			by: admin,
+			channel: channel_name("general"),
+			member: UserId.steve,
+		}),
+		everyone.remove({
+			by: admin,
+			channel: channel_name("plans"),
+			member: stranger,
+		}),
+		everyone.remove({
+			by: admin,
+			channel: channel_name("general"),
+			member: stranger,
+		}),
+	].map(|answer| answer.map_ok(members_of))
+		== [
+			Err(NotMember),
+			Err(NoSuchChannel),
+			Err(NoSuchUser),
+			Err(NoSuchChannel),
+		]
+```
+
+### `app/Dm.roc`
+
+```
+## **A DM**: a place for exactly one or two humans, never an agent, named
+## by its pair of user ids in numeric order: `7_11`, never `11_7`, and one
+## human alone, in their own DM, `5_5`. A DM's name starts with a digit and
+## holds a `_`, and a channel's never does (`StrictName`), so the two never
+## collide.
+##
+## **A DM BEGINS WITH ITS FIRST MESSAGE**: opaque, so `start` is the only
+## way in, and it gives the DM together with its first conversation,
+## holding that message. A DM with no message, or with an agent in it,
+## can't be built.
+import Conversation
+import DateTime
+import Directory
+import Topic
+import UserId
+
+Dm :: { low : UserId, high : UserId }.{
+
+	## **WHAT STARTING A DM NEEDS**: who writes the first message (`from`),
+	## who it is to (`to`; `from` again for one's own DM), the topic, and
+	## the message's markdown and time. Both are the directory's users, so
+	## each is known to be a human or an agent.
+	Start : {
+		from : Directory.User,
+		to : Directory.User,
+		topic : Topic,
+		markdown : Str,
+		time : DateTime,
+	}
+
+	## The DM between `from` and `to`, and its conversation under `topic`,
+	## whose first message `from` wrote; unless `from` is an agent, or else
+	## `to` is (`Agent`, naming them).
+	start : Dm.Start -> Try({ dm : Dm, conversation : Conversation }, [Agent(UserId)])
+	start = |
+		{
+			from,
+			to,
+			topic,
+			markdown,
+			time,
+		},
+	| {
+		human_only(from)?
+		human_only(to)?
+		pair =
+			match from.id().compare(to.id()) {
+				After => { low: to.id(), high: from.id() }
+				_ => { low: from.id(), high: to.id() }
+			}
+		grown = Conversation.empty(topic).append({
+			payload: { author: from.author(), markdown },
+			time,
+		}) ?? crash "Dm.start: an empty conversation takes its first message"
+		Ok({ dm: Dm.(pair), conversation: grown.conversation })
+	}
+
+	## Its members' ids, lowest first: two, or one for one's own DM.
+	members : Dm -> List(UserId)
+	members = |Dm.({ low, high })| if (low == high) [low] else [low, high]
+
+	## **ITS NAME**, as a folder's name and a URL take it: the ids, lowest
+	## first, joined by `_`.
+	to_str : Dm -> Str
+	to_str = |Dm.({ low, high })| "${low.to_str()}_${high.to_str()}"
+
+	is_eq : _
+}
+
+## Nothing, if `user` is a human; else the refusal naming them.
+human_only : Directory.User -> Try({}, [Agent(UserId)])
+human_only = |user|
+	match user.role() {
+		Human => Ok({})
+		Agent(_) => Err(Agent(user.id()))
+	}
+```
+
+### `app/DmSpec.roc`
+
+```
+## **DM'S AND PLACE'S TESTS**: a DM starts with its first message, between
+## humans only, named by its pair in numeric order; and no DM's name is a
+## channel's.
+import ChannelName
+import Directory
+import DateTime
+import Dm
+import Message
+import Place
+import Sample
+import UserId
+
+DmSpec :: [].{}
+
+## Noon on the day of the samples.
+noon : DateTime
+noon = DateTime.from_str("2026-11-02T12:00:00Z") ?? crash "DmSpec: a time"
+
+## **WHO A TEST'S DM IS BETWEEN**: its first message's writer, and who it
+## is to.
+Ends : { from : Directory.User, to : Directory.User }
+
+## A DM started from `from` to `to`, in `plans`, saying hello at noon.
+started : Ends -> Try({ dm : Dm, conversation : _ }, [Agent(UserId)])
+started = |{ from, to }|
+	Dm.start({
+		from,
+		to,
+		topic: Sample.plans,
+		markdown: "hello",
+		time: noon,
+	})
+
+## A started DM's name and members, as a test compares them.
+named : Ends -> Try({ name : Str, members : List(Str) }, [Agent(UserId)])
+named = |pair|
+	started(pair).map_ok(
+		|{ dm, conversation: _ }| {
+			name: dm.to_str(),
+			members: dm.members().map(UserId.to_str),
+		},
+	)
+
+## The users the crowded sample numbers 9 and 10.
+nine_and_ten : { nine : Directory.User, ten : Directory.User }
+nine_and_ten = {
+	users = Sample.crowded(7).users()
+	when_found = |at| users.get(at) ?? crash "DmSpec: the crowded sample has ten users"
+	{ nine: when_found(8), ten: when_found(9) }
+}
+
+# Two humans, either one starting: one DM, lowest id first.
+expect named({
+	from: Sample.steve,
+	to: Sample.user("Apoorva"),
+}) == Ok({ name: "1_2", members: ["1", "2"] })
+expect named({
+	from: Sample.user("Apoorva"),
+	to: Sample.steve,
+}) == Ok({ name: "1_2", members: ["1", "2"] })
+expect
+	started({ from: Sample.steve, to: Sample.user("Apoorva") }).map_ok(|s| s.dm)
+		== started({ from: Sample.user("Apoorva"), to: Sample.steve }).map_ok(|s| s.dm)
+# The order is numeric, not the names' text: 9 before 10, both ways.
+expect named({
+	from: nine_and_ten.ten,
+	to: nine_and_ten.nine,
+}) == Ok({ name: "9_10", members: ["9", "10"] })
+expect named({
+	from: nine_and_ten.nine,
+	to: nine_and_ten.ten,
+}) == Ok({ name: "9_10", members: ["9", "10"] })
+# One human alone: their own DM, one member.
+expect named({
+	from: Sample.user("Apoorva"),
+	to: Sample.user("Apoorva"),
+}) == Ok({ name: "2_2", members: ["2"] })
+# An agent, as either side or both, is refused by id, the sender asked
+# first.
+expect
+	[
+		named({ from: Sample.user("CC"), to: Sample.steve }),
+		named({ from: Sample.steve, to: Sample.user("CC") }),
+		named({ from: Sample.user("CC"), to: Sample.user("CC") }),
+	]
+		== List.repeat(Err(Agent(Sample.user("CC").id())), 3)
+# The DM begins with its first message: the sender's, numbered 1, under
+# the topic, at its time.
+expect
+	started({ from: Sample.user("Apoorva"), to: Sample.steve }).map_ok(
+		|{ dm: _, conversation }| {
+			topic: conversation.topic(),
+			messages: conversation.messages().map(
+				|m| (
+					m.id(),
+					m.author().to_str(),
+					m.time(),
+					m.markdown(),
+				),
+			),
+		},
+	)
+		== Ok({
+			topic: Sample.plans,
+			messages: [
+				(
+					Message.Id.first,
+					"Apoorva",
+					noon,
+					"hello",
+				),
+			],
+		})
+# A place's name: a channel's own, or a DM's pair.
+expect {
+	plans = ChannelName.from_str("plans") ?? crash "DmSpec: plans is a channel's name"
+	dm = (
+		started({
+			from: Sample.steve,
+			to: Sample.user("Apoorva"),
+		}) ?? crash "DmSpec: two humans start a DM"
+	).dm
+	[Place.(Channel(plans)).to_str(), Place.(Dm(dm)).to_str()] == ["plans", "1_2"]
+}
+# No DM's name is a channel's: each is refused as one, by its first byte.
+expect
+	["1_2", "2_2", "9_10", "255_255"].map(ChannelName.from_str)
+		== List.repeat(Err(StartsWithNonLetter), 4)
+```
+
 ### `app/Escape.roc`
 
 ```
@@ -868,7 +1867,7 @@ Markdown :: [].{
 	render : Str -> TrustedHtml
 	render = |markdown| {
 		rendered = Md.render(markdown.to_utf8(), { uploads: SecureImageTag.is_conversation_upload })
-		TrustedHtml.dangerously_trust(Str.from_utf8(rendered) ?? crash "Markdown.render: roc-markdown renders UTF-8 from UTF-8")
+		TrustedHtml.dangerously_trust(Str.from_utf8(rendered) ?? crash "Markdown.render: roc-markdown returned bytes that are not UTF-8, from UTF-8 input")
 	}
 }
 
@@ -1027,6 +2026,326 @@ expect parts(Message.numbered({ id: Message.Id.(65535), arrival: reply })) == {
 	time: later,
 	markdown: "hi",
 }
+```
+
+### `app/Name.roc`
+
+```
+## **A PERMANENT NAME**: a human's, an agent's or a channel's, exactly as
+## given, the one home of the rule every name obeys. Names are permanent
+## and case-sensitive: someone who signs up as "Steve Howell" is never shown
+## as "steve howell". Opaque, so `from_str` is the only way in.
+##
+## **LETTERS, AND SINGLE SPACES BETWEEN WORDS**: every character is a
+## letter of the name's alphabet (`NameAlphabet`, an allowlist: ASCII's
+## letters and the accented Latin ones) or a space, and the spaces fall
+## only between words, one at a time. So no name holds a digit,
+## punctuation, an emoji, a control byte that could end a transcript's
+## `from:` line, or an invisible character that could draw it as another
+## name, and a permanent name looks like itself.
+##
+## **ONE NAMESPACE, UNIQUE REGARDLESS OF CASE**: humans, agents and
+## channels share it, so no two of them have names that differ only in
+## case. `key` is the one spelling that uniqueness compares.
+import NameAlphabet
+import StrictName
+
+Name :: Str.{
+
+	## The name `name`, or the first reason, in this order, it is refused:
+	## empty, a character outside the alphabet that is no space, or a space
+	## at either end or beside another.
+	from_str : Str -> Try(Name, [Empty, ForbiddenCharacter, BadSpacing])
+	from_str = |name|
+		if (name.is_empty())
+			Err(Empty)
+		else if (!NameAlphabet.is_written_in(name))
+			Err(ForbiddenCharacter)
+		else if (name.starts_with(" ") or name.ends_with(" ") or name.contains("  "))
+			Err(BadSpacing)
+		else
+			Ok(Name.(name))
+
+	## The name, exactly as given.
+	to_str : Name -> Str
+	to_str = |Name.(name)| name
+
+	## **WHAT UNIQUENESS COMPARES**: two names are the same name in the
+	## namespace exactly when their keys are equal. Opaque, so a key is only
+	## ever a name's, and is never shown.
+	Key :: Str.{
+
+		## **A CHANNEL'S PLACE IN THE NAMESPACE**: a strict name's key, its
+		## letters folded as a name's are, so a channel `plans` and a user
+		## `Plans` share one. A strict name is ASCII, and its digits and `-`,
+		## which no name holds, are kept as they are.
+		of_strict : StrictName -> Name.Key
+		of_strict = |strict| Name.Key.(NameAlphabet.folded(strict.to_str()))
+
+		is_eq : _
+		to_hash : _
+	}
+
+	## **THE NAME'S KEY**: its letters case-folded (`NameAlphabet.folded`),
+	## so `Zoë` and `ZOË` are one name.
+	key : Name -> Name.Key
+	key = |Name.(name)| Name.Key.(NameAlphabet.folded(name))
+
+	is_eq : _
+}
+
+# ── tests
+## The name `text`, as given, or why it is refused.
+named : Str -> Try(Str, [Empty, ForbiddenCharacter, BadSpacing])
+named = |text| Name.from_str(text).map_ok(Name.to_str)
+
+# Names of letters, with single spaces between words, kept as given.
+expect
+	["Steve Howell", "Zoë", "Élodie", "CC", "S", "Zoë Ann Smith", "sTeVe"].map(named)
+		== [
+			Ok("Steve Howell"),
+			Ok("Zoë"),
+			Ok("Élodie"),
+			Ok("CC"),
+			Ok("S"),
+			Ok("Zoë Ann Smith"),
+			Ok("sTeVe"),
+		]
+expect named("") == Err(Empty)
+# Anything outside the alphabet, anywhere: a digit, punctuation, an emoji,
+# a control byte, a format character, a space that isn't ASCII's.
+expect
+	[
+		"Steve!",
+		"R2D2",
+		"Steve 😀",
+		"Ste\nve",
+		"Steve\u(202e)llewoH",
+		"\u(200b)",
+		"Ste\u(200d)ve",
+		"\u(feff)Steve",
+		"Steve\u(a0)Howell",
+		"Steve-Howell",
+		"O'Brien",
+		"\t",
+	].map(named)
+		== List.repeat(Err(ForbiddenCharacter), 12)
+# Spaces: one between words kept; two together, or one at either end, or
+# a name of spaces alone, refused.
+expect
+	[
+		"Steve  Howell",
+		" Zoë",
+		"Zoë ",
+		" ",
+		"  ",
+	].map(named)
+		== List.repeat(Err(BadSpacing), 5)
+# The order: a forbidden character is named before bad spacing.
+expect named(" Steve!") == Err(ForbiddenCharacter)
+# The key: names that differ only in case share one, accented letters
+# included; any other difference keeps them apart.
+## The key of the name `text`, which a test's text always is.
+key_of : Str -> Name.Key
+key_of = |text| (Name.from_str(text) ?? crash "Name's tests: a test's name is a name").key()
+
+expect key_of("Steve Howell") == key_of("sTeVe hoWEll")
+expect key_of("CC") == key_of("cc")
+expect key_of("Zoë") == key_of("ZOË")
+expect key_of("Élodie") == key_of("élodie")
+expect key_of("ſteve") == key_of("Steve")
+expect key_of("Steve Howell") != key_of("Steve Howel")
+expect key_of("Steve Howell") != key_of("SteveHowell")
+expect key_of("Zoë") != key_of("Zoe")
+# A strict name's key: a user's of the same letters in any case, and no
+# user's while it holds a digit or `-`.
+## The key of the strict name `text`, which a test's always is.
+strict_key_of : Str -> Name.Key
+strict_key_of = |text| Name.Key.of_strict(StrictName.from_str(text) ?? crash "Name's tests: a test's strict name is one")
+
+expect strict_key_of("Plans") == key_of("plans")
+expect strict_key_of("plans") == key_of("PLANS")
+expect strict_key_of("gopher-roc") != key_of("gopherroc")
+expect strict_key_of("gopher-roc") == strict_key_of("Gopher-Roc")
+# The name keeps its case; only the key folds it.
+expect Name.from_str("Steve") != Name.from_str("steve")
+```
+
+### `app/NameAlphabet.roc`
+
+```
+## **THE ALPHABET A NAME IS WRITTEN IN**: an allowlist, the one home of
+## which letters a permanent name may hold (`Name`), and of how their case
+## folds. The letters are ASCII's `A`-`Z` and `a`-`z`, and the accented
+## Latin ones: Latin-1's (U+00C0 to U+00FF, but for `×` and `÷`) and Latin
+## Extended-A's (U+0100 to U+017F). Anything else (a digit, punctuation,
+## an emoji, a control character, an invisible format character such as
+## U+202E or U+200B) is refused by not being listed.
+##
+## **BYTE BY BYTE**: every accented letter is two UTF-8 bytes, a lead of
+## 0xC3, 0xC4 or 0xC5 and one more, so both rules match on bytes, and a
+## `Str`, always valid UTF-8, needs no decoder.
+import Ascii
+
+NameAlphabet :: [].{
+
+	## Is every character of `text` a letter of the alphabet or a space?
+	is_written_in : Str -> Bool
+	is_written_in = |text| is_all_letters_or_spaces(text.to_utf8())
+
+	## **THE CASE-FOLDED SPELLING**: each letter of `text`, which is written
+	## in the alphabet or is ASCII, folded by Unicode's simple case folding, so names
+	## that differ only in case, `ZOË` and `Zoë`, fold alike. `ſ` folds to
+	## `s`, and `ß`, `ĸ`, `ŉ`, `ı` and `İ` stay as they are.
+	folded : Str -> Str
+	folded = |text|
+		Str.from_utf8(
+			folded_onto({
+				out: [],
+				bytes: text.to_utf8(),
+			}),
+		) ?? crash "NameAlphabet.folded: a letter folds to a letter, and letters are UTF-8"
+}
+
+## Is every character `bytes` hold a letter or a space?
+is_all_letters_or_spaces : List(U8) -> Bool
+is_all_letters_or_spaces = |bytes|
+	match bytes {
+		[] => Bool.True
+		[b, .. as rest] if b == ' ' or Ascii.is_letter(b) => is_all_letters_or_spaces(rest)
+		[
+			0xC3,
+			b,
+			.. as rest,
+		] if b >= 0x80 and b != 0x97 and b != 0xB7 => is_all_letters_or_spaces(rest)
+		[lead, _, .. as rest] if lead == 0xC4 or lead == 0xC5 => is_all_letters_or_spaces(rest)
+		_ => Bool.False
+	}
+
+## `out` with each character of `bytes`, which are written in the
+## alphabet, folded.
+folded_onto : { out : List(U8), bytes : List(U8) } -> List(U8)
+folded_onto = |{ out, bytes }|
+	match bytes {
+		[] => out
+		[lead, b, .. as rest] if lead >= 0xC3 and lead <= 0xC5 => {
+			point = (lead - 0xC0).to_u32() * 64 + (b - 0x80).to_u32()
+			folded_onto({ out: out.concat(encoded(fold(point))), bytes: rest })
+		}
+		[b, .. as rest] => {
+			point = b.to_u32()
+			folded_onto({ out: out.concat(encoded(fold(point))), bytes: rest })
+		}
+	}
+
+## **ONE LETTER'S FOLD**: its lower case, where it has one by Unicode's
+## simple case folding.
+fold : U32 -> U32
+fold = |point|
+	if (point >= 'A' and point <= 'Z')
+		point + 32
+	else if (point >= 0xC0 and point <= 0xDE and point != 0xD7)
+		point + 0x20
+	else if (point == 0x178)
+		0xFF
+	else if (point == 0x17F)
+		's'
+	else if (is_upper_of_pair(point))
+		point + 1
+	else
+		point
+
+## **LATIN EXTENDED-A'S CASE PAIRS**: each capital is followed by its small
+## letter, from an even code point in three runs and an odd one in two.
+is_upper_of_pair : U32 -> Bool
+is_upper_of_pair = |point| {
+	is_even = point % 2 == 0
+	(point >= 0x100 and point <= 0x12F and is_even)
+		or (point >= 0x132 and point <= 0x137 and is_even)
+		or (point >= 0x139 and point <= 0x148 and !is_even)
+		or (point >= 0x14A and point <= 0x177 and is_even)
+		or (point >= 0x179 and point <= 0x17E and !is_even)
+}
+
+## A code point below U+0800 as UTF-8: one byte below 0x80, else two.
+encoded : U32 -> List(U8)
+encoded = |point|
+	if (point < 0x80)
+		[point.to_u8_wrap()]
+	else
+		[(0xC0 + point // 64).to_u8_wrap(), (0x80 + point % 64).to_u8_wrap()]
+
+# ── tests
+# Each end of every listed range kept, and the character beside it, past
+# the list, refused: ASCII's letters, Latin-1's (around `×` and `÷`) and
+# Latin Extended-A's.
+expect
+	[
+		"A",
+		"Z",
+		"a",
+		"z",
+		" ",
+		"À",
+		"Ö",
+		"Ø",
+		"ö",
+		"ø",
+		"ÿ",
+		"Ā",
+		"ſ",
+		"Élodie",
+		"Zoë Ann",
+	].all(NameAlphabet.is_written_in)
+expect
+	[
+		"@",
+		"[",
+		"`",
+		"{",
+		"¿",
+		"×",
+		"÷",
+		"ƀ",
+		"0",
+		"9",
+		"!",
+		"-",
+		"'",
+		".",
+		"\t",
+		"\u(0)",
+		"\u(a0)",
+		"\u(202e)",
+		"\u(200b)",
+		"\u(feff)",
+		"😀",
+		"李",
+	].all(|text| !NameAlphabet.is_written_in(text))
+# One stray character anywhere refuses the whole text.
+expect !NameAlphabet.is_written_in("Steve!")
+expect !NameAlphabet.is_written_in("R2D2")
+expect NameAlphabet.is_written_in("")
+# The fold: each run's capitals to their small letters, at each run's
+# ends; small letters and the uncased ones as they are.
+expect
+	[
+		"AZ",
+		"ÀÖ",
+		"ØÞ",
+		"ĀĮ",
+		"ĲĶ",
+		"ĹŇ",
+		"ŊŶ",
+		"ŹŽ",
+		"Ÿ",
+		"ſ",
+		"ZOË Ann",
+	].map(NameAlphabet.folded)
+		== ["az", "àö", "øþ", "āį", "ĳķ", "ĺň", "ŋŷ", "źž", "ÿ", "s", "zoë ann"]
+expect
+	["azàöøþÿ", "āįĳķĺňŋŷźž", "ßĸŉıİ", " "].map(NameAlphabet.folded)
+		== ["azàöøþÿ", "āįĳķĺňŋŷźž", "ßĸŉıİ", " "]
 ```
 
 ### `app/Page.roc`
@@ -1276,23 +2595,52 @@ expect Page.conversation(Conversation.empty(Sample.plans)).to_utf8() == "${head(
 expect
 	Page.conversation(Sample.two).to_utf8()
 		== "${head("plans")}<h1>plans</h1>\n<article class=\"message\" id=\"msg-1\"><header><span class=\"author\">Steve</span> <time datetime=\"2026-11-02T19:11:32Z\">2026-11-02T19:11:32Z</time> <a class=\"ref\" href=\"#msg-1\">MSG_plans_1</a></header>\n<div class=\"body\"><p>Hello</p>\n</div></article>\n<article class=\"message\" id=\"msg-2\"><header><span class=\"author\">CC</span> <time datetime=\"2026-11-02T19:12:28Z\">2026-11-02T19:12:28Z</time> <a class=\"ref\" href=\"#msg-2\">MSG_plans_2</a></header>\n<div class=\"body\"><p>Hi!</p>\n<ul>\n<li>one</li>\n<li>two</li>\n</ul>\n</div></article>\n".to_utf8()
-# A name holding markup is text on the page; the markdown's markup is kept.
+# The markdown's own markup kept, and markup typed in it shown as text. A
+# name can hold no markup (`Name`), and is escaped as all text is.
 expect
 	Page.conversation(
 		Sample.conversation(
 			Sample.plans,
 			[
 				Sample.arrival({
-					author: "<Eve>",
+					author: "Eve",
 					time: "2026-11-02T19:11:32Z",
 					markdown: "**hi** <b>",
 				}),
 			],
 		),
 	).to_utf8()
-		== "${head("plans")}<h1>plans</h1>\n<article class=\"message\" id=\"msg-1\"><header><span class=\"author\">&lt;Eve&gt;</span> <time datetime=\"2026-11-02T19:11:32Z\">2026-11-02T19:11:32Z</time> <a class=\"ref\" href=\"#msg-1\">MSG_plans_1</a></header>\n<div class=\"body\"><p><strong>hi</strong> &lt;b&gt;</p>\n</div></article>\n".to_utf8()
+		== "${head("plans")}<h1>plans</h1>\n<article class=\"message\" id=\"msg-1\"><header><span class=\"author\">Eve</span> <time datetime=\"2026-11-02T19:11:32Z\">2026-11-02T19:11:32Z</time> <a class=\"ref\" href=\"#msg-1\">MSG_plans_1</a></header>\n<div class=\"body\"><p><strong>hi</strong> &lt;b&gt;</p>\n</div></article>\n".to_utf8()
 # A refusal's words are text on its page.
 expect Page.refused("it <is> not UTF-8").to_utf8() == "${head("Not a transcript")}<p>Not a transcript: it &lt;is&gt; not UTF-8.</p>".to_utf8()
+```
+
+### `app/Place.roc`
+
+```
+## **WHERE A CONVERSATION LIVES**: a channel or a DM. A topic is unique
+## only within its place, so a conversation's identity is its place and its
+## topic; the conversation itself stands alone, knowing neither
+## (`Conversation`).
+##
+## **A PLACE'S NAME** is a folder's and a URL's: a channel's name, or a
+## DM's pair. A channel's starts with a letter and holds no `_`; a DM's
+## starts with a digit and holds one; so no two places share a name.
+import ChannelName
+import Dm
+
+Place := [Channel(ChannelName), Dm(Dm)].{
+
+	## Its name, as a folder's name and a URL take it.
+	to_str : Place -> Str
+	to_str = |Place.(place)|
+		match place {
+			Channel(name) => name.to_str()
+			Dm(dm) => dm.to_str()
+		}
+
+	is_eq : _
+}
 ```
 
 ### `app/Sample.roc`
@@ -1303,9 +2651,12 @@ expect Page.refused("it <is> not UTF-8").to_utf8() == "${head("Not a transcript"
 ## Spec imports it; no production module does.
 import Author
 import Conversation
+import Directory
 import Message
 import DateTime
+import Name
 import Topic
+import UserId
 
 Sample :: [].{
 
@@ -1385,7 +2736,47 @@ Sample :: [].{
 	## The third message's id.
 	third : Message.Id
 	third = Sample.second.next() ?? crash "Sample.third: the second id has a next"
+
+	## The permanent name `text`, which a test's always is.
+	name : Str -> Name
+	name = |text| Name.from_str(text) ?? crash "Sample.name: a test's name is a name"
+
+	## **THE SAMPLE DIRECTORY**: Steve (1) and Apoorva (2), humans, and CC
+	## (3), Steve's agent.
+	directory : Directory
+	directory = {
+		founded = Directory.founded_by(Sample.name("Steve"))
+		with_apoorva = (founded.add_human(Sample.name("Apoorva")) ?? crash "Sample.directory: Apoorva's name is free").directory
+		with_cc = with_apoorva.add_agent({
+			name: Sample.name("CC"),
+			owner: UserId.steve,
+		}) ?? crash "Sample.directory: CC's name is free"
+		with_cc.directory
+	}
+
+	## **THE SAMPLE DIRECTORY, CROWDED**: with `count` more humans, each
+	## named for their place in letters (`Filler aa`, `Filler ab`...).
+	crowded : U64 -> Directory
+	crowded = |count|
+		List.from_iter(U64.until(0, count)).fold(
+			Sample.directory,
+			|so_far, at| (so_far.add_human(Sample.name("Filler ${place_in_letters(at)}")) ?? crash "Sample.crowded: a filler's name is free").directory,
+		)
+
+	## Steve, in the sample directory.
+	steve : Directory.User
+	steve = Sample.user("Steve")
+
+	## The sample directory's user named `text`, which it holds.
+	user : Str -> Directory.User
+	user = |text|
+		Sample.directory.users().find_first(|u| u.name().to_str() == text) ?? crash "Sample.user: the sample directory holds ${text}"
 }
+
+## `at`, below 676, as two letters: 0 is `aa`, 1 `ab`, 26 `ba`.
+place_in_letters : U64 -> Str
+place_in_letters = |at|
+	Str.from_utf8(['a' + (at // 26).to_u8_wrap(), 'a' + (at % 26).to_u8_wrap()]) ?? crash "Sample.place_in_letters: letters are UTF-8"
 
 ## `so_far` with `count` more of Steve's hello.
 filled : { so_far : Conversation, count : U64 } -> Conversation
@@ -1420,7 +2811,8 @@ filled = |{ so_far, count }|
 ## uploads exist, this rule asks the conversation for its own.
 ##
 ## What the renderer's output becomes on a page is vouched for at
-## `TrustedHtml`'s one door; see its header for the others.
+## `TrustedHtml`'s one door; see its header for the others. Text from
+## outside comes in only through `UnvalidatedString`.
 SecureImageTag :: [].{
 
 	## Is `source` one of the message's conversation's uploads? No
@@ -1554,6 +2946,8 @@ expect !Separator.escape("-------------\nx\n-------------").split_on("\n").any(|
 ## runs beside `roc test app/main.roc`). A Spec left out of this list never
 ## runs, so the gate checks that every `app/*Spec.roc` is imported here.
 import ConversationSpec
+import DirectorySpec
+import DmSpec
 import PageSpec
 import SecureImageTagSpec
 import TranscriptSpec
@@ -1561,28 +2955,32 @@ import TranscriptSpec
 Specs :: [].{}
 ```
 
-### `app/Topic.roc`
+### `app/StrictName.roc`
 
 ```
-## **A TOPIC**: a conversation's name, which becomes a file name and a URL,
-## so it is strictly named: ASCII letters, digits and `-`, starting with a
-## letter, at most `longest` bytes. Opaque, so `from_str` is the only way in;
-## no space, CR or LF ever reaches a path, a URL or a transcript's id line.
+## **A STRICT NAME**: one that becomes a file name and a URL, the one home
+## of that rule, which a topic (`Topic`) and a channel's name
+## (`ChannelName`) obey: ASCII letters, digits and `-`, starting with a
+## letter, at most `longest` bytes. Opaque, so `from_str` is the only way
+## in; no space, CR, LF, `/`, `.` or `_` ever reaches a path, a URL or a
+## transcript's id line. With no `_` and a letter first, no strict name is
+## ever a DM's (`7_11`), and a reference's `_`s (`MSG_<topic>_<n>`)
+## are never a topic's.
 import Ascii
 
-Topic :: Str.{
+StrictName :: Str.{
 
-	## The topic named `name`, or the first reason, in this order, it is
+	## The strict name `name`, or the first reason, in this order, it is
 	## refused.
-	from_str : Str -> Try(Topic, [Empty, StartsWithNonLetter, TooLong, ForbiddenByte])
+	from_str : Str -> Try(StrictName, [Empty, StartsWithNonLetter, TooLong, ForbiddenByte])
 	from_str = |name| {
 		bytes = name.to_utf8()
 		match bytes {
 			[] => Err(Empty)
 			[first, ..] if !Ascii.is_letter(first) => Err(StartsWithNonLetter)
-			_ if bytes.len() > Topic.longest => Err(TooLong)
+			_ if bytes.len() > StrictName.longest => Err(TooLong)
 			_ if !bytes.all(is_allowed) => Err(ForbiddenByte)
-			_ => Ok(Topic.(name))
+			_ => Ok(StrictName.(name))
 		}
 	}
 
@@ -1591,54 +2989,96 @@ Topic :: Str.{
 	longest = 60
 
 	## The name, as a file name and a URL take it.
-	to_str : Topic -> Str
-	to_str = |Topic.(name)| name
+	to_str : StrictName -> Str
+	to_str = |StrictName.(name)| name
 
 	is_eq : _
+	to_hash : _
 }
 
 is_allowed : U8 -> Bool
 is_allowed = |b| Ascii.is_letter(b) or Ascii.is_digit(b) or b == '-'
 
 # ── tests
-expect Topic.from_str("") == Err(Empty)
-expect Topic.from_str(" ") == Err(StartsWithNonLetter)
-expect Topic.from_str("\t") == Err(StartsWithNonLetter)
-expect Topic.from_str("\n") == Err(StartsWithNonLetter)
-expect Topic.from_str("\r") == Err(StartsWithNonLetter)
-expect Topic.from_str("1plans") == Err(StartsWithNonLetter)
-expect Topic.from_str("-plans") == Err(StartsWithNonLetter)
+expect StrictName.from_str("") == Err(Empty)
+expect StrictName.from_str(" ") == Err(StartsWithNonLetter)
+expect StrictName.from_str("\t") == Err(StartsWithNonLetter)
+expect StrictName.from_str("\n") == Err(StartsWithNonLetter)
+expect StrictName.from_str("\r") == Err(StartsWithNonLetter)
+expect StrictName.from_str("1plans") == Err(StartsWithNonLetter)
+expect StrictName.from_str("-plans") == Err(StartsWithNonLetter)
+expect StrictName.from_str("_plans") == Err(StartsWithNonLetter)
 # The bytes beside the letters' ranges, first.
-expect Topic.from_str("@a") == Err(StartsWithNonLetter)
-expect Topic.from_str("[a") == Err(StartsWithNonLetter)
-expect Topic.from_str("`a") == Err(StartsWithNonLetter)
-expect Topic.from_str("{a") == Err(StartsWithNonLetter)
+expect StrictName.from_str("@a") == Err(StartsWithNonLetter)
+expect StrictName.from_str("[a") == Err(StartsWithNonLetter)
+expect StrictName.from_str("`a") == Err(StartsWithNonLetter)
+expect StrictName.from_str("{a") == Err(StartsWithNonLetter)
 # The bytes beside every allowed range, after the first.
-expect Topic.from_str("aAzZ09-").map_ok(Topic.to_str) == Ok("aAzZ09-")
-expect Topic.from_str("a/") == Err(ForbiddenByte)
-expect Topic.from_str("a:") == Err(ForbiddenByte)
-expect Topic.from_str("a@") == Err(ForbiddenByte)
-expect Topic.from_str("a[") == Err(ForbiddenByte)
-expect Topic.from_str("a`") == Err(ForbiddenByte)
-expect Topic.from_str("a{") == Err(ForbiddenByte)
-expect Topic.from_str("a,") == Err(ForbiddenByte)
-expect Topic.from_str("a.") == Err(ForbiddenByte)
-expect Topic.from_str("plans\nnext") == Err(ForbiddenByte)
-expect Topic.from_str("plans\r") == Err(ForbiddenByte)
-expect Topic.from_str("plans ") == Err(ForbiddenByte)
-expect Topic.from_str("plans_2") == Err(ForbiddenByte)
-expect Topic.from_str("café") == Err(ForbiddenByte)
+expect StrictName.from_str("aAzZ09-").map_ok(StrictName.to_str) == Ok("aAzZ09-")
+expect StrictName.from_str("a/") == Err(ForbiddenByte)
+expect StrictName.from_str("a:") == Err(ForbiddenByte)
+expect StrictName.from_str("a@") == Err(ForbiddenByte)
+expect StrictName.from_str("a[") == Err(ForbiddenByte)
+expect StrictName.from_str("a`") == Err(ForbiddenByte)
+expect StrictName.from_str("a{") == Err(ForbiddenByte)
+expect StrictName.from_str("a,") == Err(ForbiddenByte)
+expect StrictName.from_str("a.") == Err(ForbiddenByte)
+expect StrictName.from_str("plans\nnext") == Err(ForbiddenByte)
+expect StrictName.from_str("plans\r") == Err(ForbiddenByte)
+expect StrictName.from_str("plans ") == Err(ForbiddenByte)
+expect StrictName.from_str("plans_2") == Err(ForbiddenByte)
+expect StrictName.from_str("café") == Err(ForbiddenByte)
 # The length at, under and over the longest.
-expect Topic.from_str("a".repeat(61)) == Err(TooLong)
-expect Topic.from_str("a".repeat(60)).map_ok(Topic.to_str) == Ok("a".repeat(60))
-expect Topic.from_str("a".repeat(59)).map_ok(Topic.to_str) == Ok("a".repeat(59))
-expect Topic.longest == 60
+expect StrictName.from_str("a".repeat(61)) == Err(TooLong)
+expect StrictName.from_str("a".repeat(60)).map_ok(StrictName.to_str) == Ok("a".repeat(60))
+expect StrictName.from_str("a".repeat(59)).map_ok(StrictName.to_str) == Ok("a".repeat(59))
+expect StrictName.longest == 60
 # The order of refusals: the first byte, then the length, then the bytes.
-expect Topic.from_str("1${"a".repeat(60)}") == Err(StartsWithNonLetter)
-expect Topic.from_str("a${"a".repeat(59)} ") == Err(TooLong)
-expect Topic.from_str("a b") == Err(ForbiddenByte)
-expect Topic.from_str("p").map_ok(Topic.to_str) == Ok("p")
-expect Topic.from_str("Z").map_ok(Topic.to_str) == Ok("Z")
+expect StrictName.from_str("1${"a".repeat(60)}") == Err(StartsWithNonLetter)
+expect StrictName.from_str("a${"a".repeat(59)} ") == Err(TooLong)
+expect StrictName.from_str("a b") == Err(ForbiddenByte)
+expect StrictName.from_str("p").map_ok(StrictName.to_str) == Ok("p")
+expect StrictName.from_str("Z").map_ok(StrictName.to_str) == Ok("Z")
+expect StrictName.from_str("gopher-roc-2").map_ok(StrictName.to_str) == Ok("gopher-roc-2")
+```
+
+### `app/Topic.roc`
+
+```
+## **A TOPIC**: a conversation's name, which becomes a file name and a URL,
+## so it is a strict name (`StrictName`, the one home of that rule). A
+## topic is unique only within its channel or DM. Opaque, so `from_str` is
+## the only way in, and a topic is never mistaken for a channel's name.
+import StrictName
+
+Topic :: StrictName.{
+
+	## The topic named `name`, refused as `StrictName.from_str` refuses it.
+	from_str : Str -> Try(Topic, [Empty, StartsWithNonLetter, TooLong, ForbiddenByte])
+	from_str = |name| StrictName.from_str(name).map_ok(|strict| Topic.(strict))
+
+	## The name, as a file name and a URL take it.
+	to_str : Topic -> Str
+	to_str = |Topic.(strict)| strict.to_str()
+
+	is_eq : _
+}
+
+# ── tests
+# Refused as a strict name is, by each of its refusals; kept as given.
+expect
+	[
+		"",
+		"1plans",
+		"a".repeat(61),
+		"plans_2",
+	].map(Topic.from_str)
+		== [
+			Err(Empty),
+			Err(StartsWithNonLetter),
+			Err(TooLong),
+			Err(ForbiddenByte),
+		]
 expect Topic.from_str("gopher-roc-2").map_ok(Topic.to_str) == Ok("gopher-roc-2")
 ```
 
@@ -1850,10 +3290,14 @@ expect one_with({ ..first, head: "MSG_other_1" }) == Err(BadHead(Sample.first))
 expect one_with({ ..first, from: "frm: Steve" }) == Err(BadHead(Sample.first))
 expect one_with({ ..first, date: "dt: 2026-11-02T19:11:32Z" }) == Err(BadHead(Sample.first))
 expect one_with({ ..first, gap: "" }) == Err(BadHead(Sample.first))
-expect one_with({ ..first, from: "from: " }) == Err(Author(Sample.first, Blank))
-expect one_with({ ..first, from: "from:  " }) == Err(Author(Sample.first, Blank))
-expect one_with({ ..first, from: "from: Steve\r" }) == Err(Author(Sample.first, ControlByte))
-expect one_with({ ..first, from: "from:  Steve" }) == Err(Author(Sample.first, Padded))
+expect one_with({ ..first, from: "from: " }) == Err(Author(Sample.first, Empty))
+expect one_with({ ..first, from: "from:  " }) == Err(Author(Sample.first, BadSpacing))
+expect one_with({ ..first, from: "from: Steve\r" }) == Err(Author(Sample.first, ForbiddenCharacter))
+expect one_with({ ..first, from: "from:  Steve" }) == Err(Author(Sample.first, BadSpacing))
+expect one_with({
+	..first,
+	from: "from: Ste\u(202e)ve",
+}) == Err(Author(Sample.first, ForbiddenCharacter))
 expect one_with({ ..first, date: "date: 2026-11-02" }) == Err(DateTime(Sample.first, WrongShape))
 expect one_with({
 	..first,
@@ -1875,9 +3319,9 @@ expect two_with({ ..second, head: "MSG_plans_3" }) == Err(BadHead(Sample.second)
 expect two_with({ ..second, from: "frm: CC" }) == Err(BadHead(Sample.second))
 expect two_with({ ..second, date: "dt: 2026-11-02T19:12:28Z" }) == Err(BadHead(Sample.second))
 expect two_with({ ..second, gap: "" }) == Err(BadHead(Sample.second))
-expect two_with({ ..second, from: "from: " }) == Err(Author(Sample.second, Blank))
-expect two_with({ ..second, from: "from: C\u(0)C" }) == Err(Author(Sample.second, ControlByte))
-expect two_with({ ..second, from: "from: CC " }) == Err(Author(Sample.second, Padded))
+expect two_with({ ..second, from: "from: " }) == Err(Author(Sample.second, Empty))
+expect two_with({ ..second, from: "from: C\u(0)C" }) == Err(Author(Sample.second, ForbiddenCharacter))
+expect two_with({ ..second, from: "from: CC " }) == Err(Author(Sample.second, BadSpacing))
 expect two_with({
 	..second,
 	date: "date: 2026-11-02T19:12:28",
@@ -1991,6 +3435,9 @@ expect {
 ## `Page`'s fixed head and style sheet. `join` builds only from what is
 ## already vouched for, so it vouches for nothing new.
 ##
+## **THE OTHER TRUST BOUNDARIES**: `UnvalidatedString`, the way text from
+## outside comes in, and `SecureImageTag`, which images a message may show.
+##
 ## **THE WAY OUT IS BYTES**: `to_utf8`, for the host. There is no way back
 ## to a `Str`, so trusted markup can't be handed to `Escape.text` and
 ## escaped again without a deliberate, fallible `Str.from_utf8`.
@@ -2025,13 +3472,212 @@ expect
 expect TrustedHtml.join([]).to_utf8() == []
 ```
 
+### `app/UnvalidatedString.roc`
+
+```
+## **TEXT FROM THE WIRE, NOT YET CHECKED**: whatever arrives from outside
+## (a request, a file the host read) is an `UnvalidatedString` until a
+## checking door says what it is. Opaque, with one way in, `from_utf8`, at
+## main's door, and no way back to a `Str`: the only ways out are the
+## checking doors below, each giving a checked type or a refusal's tags.
+## So no `Name`, `Topic`, `DateTime` or `Conversation` is ever built from
+## outside text that skipped its check.
+##
+## **ONE OF THE TRUST BOUNDARIES**: this is the way in; `TrustedHtml` is
+## the way out to a page, and `SecureImageTag` rules which images a
+## message may show. A security reader starts at any of the three.
+import Conversation
+import DateTime
+import Name
+import Topic
+import Transcript
+
+UnvalidatedString :: Str.{
+
+	## **THE WAY IN**: the host's `bytes`, unless they are not UTF-8.
+	from_utf8 : List(U8) -> Try(UnvalidatedString, [NotUtf8])
+	from_utf8 = |bytes|
+		match Str.from_utf8(bytes) {
+			Ok(text) => Ok(UnvalidatedString.(text))
+			Err(_) => Err(NotUtf8)
+		}
+
+	## The permanent name it spells, checked by `Name.from_str`.
+	name : UnvalidatedString -> Try(Name, [Empty, ForbiddenCharacter, BadSpacing])
+	name = |UnvalidatedString.(text)| Name.from_str(text)
+
+	## The topic it names, checked by `Topic.from_str`.
+	topic : UnvalidatedString -> Try(Topic, [Empty, StartsWithNonLetter, TooLong, ForbiddenByte])
+	topic = |UnvalidatedString.(text)| Topic.from_str(text)
+
+	## The time it writes, checked by `DateTime.from_str`.
+	date_time : UnvalidatedString -> Try(DateTime, [WrongShape, OutOfRange])
+	date_time = |UnvalidatedString.(text)| DateTime.from_str(text)
+
+	## The conversation under `named`, as the transcript it is, checked by
+	## `Transcript.read`, its refusals as that reader names them.
+	conversation : UnvalidatedString, Topic -> Try(Conversation, _)
+	conversation = |UnvalidatedString.(text), named| Transcript.read(named, text)
+}
+
+# ── tests
+## The text `bytes` hold, from the wire, which a test's always are.
+wire : List(U8) -> UnvalidatedString
+wire = |bytes| UnvalidatedString.from_utf8(bytes) ?? crash "UnvalidatedString's tests: a test's bytes are UTF-8"
+
+# Only UTF-8 comes in: a stray byte, and a character cut short, refused.
+## Whether `bytes` come in, or why not.
+comes_in : List(U8) -> Try({}, [NotUtf8])
+comes_in = |bytes| UnvalidatedString.from_utf8(bytes).map_ok(|_| {})
+
+expect [
+	[0xFF],
+	[0xC3],
+	"Zoë".to_utf8(),
+	[],
+].map(comes_in) == [
+	Err(NotUtf8),
+	Err(NotUtf8),
+	Ok({}),
+	Ok({}),
+]
+# Each way out checks, both sides.
+expect wire("Zoë".to_utf8()).name().map_ok(Name.to_str) == Ok("Zoë")
+expect wire("Zoë!".to_utf8()).name() == Err(ForbiddenCharacter)
+expect wire("plans".to_utf8()).topic().map_ok(Topic.to_str) == Ok("plans")
+expect wire("plans_2".to_utf8()).topic() == Err(ForbiddenByte)
+expect wire("2026-11-02T19:11:32Z".to_utf8()).date_time().map_ok(DateTime.to_str) == Ok("2026-11-02T19:11:32Z")
+expect wire("2026-11-02".to_utf8()).date_time() == Err(WrongShape)
+expect {
+	plans = Topic.from_str("plans") ?? crash "UnvalidatedString's tests: a topic"
+	[wire([]).conversation(plans), wire("\n".to_utf8()).conversation(plans)]
+		== [Ok(Conversation.empty(plans)), Err(BadEnds)]
+}
+```
+
+### `app/UserId.roc`
+
+```
+## **A USER'S ID**: a human's or an agent's number, unique and permanent,
+## handy in a URL and in a file's name (`UserStem`). Steve is always 1.
+##
+## **ONE COUNT FOR HUMANS AND AGENTS**, as they share one namespace: an id
+## alone says who, with no kind beside it to keep in step, and `apoorva-2`
+## and an agent's `cc-3` are never the same number.
+##
+## **WHY U8**: the chat is a small group of humans and their agents, and
+## 255 is many times that. Every id that lasts is written as its decimal
+## digits (a file's name, a URL, a DM's name), so a wider type later moves
+## no byte on disk.
+UserId :: U8.{
+
+	## Steve's id, always: the first user, and the admin (`Admin`).
+	steve : UserId
+	steve = UserId.(1)
+
+	## The id after this one, unless this is the last a chat holds.
+	next : UserId -> Try(UserId, [Full])
+	next = |UserId.(n)| if (n == U8.highest) Err(Full) else Ok(UserId.(n + 1))
+
+	## The number, as a URL, a file's name and a DM's name write it.
+	to_str : UserId -> Str
+	to_str = |UserId.(n)| n.to_str()
+
+	## **WHICH COMES FIRST**, by number: a DM's pair and a channel's
+	## members are written in this order.
+	compare : UserId, UserId -> [Before, Same, After]
+	compare = |
+		UserId.(n),
+		UserId.(other),
+	| if (n < other) Before else if (n == other) Same else After
+
+	is_eq : _
+	to_hash : _
+}
+
+# ── tests
+expect UserId.steve.to_str() == "1"
+expect UserId.steve.next().map_ok(UserId.to_str) == Ok("2")
+# The last id at, under and over the highest.
+expect UserId.(254).next().map_ok(UserId.to_str) == Ok("255")
+expect UserId.(255).next() == Err(Full)
+# The order, both ways round, and the same id.
+expect
+	[
+		UserId.steve.compare(UserId.(2)),
+		UserId.(2).compare(UserId.steve),
+		UserId.(2).compare(UserId.(2)),
+		UserId.(9).compare(UserId.(10)),
+	]
+		== [Before, After, Same, Before]
+```
+
+### `app/UserStem.roc`
+
+```
+## **A USER'S FILE STEM**: `apoorva-2`, from a user's name and id, the one
+## home of that spelling. A user's files are named from it
+## (`apoorva-2.info`); what each holds is not decided here.
+##
+## **STRICT, SO SAFE AS A FILE'S NAME AND IN A URL**: each word of the name
+## (`Name`: letters, single spaces between words) as its ASCII letters in
+## lower case, its accented letters left out, the words joined by `-`; then
+## `-` and the id. A word with no ASCII letter is left out, and a name with
+## none is the id alone. The id makes a stem unique, so the name's part is
+## only for a reader finding the file.
+import Ascii
+import Name
+import UserId
+
+UserStem :: [].{
+
+	## The stem of the user `id`, named `name`.
+	of : { name : Name, id : UserId } -> Str
+	of = |{ name, id }| {
+		words = name.to_str().with_ascii_lowercased().split_on(" ").map(ascii_only).drop_if(Str.is_empty)
+		if (words.is_empty()) id.to_str() else "${Str.join_with(words, "-")}-${id.to_str()}"
+	}
+}
+
+## `word`'s ASCII letters, in order.
+ascii_only : Str -> Str
+ascii_only = |word|
+	Str.from_utf8(word.to_utf8().keep_if(Ascii.is_letter)) ?? crash "UserStem.ascii_only: ASCII letters are UTF-8"
+
+# ── tests
+## The stem of `text`'s user, whose id is the one after `count` others'.
+stem : Str, U64 -> Str
+stem = |text, count| {
+	name = Name.from_str(text) ?? crash "UserStem's tests: a test's name is a name"
+	id = List.repeat({}, count).fold(
+		UserId.steve,
+		|at, {}| at.next() ?? crash "UserStem's tests: a test's id fits",
+	)
+	UserStem.of({ name, id })
+}
+
+expect stem("Steve", 0) == "steve-1"
+expect stem("apoorva", 1) == "apoorva-2"
+expect stem("Steve Howell", 0) == "steve-howell-1"
+expect stem("CC", 2) == "cc-3"
+# Accented letters left out, and a word left with none.
+expect stem("Zoë Ann", 3) == "zo-ann-4"
+expect stem("Élodie", 4) == "lodie-5"
+expect stem("Zoë Ő Ann", 5) == "zo-ann-6"
+# No ASCII letter at all: the id alone, at the first id and the last.
+expect stem("Éé", 0) == "1"
+expect stem("Ő Ű", 254) == "255"
+expect stem("Zoë", 254) == "zo-255"
+```
+
 ### `app/main.roc`
 
 ```
 ## **THE DEMO**: a topic's name and its transcript in, its page out. The
 ## host (host/main.zig) reads the file and writes the page; everything
-## else is the pure core. The door: the host's bytes become a Conversation
-## or a refusal's tags here, and only here are the tags put into words.
+## else is the pure core. The door: the host's bytes become unchecked text
+## (`UnvalidatedString`), then a Conversation or a refusal's tags, here,
+## and only here are the tags put into words.
 app [page] {
 	md: "../../roc-markdown/package/main.roc",
 	pf: platform "../platform/main.roc",
@@ -2040,8 +3686,9 @@ app [page] {
 import Conversation
 import Message
 import Page
+import StrictName
 import Topic
-import Transcript
+import UnvalidatedString
 
 ## The page for `topic`'s transcript, or a page saying what is wrong with it.
 page : List(U8), List(U8) -> List(U8)
@@ -2057,10 +3704,10 @@ page = |topic, transcript| {
 ## The conversation the host's bytes hold, decoded at the door.
 conversation : { topic : List(U8), transcript : List(U8) } -> Try(Conversation, _)
 conversation = |{ topic, transcript }| {
-	name = Str.from_utf8(topic) ? |_| TopicNotUtf8
-	text = Str.from_utf8(transcript) ? |_| TranscriptNotUtf8
-	checked = Topic.from_str(name) ? |why| Topic(why)
-	Transcript.read(checked, text).map_err(|why| Transcript(why))
+	name = UnvalidatedString.from_utf8(topic) ? |NotUtf8| TopicNotUtf8
+	text = UnvalidatedString.from_utf8(transcript) ? |NotUtf8| TranscriptNotUtf8
+	checked = name.topic() ? |why| Topic(why)
+	text.conversation(checked).map_err(|why| Transcript(why))
 }
 
 ## **EVERY WAY THE DOOR REFUSES**: what `words` takes, each module's tags
@@ -2074,7 +3721,7 @@ Refusal : [
 		[
 			BadEnds,
 			BadHead(Message.Id),
-			Author(Message.Id, [Blank, ControlByte, Padded]),
+			Author(Message.Id, [Empty, ForbiddenCharacter, BadSpacing]),
 			DateTime(Message.Id, [WrongShape, OutOfRange]),
 			BadBody(Message.Id),
 			Backdated(Message.Id),
@@ -2092,7 +3739,7 @@ words = |why|
 		TranscriptNotUtf8 => "it is not UTF-8"
 		Topic(Empty) => "its topic is empty"
 		Topic(StartsWithNonLetter) => "its topic does not start with an ASCII letter"
-		Topic(TooLong) => "its topic is longer than ${Topic.longest.to_str()} characters"
+		Topic(TooLong) => "its topic is longer than ${StrictName.longest.to_str()} characters"
 		Topic(ForbiddenByte) => "its topic holds more than ASCII letters, digits and -"
 		Transcript(BadEnds) => "a transcript starts with the separator and ends with an empty line"
 		Transcript(Full) => "it holds more messages than a conversation can"
@@ -2102,9 +3749,9 @@ words = |why|
 		Transcript(Author(id, fault)) => {
 			said =
 				match fault {
-					Blank => " has no author"
-					ControlByte => "'s author holds a control character"
-					Padded => "'s author starts or ends with a space"
+					Empty => " has no author"
+					ForbiddenCharacter => "'s author holds a character that is no letter or space"
+					BadSpacing => "'s author has a space at either end, or two together"
 				}
 			"message ${id.to_str()}${said}"
 		}
@@ -2156,9 +3803,9 @@ expect {
 		Topic(ForbiddenByte),
 		Transcript(BadEnds),
 		Transcript(BadHead(second)),
-		Transcript(Author(second, Blank)),
-		Transcript(Author(second, ControlByte)),
-		Transcript(Author(second, Padded)),
+		Transcript(Author(second, Empty)),
+		Transcript(Author(second, ForbiddenCharacter)),
+		Transcript(Author(second, BadSpacing)),
 		Transcript(DateTime(second, WrongShape)),
 		Transcript(DateTime(second, OutOfRange)),
 		Transcript(BadBody(second)),
@@ -2175,8 +3822,8 @@ expect {
 			"a transcript starts with the separator and ends with an empty line",
 			"message 2 does not open with its reference, `from:`, `date:` and an empty line",
 			"message 2 has no author",
-			"message 2's author holds a control character",
-			"message 2's author starts or ends with a space",
+			"message 2's author holds a character that is no letter or space",
+			"message 2's author has a space at either end, or two together",
 			"message 2's date is not YYYY-MM-DDTHH:MM:SSZ",
 			"message 2's date is no time a calendar and clock show",
 			"message 2 holds the separator, unescaped, on a line of its own",
