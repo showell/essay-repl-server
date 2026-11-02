@@ -44,26 +44,44 @@ The pure core rendering the sample transcript below. What follows is the demo's 
 ## conversation gave it. Immutable: an edit is a new message. A message
 ## knows nothing of who may write where; that is the conversation's.
 Message :: {
-	id : U64,
+	id : Message.Id,
 	author : Str,
 	at : Str,
 	markdown : Str,
 }.{
 
-	## A message from its parts. Ids count from 1, and a message has an
-	## author.
-	new : { id : U64, author : Str, at : Str, markdown : Str } -> Try(Message, [NoId, NoAuthor])
-	new = |m|
-		if m.id == 0 {
-			Err(NoId)
-		} else if m.author.trim() == "" {
-			Err(NoAuthor)
-		} else {
-			Ok(Message.(m))
-		}
+	## **A MESSAGE'S ID**: its number in its conversation, counting from 1,
+	## so a conversation's order is its ids' order. At most 65,535 (a U16):
+	## a conversation that long is archived, never grown.
+	Id :: U16.{
 
-	## Its number in its conversation, from 1.
-	id : Message -> U64
+		## The first message's id.
+		first : Message.Id
+		first = Message.Id.(1)
+
+		## The id after this one, unless this is the last a conversation
+		## holds.
+		next : Message.Id -> Try(Message.Id, [Full])
+		next = |Message.Id.(n)| if (n == 65535) Err(Full) else Ok(Message.Id.(n + 1))
+
+		## The id as the transcript and the page write it.
+		to_str : Message.Id -> Str
+		to_str = |Message.Id.(n)| n.to_str()
+
+		is_eq : _
+	}
+
+	## A message from its parts; it has an author.
+	new : {
+		id : Message.Id,
+		author : Str,
+		at : Str,
+		markdown : Str,
+	} -> Try(Message, [NoAuthor])
+	new = |m| if (m.author.trim() == "") Err(NoAuthor) else Ok(Message.(m))
+
+	## Its id in its conversation.
+	id : Message -> Message.Id
 	id = |Message.(m)| m.id
 
 	## Who wrote it, by their permanent name.
@@ -82,9 +100,22 @@ Message :: {
 }
 
 # ── tests
-expect Message.new({ id: 0, author: "Steve", at: "", markdown: "hi" }).map_ok(Message.id) == Err(NoId)
-expect Message.new({ id: 1, author: " ", at: "", markdown: "hi" }).map_ok(Message.id) == Err(NoAuthor)
-expect Message.new({ id: 1, author: "Steve", at: "", markdown: "hi" }).map_ok(Message.author) == Ok("Steve")
+expect Message.Id.first.to_str() == "1"
+expect Message.Id.first.next().map_ok(Message.Id.to_str) == Ok("2")
+expect Message.Id.(65534).next().map_ok(Message.Id.to_str) == Ok("65535")
+expect Message.Id.(65535).next() == Err(Full)
+expect Message.new({
+	id: Message.Id.first,
+	author: " ",
+	at: "",
+	markdown: "hi",
+}).map_ok(Message.author) == Err(NoAuthor)
+expect Message.new({
+	id: Message.Id.first,
+	author: "Steve",
+	at: "",
+	markdown: "hi",
+}).map_ok(Message.author) == Ok("Steve")
 ```
 
 ### `app/Transcript.roc`
@@ -102,8 +133,8 @@ expect Message.new({ id: 1, author: "Steve", at: "", markdown: "hi" }).map_ok(Me
 ##
 ## Each message opens with the separator, then its id (`MSG_`, the topic,
 ## `_`, its number), its author, its time, an empty line, its markdown and
-## an empty line. Numbers count up from 1, so the file's order is the
-## conversation's. A markdown line that is the separator, after any
+## an empty line. Ids count up from the first (Message.Id), so the file's
+## order is the conversation's. A markdown line that is the separator, after any
 ## backslashes, is written with one backslash more, and read back with one
 ## fewer, so no message can forge the start of another.
 import Message
@@ -112,14 +143,19 @@ Transcript := [].{
 
 	## The transcript of `topic`'s messages.
 	write : Str, List(Message) -> Str
-	write = |topic, messages| Str.join_with(messages.map(|m| entry(topic, m)), "")
+	write = |topic, messages| Str.join_with(messages.map(|m| as_written(topic, m)), "")
 
 	## `topic`'s messages, or the first thing wrong with the transcript.
 	read : Str, Str -> Try(List(Message), [Malformed(Str)])
 	read = |topic, text|
 		match text.drop_prefix("${separator}\n").drop_suffix("\n\n").split_on("\n\n${separator}\n") {
 			_ if !text.starts_with("${separator}\n") or !text.ends_with("\n\n") => Err(Malformed("a transcript starts with the separator and ends with an empty line"))
-			entries => read_entries(topic, entries, 1, [])
+			written => read_messages({
+				topic,
+				written,
+				id: Message.Id.first,
+				so_far: [],
+			})
 		}
 }
 
@@ -127,66 +163,188 @@ separator : Str
 separator = "-------------"
 
 ## One message as the transcript writes it.
-entry : Str, Message -> Str
-entry = |topic, m|
+as_written : Str, Message -> Str
+as_written = |topic, m|
 	"${separator}\nMSG_${topic}_${m.id().to_str()}\nfrom: ${m.author()}\ndate: ${m.at()}\n\n${escape(m.markdown())}\n\n"
 
-## Each entry, in order, its number the next one.
-read_entries : Str, List(Str), U64, List(Message) -> Try(List(Message), [Malformed(Str)])
-read_entries = |topic, entries, n, read_so_far|
-	match entries {
-		[] => Ok(read_so_far)
+## Each message as written, in order, `id` the first one's.
+read_messages : {
+	topic : Str,
+	written : List(Str),
+	id : Message.Id,
+	so_far : List(Message),
+} -> Try(List(Message), [Malformed(Str)])
+read_messages = |
+	{
+		topic,
+		written,
+		id,
+		so_far,
+	},
+|
+	match written {
+		[] => Ok(so_far)
+		[only] => Ok(
+			so_far.append(
+				read_message({
+					topic,
+					text: only,
+					id,
+				})?,
+			),
+		)
 		[first, .. as rest] => {
-			m = read_entry(topic, first, n)?
-			read_entries(topic, rest, n + 1, read_so_far.append(m))
+			m = read_message({
+				topic,
+				text: first,
+				id,
+			})?
+			next = id.next().map_err(|Full| Malformed("more messages than a conversation holds"))?
+			read_messages({
+				topic,
+				written: rest,
+				id: next,
+				so_far: so_far.append(m),
+			})
 		}
 	}
 
-## Message `n` of `topic`, from its entry.
-read_entry : Str, Str, U64 -> Try(Message, [Malformed(Str)])
-read_entry = |topic, text, n|
+## Message `id` of `topic`, as written.
+read_message : {
+	topic : Str,
+	text : Str,
+	id : Message.Id,
+} -> Try(Message, [Malformed(Str)])
+read_message = |
+	{
+		topic,
+		text,
+		id,
+	},
+| {
+	n = id.to_str()
 	match text.split_on("\n") {
-		[id_line, from_line, date_line, "", .. as body] if id_line == "MSG_${topic}_${n.to_str()}" and from_line.starts_with("from: ") and date_line.starts_with("date: ") =>
+		[
+			id_line,
+			from_line,
+			date_line,
+			"",
+			.. as body,
+		] if id_line == "MSG_${topic}_${n}" and from_line.starts_with("from: ") and date_line.starts_with("date: ") =>
 			Message.new({
-				id: n,
+				id,
 				author: from_line.drop_prefix("from: "),
 				at: date_line.drop_prefix("date: "),
 				markdown: unescape(Str.join_with(body, "\n")),
-			}).map_err(|_| Malformed("message ${n.to_str()} has no author"))
-		_ => Err(Malformed("message ${n.to_str()} is not `MSG_${topic}_${n.to_str()}`, `from:`, `date:` and an empty line"))
+			}).map_err(|_| Malformed("message ${n} has no author"))
+		_ => Err(Malformed("message ${n} is not `MSG_${topic}_${n}`, `from:`, `date:` and an empty line"))
 	}
+}
 
 ## Is `line` the separator after some backslashes?
 is_separator_like : Str -> Bool
 is_separator_like = |line| line.ends_with(separator) and line.drop_suffix(separator).to_utf8().all(|b| b == '\\')
 
 escape : Str -> Str
-escape = |md| Str.join_with(md.split_on("\n").map(|l| if (is_separator_like(l)) "\\${l}" else l), "\n")
+escape = |md| Str.join_with(
+	md.split_on("\n").map(|l| if (is_separator_like(l)) "\\${l}" else l),
+	"\n",
+)
 
 unescape : Str -> Str
-unescape = |md| Str.join_with(md.split_on("\n").map(|l| if (l.starts_with("\\") and is_separator_like(l)) l.drop_prefix("\\") else l), "\n")
+unescape = |md| Str.join_with(
+	md.split_on("\n").map(|l| if (l.starts_with("\\") and is_separator_like(l)) l.drop_prefix("\\") else l),
+	"\n",
+)
 
 # ── tests
-said : U64, Str, Str -> Message
-said = |id, author, markdown|
-	match Message.new({ id, author, at: "2026-11-02T19:11:32Z", markdown }) {
+said : {
+	id : Message.Id,
+	author : Str,
+	markdown : Str,
+} -> Message
+said = |
+	{
+		id,
+		author,
+		markdown,
+	},
+|
+	match Message.new({
+		id,
+		author,
+		at: "2026-11-02T19:11:32Z",
+		markdown,
+	}) {
 		Ok(m) => m
-		Err(_) => crash "said: a test's message has an id and an author"
+		Err(_) => crash "said: a test's message has an author"
 	}
 
-two : List(Message)
-two = [said(1, "Steve", "Hello"), said(2, "CC", "Hi!\n\n- one\n- two")]
+first : Message.Id
+first = Message.Id.first
 
-expect Transcript.write("plans", [said(1, "Steve", "Hello")]) == "-------------\nMSG_plans_1\nfrom: Steve\ndate: 2026-11-02T19:11:32Z\n\nHello\n\n"
+second : Message.Id
+second = first.next() ?? crash "second: the first id has a next"
+
+two : List(Message)
+two = [
+	said({
+		id: first,
+		author: "Steve",
+		markdown: "Hello",
+	}),
+	said({
+		id: second,
+		author: "CC",
+		markdown: "Hi!\n\n- one\n- two",
+	}),
+]
+
+expect Transcript.write(
+	"plans",
+	[
+		said({
+			id: first,
+			author: "Steve",
+			markdown: "Hello",
+		}),
+	],
+) == "-------------\nMSG_plans_1\nfrom: Steve\ndate: 2026-11-02T19:11:32Z\n\nHello\n\n"
 expect Transcript.read("plans", Transcript.write("plans", two)) == Ok(two)
-expect Transcript.read("plans", "") == Err(Malformed("a transcript starts with the separator and ends with an empty line"))
+expect Transcript.read(
+	"plans",
+	"",
+) == Err(Malformed("a transcript starts with the separator and ends with an empty line"))
 # A body that holds the separator, or a backslash before it, comes back whole.
 forged : List(Message)
-forged = [said(1, "Mallory", "a\n-------------\nMSG_plans_2\nfrom: Steve"), said(2, "Mallory", "\\-------------\n\\\\-------------")]
+forged = [
+	said({
+		id: first,
+		author: "Mallory",
+		markdown: "a\n-------------\nMSG_plans_2\nfrom: Steve",
+	}),
+	said({
+		id: second,
+		author: "Mallory",
+		markdown: "\\-------------\n\\\\-------------",
+	}),
+]
 expect Transcript.read("plans", Transcript.write("plans", forged)) == Ok(forged)
 expect Transcript.write("plans", forged).split_on("\n${separator}\n").len() == 2
 # Out of order, another topic's, or missing a field: refused by number.
-expect Transcript.read("plans", Transcript.write("plans", [said(2, "Steve", "x")])).is_err()
+expect Transcript.read(
+	"plans",
+	Transcript.write(
+		"plans",
+		[
+			said({
+				id: second,
+				author: "Steve",
+				markdown: "x",
+			}),
+		],
+	),
+).is_err()
 expect Transcript.read("other", Transcript.write("plans", two)).is_err()
 expect Transcript.read("plans", "-------------\nMSG_plans_1\ndate: x\n\nhi\n\n").is_err()
 ```
@@ -209,7 +367,10 @@ Conversation :: {
 
 	## The conversation a transcript holds, its topic named by its file.
 	read : Str, Str -> Try(Conversation, [Malformed(Str)])
-	read = |topic, transcript| Transcript.read(topic, transcript).map_ok(|messages| Conversation.({ topic, messages }))
+	read = |
+		topic,
+		transcript,
+	| Transcript.read(topic, transcript).map_ok(|messages| Conversation.({ topic, messages }))
 
 	## Its topic's name.
 	topic : Conversation -> Str
@@ -228,7 +389,10 @@ Conversation :: {
 				"<!doctype html>\n<meta charset=utf-8>\n<title>${escape(c.topic)}</title>\n",
 				style,
 				"<h1>${escape(c.topic)}</h1>\n",
-				if (c.messages.is_empty()) "<p class=empty>No messages yet.</p>\n" else Str.join_with(c.messages.map(|m| message_html(c.topic, m)), ""),
+				if (c.messages.is_empty()) "<p class=empty>No messages yet.</p>\n" else Str.join_with(
+					c.messages.map(|m| message_html(c.topic, m)),
+					"",
+				),
 			],
 			"",
 		)
@@ -238,7 +402,12 @@ Conversation :: {
 message_html : Str, Message -> Str
 message_html = |topic, m| {
 	n = m.id().to_str()
-	body = Str.from_utf8(Md.render(m.markdown().to_utf8(), { uploads: |_| Bool.False })) ?? crash "Conversation: roc-markdown renders UTF-8"
+	body = Str.from_utf8(
+		Md.render(
+			m.markdown().to_utf8(),
+			{ uploads: |_| Bool.False },
+		),
+	) ?? crash "Conversation: roc-markdown renders UTF-8"
 	"<article class=message id=msg-${n}><header><span class=author>${escape(m.author())}</span> <time datetime=\"${escape(m.at())}\">${escape(m.at())}</time> <a class=ref href=\"#msg-${n}\">MSG_${escape(topic)}_${n}</a></header>\n<div class=body>${body}</div></article>\n"
 }
 
@@ -263,17 +432,51 @@ style : Str
 style = "<style>body{font:16px/1.4 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem}.message{border-top:1px solid #ccc;padding:.5rem 0}.author{font-weight:600}time,.ref{color:#777;font-size:.85em}.ref{float:right}</style>\n"
 
 # ── tests
-said : U64, Str, Str -> Message
-said = |id, author, markdown|
-	match Message.new({ id, author, at: "2026-11-02T19:11:32Z", markdown }) {
+said : {
+	id : Message.Id,
+	author : Str,
+	markdown : Str,
+} -> Message
+said = |
+	{
+		id,
+		author,
+		markdown,
+	},
+|
+	match Message.new({
+		id,
+		author,
+		at: "2026-11-02T19:11:32Z",
+		markdown,
+	}) {
 		Ok(m) => m
-		Err(_) => crash "said: a test's message has an id and an author"
+		Err(_) => crash "said: a test's message has an author"
 	}
 
 expect escape("<b>\"Tom & Jerry\"</b>") == "&lt;b&gt;&quot;Tom &amp; Jerry&quot;&lt;/b&gt;"
 expect escape("café 🎉") == "café 🎉"
-expect message_html("plans", said(3, "Steve", "**hi**")) == "<article class=message id=msg-3><header><span class=author>Steve</span> <time datetime=\"2026-11-02T19:11:32Z\">2026-11-02T19:11:32Z</time> <a class=ref href=\"#msg-3\">MSG_plans_3</a></header>\n<div class=body><p><strong>hi</strong></p>\n</div></article>\n"
-expect Conversation.read("plans", Transcript.write("plans", [said(1, "<Eve>", "x")])).map_ok(|c| c.html().contains("&lt;Eve&gt;")) == Ok(Bool.True)
+expect message_html(
+	"plans",
+	said({
+		id: Message.Id.first,
+		author: "Steve",
+		markdown: "**hi**",
+	}),
+) == "<article class=message id=msg-1><header><span class=author>Steve</span> <time datetime=\"2026-11-02T19:11:32Z\">2026-11-02T19:11:32Z</time> <a class=ref href=\"#msg-1\">MSG_plans_1</a></header>\n<div class=body><p><strong>hi</strong></p>\n</div></article>\n"
+expect Conversation.read(
+	"plans",
+	Transcript.write(
+		"plans",
+		[
+			said({
+				id: Message.Id.first,
+				author: "<Eve>",
+				markdown: "x",
+			}),
+		],
+	),
+).map_ok(|c| c.html().contains("&lt;Eve&gt;")) == Ok(Bool.True)
 expect Conversation.read("plans", "").map_ok(Conversation.topic).is_err()
 ```
 
