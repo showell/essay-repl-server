@@ -15,7 +15,11 @@
 ## read and written and the calendar's check, and gives way to the builtins'
 ## once they have one.
 import Ascii
+```
 
+**Lines 1–12**
+
+```roc
 DateTime :: Str.{
 
 	## The time `text` names, or why it is refused: not the form, or a
@@ -33,11 +37,6 @@ DateTime :: Str.{
 				m1,
 				m2,
 				'-',
-```
-
-**Lines 1–30**: `DateTime`, `from_str`
-
-```roc
 				d1,
 				d2,
 				'T',
@@ -66,13 +65,13 @@ DateTime :: Str.{
 				s1,
 				s2,
 			].all(Ascii.is_digit) => {
-				year = number([
-					y1,
 ```
 
-**Lines 31–60**
+**Lines 14–58**: `DateTime`, `from_str` (part 1 of 2)
 
 ```roc
+				year = number([
+					y1,
 					y2,
 					y3,
 					y4,
@@ -91,7 +90,11 @@ DateTime :: Str.{
 			}
 			_ => Err(WrongShape)
 		}
+```
 
+**Lines 59–78**: `from_str` (part 2 of 2)
+
+```roc
 	## **THE TIME A CLOCK GIVES**: `seconds` since 1970-01-01T00:00:00Z (the
 	## host's clock), unless it is before then, or after the last second
 	## the form can write, 9999-12-31T23:59:59Z (`OutOfRange`). The
@@ -108,11 +111,7 @@ DateTime :: Str.{
 			text = "${padded(date.year, 4)}-${padded(date.month, 2)}-${padded(date.day, 2)}T${padded(of_day // 3600, 2)}:${padded((of_day % 3600) // 60, 2)}:${padded(of_day % 60, 2)}Z"
 			Ok(DateTime.(text))
 		}
-```
 
-**Lines 61–95**: `from_seconds_since_epoch`
-
-```roc
 	## The time as written.
 	to_str : DateTime -> Str
 	to_str = |DateTime.(text)| text
@@ -126,7 +125,11 @@ DateTime :: Str.{
 
 	is_eq : _
 }
+```
 
+**Lines 80–109**: `from_seconds_since_epoch`, `to_str`, `compare`, `is_eq`
+
+```roc
 ## 9999-12-31T23:59:59Z, in seconds since the epoch: the last the form
 ## writes.
 last_second : I64
@@ -143,11 +146,6 @@ civil_from_days : I64 -> {
 civil_from_days = |days| {
 	from_era_start = days + 719468
 	era = from_era_start // 146097
-```
-
-**Lines 97–126**: `to_str`, `compare`, `is_eq`, `last_second`, `civil_from_days`, `year`, `month`, `day`
-
-```roc
 	day_of_era = from_era_start - era * 146097
 	year_of_era = (day_of_era - day_of_era // 1460 + day_of_era // 36524 - day_of_era // 146096) // 365
 	day_of_year = day_of_era - (365 * year_of_era + year_of_era // 4 - year_of_era // 100)
@@ -161,7 +159,11 @@ civil_from_days = |days| {
 		day,
 	}
 }
+```
 
+**Lines 111–139**: `last_second`, `civil_from_days`
+
+```roc
 ## `n`, zero or more, in at least `width` digits, zeros before.
 padded : I64, U64 -> Str
 padded = |n, width| {
@@ -177,11 +179,7 @@ byte_order = |bytes, others|
 		([byte, ..], [other, ..]) => if (byte < other) Before else After
 		_ => Same
 	}
-```
 
-**Lines 127–155**: `padded`, `byte_order`
-
-```roc
 ## The number the digits write, most significant first.
 number : List(U8) -> U64
 number = |digits| digits.fold(0, |n, d| n * 10 + (d - '0').to_u64())
@@ -194,7 +192,11 @@ days_in = |{ year, month }|
 		4 | 6 | 9 | 11 => 30
 		_ => 31
 	}
+```
 
+**Lines 141–168**: `padded`, `byte_order`, `number`, `days_in`
+
+```roc
 ## Every fourth year, but not every hundredth, unless every four-hundredth.
 is_leap : U64 -> Bool
 is_leap = |year| year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
@@ -203,11 +205,7 @@ is_leap = |year| year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 ## The text of the time `text` names, if it is accepted.
 ok : Str -> Try(Str, [WrongShape, OutOfRange])
 ok = |text| DateTime.from_str(text).map_ok(DateTime.to_str)
-```
 
-**Lines 157–177**: `number`, `days_in`, `is_leap`, `ok`
-
-```roc
 expect ok("2026-11-02T19:11:32Z") == Ok("2026-11-02T19:11:32Z")
 expect DateTime.from_str("") == Err(WrongShape)
 expect DateTime.from_str("2026-11-02T19:11:32") == Err(WrongShape)
@@ -223,6 +221,11 @@ expect DateTime.from_str("2026/11-02T19:11:32Z") == Err(WrongShape)
 # A digit's neighbours, in a digit's place.
 expect DateTime.from_str("202/-11-02T19:11:32Z") == Err(WrongShape)
 expect DateTime.from_str("202:-11-02T19:11:32Z") == Err(WrongShape)
+```
+
+**Lines 170–193**: `is_leap`, `ok`; 14 expects
+
+```roc
 # Each field at, and just past, each end of its range.
 expect DateTime.from_str("2026-00-02T19:11:32Z") == Err(OutOfRange)
 expect ok("2026-01-02T19:11:32Z") == Ok("2026-01-02T19:11:32Z")
@@ -238,11 +241,6 @@ expect DateTime.from_str("2026-11-02T19:11:60Z") == Err(OutOfRange)
 expect ok("0000-01-01T00:00:00Z") == Ok("0000-01-01T00:00:00Z")
 expect ok("9999-12-31T23:59:59Z") == Ok("9999-12-31T23:59:59Z")
 expect DateTime.from_str("2026-99-99T99:99:99Z") == Err(OutOfRange)
-```
-
-**Lines 179–208**: 28 expects
-
-```roc
 # Each month's last day, and the day after it.
 expect ok("2026-01-31T19:11:32Z") == Ok("2026-01-31T19:11:32Z")
 expect DateTime.from_str("2026-01-32T19:11:32Z") == Err(OutOfRange)
@@ -262,6 +260,11 @@ expect DateTime.from_str("2024-02-30T19:11:32Z") == Err(OutOfRange)
 expect DateTime.from_str("1900-02-29T19:11:32Z") == Err(OutOfRange)
 expect ok("2000-02-29T19:11:32Z") == Ok("2000-02-29T19:11:32Z")
 expect is_leap(2024) and is_leap(2000) and is_leap(0)
+```
+
+**Lines 194–227**: 31 expects
+
+```roc
 # The order: the same time, and a second either side of it, within a
 # field and across each field's rollover, both ways round.
 ## Each pair's order, both ways round, from the pair's text.
@@ -274,11 +277,7 @@ orders = |pairs|
 			(first.compare(second), second.compare(first))
 		},
 	)
-```
 
-**Lines 209–239**: `orders`; 17 expects
-
-```roc
 expect orders([("2026-11-02T19:11:32Z", "2026-11-02T19:11:32Z")]) == [(Same, Same)]
 expect
 	orders([
@@ -300,7 +299,7 @@ from_clock : I64 -> Try(Str, [OutOfRange])
 from_clock = |seconds| DateTime.from_seconds_since_epoch(seconds).map_ok(DateTime.to_str)
 ```
 
-**Lines 241–259**: `from_clock`; 3 expects
+**Lines 228–259**: `orders`, `from_clock`; 3 expects
 
 ```roc
 expect
