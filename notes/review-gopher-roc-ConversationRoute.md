@@ -1,6 +1,6 @@
 # Review: gopher-roc `app/ConversationRoute.roc`
 
-259 lines in 10 chunks, as of commit 614211c Tests keep each input beside its expected answer. Reply under any chunk; this paragraph is for the module as a whole.
+259 lines in 10 chunks, as of commit 7132b06 Message.Arrival is Message.Unnumbered. Reply under any chunk; this paragraph is for the module as a whole.
 
 ```roc
 ## **A CONVERSATION'S TWO ROUTES**: its page (GET), and a message added to
@@ -76,7 +76,7 @@ ConversationRoute :: [].{
 			body,
 		},
 	|
-		match arrival({
+		match unnumbered_message_from_post({
 			acting,
 			now,
 			body,
@@ -87,25 +87,25 @@ ConversationRoute :: [].{
 **Lines 48–71**: `append!` (part 1 of 2)
 
 ```roc
-			Ok(arrived) =>
+			Ok(unnumbered_message) =>
 				match FileSystem.read_transcript!(key) {
 					Ok(utf8) =>
 						match Transcript.decode(key.topic(), utf8) {
 							Ok(conversation) =>
-								add_arrival!({
+								append_unnumbered_message!({
 									key,
 									conversation,
 									file: File(utf8),
-									arrived,
+									unnumbered_message,
 								})
 							Err(why) => unreadable(why)
 						}
 					Err(Missing) =>
-						add_arrival!({
+						append_unnumbered_message!({
 							key,
 							conversation: Conversation.empty(key.topic()),
 							file: NoFile,
-							arrived,
+							unnumbered_message,
 						})
 					Err(fault) => failed(fault)
 				}
@@ -116,14 +116,14 @@ ConversationRoute :: [].{
 **Lines 72–95**: `append!` (part 2 of 2)
 
 ```roc
-## **WHAT ARRIVED**: the markdown in `body`'s field `markdown`, by the
-## acting user, at `now`; or why it is refused.
-arrival : {
+## **THE POST'S UNNUMBERED MESSAGE**: the markdown in `body`'s field
+## `markdown`, by the acting user, at `now`; or why it is refused.
+unnumbered_message_from_post : {
 	acting : SignedIn,
 	now : I64,
 	body : List(U8),
 } -> Try(
-	Message.Arrival(Author),
+	Message.Unnumbered(Author),
 	[
 		MissingField,
 		RepeatedField,
@@ -133,7 +133,7 @@ arrival : {
 		ClockOutOfRange,
 	],
 )
-arrival = |
+unnumbered_message_from_post = |
 	{
 		acting,
 		now,
@@ -147,27 +147,27 @@ arrival = |
 }
 ```
 
-**Lines 97–125**: `arrival`
+**Lines 97–125**: `unnumbered_message_from_post`
 
 ```roc
-## `arrived` appended to `conversation`, its record appended to `file`
-## (the transcript `conversation` was read from, or `NoFile`), and a 303 to
-## the page; or why not.
-add_arrival! : {
+## `unnumbered_message` appended to `conversation`, its record appended to
+## `file` (the transcript `conversation` was read from, or `NoFile`), and a
+## 303 to the page; or why not.
+append_unnumbered_message! : {
 	key : ConversationKey,
 	conversation : Conversation,
 	file : [NoFile, File(Transcript.Utf8Transcript)],
-	arrived : Message.Arrival(Author),
+	unnumbered_message : Message.Unnumbered(Author),
 } => Http.Response
-add_arrival! = |
+append_unnumbered_message! = |
 	{
 		key,
 		conversation,
 		file,
-		arrived,
+		unnumbered_message,
 	},
 |
-	match conversation.append(arrived) {
+	match conversation.append(unnumbered_message) {
 		Ok(grown) =>
 			match Transcript.message_record({
 				conversation: grown.conversation,
@@ -186,7 +186,7 @@ add_arrival! = |
 	}
 ```
 
-**Lines 127–160**: `add_arrival!`
+**Lines 127–160**: `append_unnumbered_message!`
 
 ```roc
 ## **A MESSAGE THE CONVERSATION REFUSES**, saying why: a 409.
@@ -253,17 +253,17 @@ steve = {
 **Lines 190–216**: `unreadable`, `failed`, `steve`
 
 ```roc
-## A test's arrival, as it reads it.
-Arrived : {
+## An unnumbered message's parts, as a test reads them.
+UnnumberedMessageText : {
 	author : Str,
 	time : Str,
 	markdown : Str,
 }
 
-## What arrived from `body` at `now`, as a test reads it.
-arrived_at : I64, Str -> Try(Arrived, _)
-arrived_at = |now, body|
-	arrival({
+## The unnumbered message posted as `body` at `now`, as a test reads it.
+unnumbered_message_at : I64, Str -> Try(UnnumberedMessageText, _)
+unnumbered_message_at = |now, body|
+	unnumbered_message_from_post({
 		acting: steve,
 		now,
 		body: body.to_utf8(),
@@ -276,30 +276,30 @@ arrived_at = |now, body|
 	)
 ```
 
-**Lines 218–238**: `Arrived`, `arrived_at`
+**Lines 218–238**: `UnnumberedMessageText`, `unnumbered_message_at`
 
 ```roc
-## What arrived from `body` at 2026-11-02T19:11:32Z.
-arrived_at_the_sample_time : Str -> Try(Arrived, _)
-arrived_at_the_sample_time = |body| arrived_at(1793646692, body)
+## The unnumbered message posted as `body` at 2026-11-02T19:11:32Z.
+unnumbered_message_at_the_sample_time : Str -> Try(UnnumberedMessageText, _)
+unnumbered_message_at_the_sample_time = |body| unnumbered_message_at(1793646692, body)
 
 expect
-	arrived_at_the_sample_time("markdown=Hi+there%0D%0Aall")
+	unnumbered_message_at_the_sample_time("markdown=Hi+there%0D%0Aall")
 		== Ok({
 			author: "Steve",
 			time: "2026-11-02T19:11:32Z",
 			markdown: "Hi there\nall",
 		})
-expect arrived_at_the_sample_time("") == Err(MissingField)
-expect arrived_at_the_sample_time("markdown=a&markdown=b") == Err(RepeatedField)
-expect arrived_at_the_sample_time("markdown=%G0") == Err(BadEscape)
-expect arrived_at_the_sample_time("markdown=%FF") == Err(NotUtf8)
-expect arrived_at_the_sample_time("markdown=+") == Err(Blank)
-expect arrived_at(-1, "markdown=x").map_ok(|_| {}) == Err(ClockOutOfRange)
+expect unnumbered_message_at_the_sample_time("") == Err(MissingField)
+expect unnumbered_message_at_the_sample_time("markdown=a&markdown=b") == Err(RepeatedField)
+expect unnumbered_message_at_the_sample_time("markdown=%G0") == Err(BadEscape)
+expect unnumbered_message_at_the_sample_time("markdown=%FF") == Err(NotUtf8)
+expect unnumbered_message_at_the_sample_time("markdown=+") == Err(Blank)
+expect unnumbered_message_at(-1, "markdown=x").map_ok(|_| {}) == Err(ClockOutOfRange)
 expect refused(MissingField).status == 400
 expect refused(Blank).status == 400
 expect refused(ClockOutOfRange).status == 500
 ```
 
-**Lines 240–259**: `arrived_at_the_sample_time`; 10 expects
+**Lines 240–259**: `unnumbered_message_at_the_sample_time`; 10 expects
 
