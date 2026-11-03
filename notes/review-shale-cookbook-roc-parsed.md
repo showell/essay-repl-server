@@ -1,0 +1,56 @@
+# Review: shale `cookbook/roc/parsed.shale`
+
+43 lines in 2 chunks, as of commit 0e7df52 cookbook/roc: typed hunts judge what their roots reach, and name the rest. Reply under any chunk; this paragraph is for the file as a whole.
+
+```lua
+-- **EVERY FILE THAT PARSES IS JUDGED; EVERY ONE THAT DOES NOT FAILS THE
+-- RUN**: a library (`use("cookbook:roc/parsed.shale")`) for the Roc recipes
+-- that hunt over `roc_tree` (the Linux prelude's), its one home for a file
+-- roc-ast refuses. `roc_tree` reads past a refusal; a recipe judges the
+-- files that parse, prints its findings, and only then fails, naming each
+-- refused file with roc-ast's reason. One deliberate old-syntax probe in a
+-- tree (roc-webbox's `p7/neg/oldsyntax.roc`) so never hides the findings in
+-- every other file, and is never passed unread either: the run exits
+-- non-zero.
+
+-- `roc_tree(paths)` split in two: `files`, the trees of the files that
+-- parse, in order, and `refused`, a line for each that does not, `path:
+-- reason`.
+function roc_parsed(paths)
+  local files = {}
+  local refused = {}
+  for f in roc_tree(paths) do
+    if f.err == "" then
+      push(files, f)
+    elseif starts_with(f.err, f.path) then
+      push(refused, f.err)
+    else
+      push(refused, f.path .. ": " .. f.err)
+    end
+  end
+  return {files = files, refused = refused}
+end
+```
+
+**Lines 1–27**: `roc_parsed`
+
+```lua
+-- The run's last word, after its findings: each refused file on a line of
+-- its own, then, under the types, each file no root reached (`unreached`,
+-- cookbook/roc/types.shale's `roc_types_hunted` lines, `not reached by
+-- <root>: <path>`, judged without types), then a failure that counts them.
+-- Nothing when none was refused or unreached.
+function fail_if_refused(who, refused, unreached?)
+  local missed = unreached or {}
+  if #refused == 0 and #missed == 0 then return nil end
+  for r in refused do print("refused: " .. r) end
+  for m in missed do print(m) end
+  local why = {}
+  if #refused > 0 then push(why, "roc-ast refused " .. #refused .. " files (named above), which have no tree to judge") end
+  if #missed > 0 then push(why, #missed .. " files (named above) are reached by no root of the types, so were judged without them") end
+  fail(who .. ": " .. join(why, "; ") .. "; every other file was judged")
+end
+```
+
+**Lines 29–43**: `fail_if_refused`
+
