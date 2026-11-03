@@ -1,0 +1,500 @@
+-- This tool publishes one Roc module or Shale script for review on the essay
+-- surface. The file is cut into chunks of about 25 lines, and each chunk is
+-- followed by a paragraph naming its lines and definitions, which carries
+-- the surface's note button. Run it from the file's repo. It writes
+-- `notes/review-<repo>-<path>.md`, commits and pushes it, and prints the URL.
+-- `dry=1` prints each chunk's lines, size, names and edges instead, and
+-- writes nothing.
+--
+--   cd ~/showell_repos/gopher-roc && shale ../essay-repl-server/tools/code_review.shale file=app/Transcript.roc
+--   cd ~/showell_repos/shale && shale ../essay-repl-server/tools/code_review.shale file=cookbook/roc/parsed.shale dry=1
+--
+-- Chunks end at the file's own boundaries, in two passes. The first finds
+-- the units (each top-level definition, with the comments above it) and
+-- splits any unit over `BIG` lines at its cleanest line: a statement
+-- directly in the unit's body before a nested one, then a line after a
+-- blank one, and only with neither a cut in the middle. Roc's units and
+-- statements come from its parser (`roc_tree`); Shale's from indentation.
+-- The second pass groups the units into chunks at the least cost, where a
+-- chunk costs its distance from `TARGET` lines, squared, and a break costs
+-- less after a blank line, between two kinds of unit, or before a comment.
+--
+-- The surface keeps replies by paragraph number, so a review with replies
+-- is never overwritten: they would hang under the wrong chunks.
+
+const FILE = arg("file", "")
+if FILE == "" then fail("code_review: file=<path to a .roc or .shale file>, run from its repo") end
+const ROC = ends_with(FILE, ".roc")
+if not ROC and not ends_with(FILE, ".shale") then fail("code_review: " .. FILE .. " is neither a .roc nor a .shale file") end
+const DRY = arg("dry", "") == "1"
+const TEXT = read(FILE)
+const LS = lines(TEXT)
+const ESSAYS = real("repos:essay-repl-server")
+const TARGET = 25
+const BIG = 45
+const LEAST = 12
+const STEP = 25
+const SPREAD = 3
+
+-- How clean a break is between two children of these Roc parents (0 the cleanest).
+const RANKS = {associated = 0, statements = 1, branches = 1, ["e-list"] = 2, ["e-record"] = 2, args = 2, ["p-list"] = 2, ["p-record"] = 2, ["p-tuple"] = 2, ["e-tuple"] = 2, ["ty-record"] = 2, tags = 2, ["e-multiline-string"] = 2}
+
+function blank(l)
+  return trim(l) == ""
+end
+
+-- The first line from `i` on that is not blank (past the end if none).
+function next_text(ls, i)
+  local at = i
+  while at <= #ls and blank(ls[at]) do at = at + 1 end
+  return at
+end
+
+-- A line after a blank one is the last resort before a cut.
+function add_blank_places(out)
+  for i = 2, #LS do
+    if blank(LS[i - 1]) and not blank(LS[i]) and not has_key(out, "" .. i) then out["" .. i] = {rank = 3, depth = 0} end
+  end
+  return out
+end
+
+-- Each unit from the first line with text after the one before it, so the
+-- comments above a unit are its.
+function attach_comments(units)
+  local after = 0
+  for u in units do
+    u.from = next_text(LS, after + 1)
+    after = u.to
+  end
+  units[#units].to = #LS
+  return units
+end
+
+-- ── Roc ──────────────────────────────────────────────────────────────────
+
+-- The file's nodes, each with `from`/`to` lines and `depth`. A node the
+-- parser gives no span (`statements`, `branches`, `e-match`) spans its children.
+function tree(path)
+  local got = roc_tree({path})
+  local f = got[1]
+  if f.err ~= "" then fail("code_review: " .. path .. " does not parse: " .. f.err) end
+  local ns = {}
+  for n in f.nodes do
+    push(ns, {kind = n.kind, name = get(n, "name", ""), raw = get(n, "raw", ""), from = n.line, to = n.end_line, kids = n.kids, parent = n.parent, depth = 0})
+  end
+  for i = 2, #ns do ns[i].depth = ns[ns[i].parent].depth + 1 end
+  local k = #ns
+  while k >= 2 do
+    local n = ns[k]
+    local p = ns[n.parent]
+    if n.from > 0 then
+      if p.from == 0 or n.from < p.from then p.from = n.from end
+      if n.to > p.to then p.to = n.to end
+    end
+    k = k - 1
+  end
+  return ns
+end
+
+function name_of(ns, i)
+  local n = ns[i]
+  if n.kind == "s-type-anno" then return n.name end
+  if n.kind == "s-decl" and #n.kids > 0 and ns[n.kids[1]].kind == "p-ident" then return ns[n.kids[1]].raw end
+  if n.kind == "s-type-decl" then
+    for k in n.kids do
+      if ns[k].kind == "header" then return ns[k].name end
+    end
+  end
+  return ""
+end
+
+function annotated(ns, prev, k)
+  return prev > 0 and ns[prev].kind == "s-type-anno" and ns[k].kind == "s-decl" and name_of(ns, k) ~= "" and name_of(ns, prev) == name_of(ns, k)
+end
+
+function kind_of(n)
+  if n.kind == "s-expect" then return "expect" end
+  if n.kind == "s-import" then return "import" end
+  if n.kind == "app" then return "header" end
+  return "definition"
+end
+
+-- The units: each top-level statement (an annotation joined to its
+-- definition), and each associated definition in a type's body
+-- (`X :: T.{ ... }`). The body's opening line goes with its first
+-- definition, unless it is three lines or more, when it is a unit itself.
+function roc_units(ns)
+  local out = {}
+  for top in ns[1].kids do
+    local t = ns[top]
+    if t.kind == "app" then push(out, {nodes = {top}, kind = "header", from = t.from, to = t.to}) end
+    if t.kind == "statements" then
+      local prev = 0
+      for k in t.kids do
+        local n = ns[k]
+        local assoc = 0
+        if n.kind == "s-type-decl" then
+          for c in n.kids do
+            if ns[c].kind == "associated" and #ns[c].kids > 0 then assoc = c end
+          end
+        end
+        if annotated(ns, prev, k) then
+          local u = out[#out]
+          push(u.nodes, k)
+          u.to = n.to
+        elseif assoc > 0 then
+          local first = ns[ns[assoc].kids[1]].from
+          local head_to = first - 1
+          local i = n.from + 1
+          while i < first do
+            if starts_with(trim(LS[i]), "#") then
+              head_to = i - 1
+              break
+            end
+            i = i + 1
+          end
+          while head_to > n.from and blank(LS[head_to]) do head_to = head_to - 1 end
+          local header = {k}
+          if head_to - n.from + 1 >= 3 then
+            push(out, {nodes = {k}, kind = "body", from = n.from, to = head_to})
+            header = {}
+          end
+          local aprev = 0
+          for c in ns[assoc].kids do
+            if annotated(ns, aprev, c) then
+              local u = out[#out]
+              push(u.nodes, c)
+              u.to = ns[c].to
+            else
+              push(header, c)
+              push(out, {nodes = header, kind = "body", from = ns[c].from, to = ns[c].to})
+              header = {}
+            end
+            aprev = c
+          end
+          out[#out].to = n.to
+        else
+          push(out, {nodes = {k}, kind = kind_of(n), from = n.from, to = n.to})
+        end
+        prev = k
+      end
+    end
+  end
+  -- A type's name is said only in the first part of a split unit.
+  for u in out do
+    u.names = {}
+    for k in u.nodes do
+      local nm = name_of(ns, k)
+      if nm ~= "" then push(u.names, {name = nm, first_part_only = ns[k].kind == "s-type-decl" and #u.nodes > 1}) end
+    end
+  end
+  return attach_comments(out)
+end
+
+-- Every line where a Roc unit may be split, with how clean a split there is:
+-- a child of a sequence (`RANKS`) that begins a line after its previous
+-- sibling ends. The split goes above the comments over it.
+function roc_places(ns, units)
+  local whole = {}
+  for u in units do
+    for k in u.nodes do whole["" .. k] = true end
+  end
+  local out = {}
+  for i = 2, #ns do
+    local n = ns[i]
+    local p = ns[n.parent]
+    local key = p.kind
+    if key == "statements" and n.parent > 0 and p.parent == 1 then key = "" end
+    if has_key(RANKS, key) and n.from > 0 and not has_key(whole, "" .. i) then
+      local prev = 0
+      for k in p.kids do
+        if k == i then break end
+        prev = k
+      end
+      local after = ns[p.parent].from
+      if prev > 0 then after = ns[prev].to end
+      if n.from > after and after > 0 and not annotated(ns, prev, i) then
+        local at = next_text(LS, after + 1)
+        local cand = {rank = RANKS[key], depth = n.depth}
+        local was = get(out, "" .. at, nil)
+        if was == nil or cand.rank < was.rank or (cand.rank == was.rank and cand.depth < was.depth) then out["" .. at] = cand end
+      end
+    end
+  end
+  return add_blank_places(out)
+end
+
+-- ── Shale ────────────────────────────────────────────────────────────────
+
+function indent(l)
+  return #l - #trim_start(l)
+end
+
+function comment(l)
+  return starts_with(trim(l), "--")
+end
+
+-- A line that carries on the statement above it rather than starting one.
+function carries_on(l)
+  return re_match(trim(l), "^(end|else|elseif|until|and|or)\\b|^[])}]|^\\.\\.")
+end
+
+-- A line whose statement goes on to the next line.
+function left_open(l)
+  return re_match(trim_end(l), "(,|[({[=]|\\.\\.|\\band|\\bor)$")
+end
+
+-- Which lines start a statement: never one inside a long string
+-- (`[[ ... ]]`, `[=[ ... ]=]`), a comment, or a line carrying on the last.
+function shale_starts()
+  local starts = {}
+  local closer = ""
+  local prev = ""
+  for i = 1, #LS do
+    local l = LS[i]
+    local starts_here = false
+    if closer ~= "" then
+      if contains(l, closer) then closer = "" end
+    elseif not blank(l) and not comment(l) then
+      starts_here = not carries_on(l) and not left_open(prev)
+      prev = l
+      local m = re_find(l, "\\[(=*)\\[")
+      if m ~= nil and not contains(sub(l, m.at + #m.text), "]" .. m.group .. "]") then closer = "]" .. m.group .. "]" end
+    end
+    push(starts, starts_here)
+  end
+  return starts
+end
+
+function shale_name(l)
+  local m = re_find(l, "^function ([A-Za-z0-9_.]+)")
+  if m == nil then m = re_find(l, "^const ([A-Za-z0-9_]+)") end
+  if m == nil then m = re_find(l, "^local ([A-Za-z0-9_]+)") end
+  if m == nil then return "" end
+  return m.group
+end
+
+-- The units: each statement at the left margin, to its last line of code.
+-- A leading comment block set off by a blank line is a unit of its own.
+function shale_units(starts)
+  local tops = {}
+  for i = 1, #LS do
+    if starts[i] and indent(LS[i]) == 0 then push(tops, i) end
+  end
+  if #tops == 0 then fail("code_review: " .. FILE .. " has no statement at the left margin") end
+  local out = {}
+  local gap = tops[1] - 1
+  while gap >= 1 and not blank(LS[gap]) do gap = gap - 1 end
+  if gap > 1 then push(out, {kind = "header", from = 1, to = gap - 1, names = {}}) end
+  for k = 1, #tops do
+    local from = tops[k]
+    local to = #LS
+    if k < #tops then to = tops[k + 1] - 1 end
+    while to > from and (blank(LS[to]) or comment(LS[to])) do to = to - 1 end
+    local l = LS[from]
+    local kind = "code"
+    if starts_with(l, "function ") then kind = "definition" end
+    if starts_with(l, "const ") or starts_with(l, "local ") then kind = "constant" end
+    local names = {}
+    local nm = shale_name(l)
+    if nm ~= "" then push(names, {name = nm, first_part_only = false}) end
+    push(out, {kind = kind, from = from, to = to, names = names})
+  end
+  return attach_comments(out)
+end
+
+-- Every line where a Shale unit may be split: a statement inside it, the
+-- shallowest first. The split goes above the comments over it.
+function shale_places(starts)
+  local out = {}
+  for i = 2, #LS do
+    if starts[i] and indent(LS[i]) > 0 then
+      local at = i
+      while at > 1 and comment(LS[at - 1]) do at = at - 1 end
+      local cand = {rank = 1, depth = indent(LS[i])}
+      local was = get(out, "" .. at, nil)
+      if was == nil or cand.depth < was.depth then out["" .. at] = cand end
+    end
+  end
+  return add_blank_places(out)
+end
+
+-- ── pass 1: the pieces ───────────────────────────────────────────────────
+
+-- The lines `from` to `to`, split while over `BIG` at the cleanest place
+-- that leaves both parts `LEAST` lines, onto `out`.
+function split_unit(at, from, to, out)
+  if to - from + 1 <= BIG then
+    push(out, {from = from, to = to})
+    return nil
+  end
+  local best = 0
+  local best_c = nil
+  local best_odd = 0
+  for i = from + LEAST, to - LEAST + 1 do
+    local c = get(at, "" .. i, nil)
+    if c ~= nil then
+      local odd = abs((i - from) - (to - i + 1))
+      local better = best_c == nil or c.rank < best_c.rank or (c.rank == best_c.rank and c.depth < best_c.depth) or (c.rank == best_c.rank and c.depth == best_c.depth and odd < best_odd)
+      if better then
+        best = i
+        best_c = c
+        best_odd = odd
+      end
+    end
+  end
+  if best == 0 then best = from + (to - from + 1) // 2 end
+  split_unit(at, from, best - 1, out)
+  split_unit(at, best, to, out)
+  return nil
+end
+
+-- Each unit, or each part of a split one, with its unit's index, names and
+-- kind. A split definition's name says which part it is.
+function pieces(units, at)
+  local out = {}
+  for ui = 1, #units do
+    local u = units[ui]
+    local parts = {}
+    split_unit(at, u.from, u.to, parts)
+    for pi = 1, #parts do
+      local names = {}
+      for d in u.names do
+        local nm = d.name .. "`"
+        if #parts > 1 and not d.first_part_only then nm = d.name .. "` (part " .. pi .. " of " .. #parts .. ")" end
+        if (pi == 1 or not d.first_part_only) and not contains(join(names, " "), "`" .. nm) then push(names, "`" .. nm) end
+      end
+      push(out, {from = parts[pi].from, to = parts[pi].to, unit = ui, kind = u.kind, names = names, part = pi, parts = #parts, expect = u.kind == "expect"})
+    end
+  end
+  return out
+end
+
+-- ── pass 2: the chunks ───────────────────────────────────────────────────
+
+function break_cost(a, b)
+  local c = 3 * STEP
+  if b.from > a.to + 1 and blank(LS[b.from - 1]) then c = c - STEP end
+  if a.kind ~= b.kind then c = c - STEP end
+  local t = trim(LS[b.from])
+  if starts_with(t, "#") or starts_with(t, "--") then c = c - STEP end
+  return max(c, 0)
+end
+
+-- The pieces grouped into chunks at the least cost, `{from, to, first, last}`
+-- each (`first` and `last` index the pieces). The parts of a split unit
+-- join nothing else.
+function chunks(ps)
+  local n = #ps
+  local best = {0}
+  local back = {0}
+  for j = 1, n do
+    local b = -1
+    local from_i = 0
+    local i = j
+    while i >= 1 do
+      local size = ps[j].to - ps[i].from + 1
+      if i < j and size > BIG then break end
+      if i < j and (ps[i].parts > 1 or ps[i + 1].parts > 1) and ps[i].unit ~= ps[i + 1].unit then break end
+      local c = best[i] + (size - TARGET) * (size - TARGET) // SPREAD
+      if i > 1 then c = c + break_cost(ps[i - 1], ps[i]) end
+      if b < 0 or c < b then
+        b = c
+        from_i = i
+      end
+      i = i - 1
+    end
+    push(best, b)
+    push(back, from_i)
+  end
+  local out = {}
+  local j = n
+  while j >= 1 do
+    local i = back[j + 1]
+    push(out, {from = ps[i].from, to = ps[j].to, first = i, last = j})
+    j = i - 1
+  end
+  reverse(out)
+  return out
+end
+
+function trimmed(c)
+  local from = c.from
+  local to = c.to
+  while from < to and blank(LS[from]) do from = from + 1 end
+  while to > from and blank(LS[to]) do to = to - 1 end
+  return {from = from, to = to}
+end
+
+-- What a chunk defines: its definitions' names and its count of expects.
+function summary(ps, c)
+  local names = {}
+  local expects = 0
+  for k = c.first, c.last do
+    local p = ps[k]
+    if p.expect and p.part == 1 then expects = expects + 1 end
+    for nm in p.names do
+      if not contains(join(names, " "), nm) then push(names, nm) end
+    end
+  end
+  local said = {}
+  if #names > 0 then push(said, join(names, ", ")) end
+  if expects == 1 then push(said, "1 expect") end
+  if expects > 1 then push(said, expects .. " expects") end
+  if #said == 0 then return "" end
+  return ": " .. join(said, "; ")
+end
+
+local units = {}
+local at = {}
+if ROC then
+  local ns = tree(FILE)
+  units = roc_units(ns)
+  at = roc_places(ns, units)
+else
+  local starts = shale_starts()
+  units = shale_units(starts)
+  at = shale_places(starts)
+end
+const ps = pieces(units, at)
+const parts = chunks(ps)
+
+if DRY then
+  for k = 1, #parts do
+    local c = trimmed(parts[k])
+    print(pad(c.from .. "-" .. c.to, 9) .. pad("(" .. (c.to - c.from + 1) .. ")", 6) .. summary(ps, parts[k]))
+    print("          | " .. trim_end(LS[c.from]))
+    print("          | " .. trim_end(LS[c.to]))
+  end
+  print(#LS .. " lines, " .. #parts .. " chunks (dry run: nothing written)")
+else
+  local repo = basename(real("."))
+  local stem = strip_suffix(strip_suffix(FILE, ".roc"), ".shale")
+  local slug = "review-" .. repo .. "-" .. substitute(stem, "/", "-")
+  local note_path = ESSAYS .. "/notes/" .. slug .. ".md"
+  local comments_path = "repos:essay-repl-server/data/comments/notes/" .. slug .. ".md.comments.json"
+  if exists(comments_path) then fail("code_review: " .. comments_path .. " holds replies to the last review of " .. FILE .. "; a new one would hang them under the wrong chunks. Move it aside first.") end
+
+  local head = must(run({"git", "log", "-1", "--format=%h %s", "--", FILE}, {timeout_ms = 10000, whole = 10000, want = "git: the file's last commit"})).out
+  local dirty = trim(must(run({"git", "status", "--short", "--", FILE}, {timeout_ms = 10000, whole = 10000, want = "git: whether the file has changes"})).out) ~= ""
+
+  local fence = "```"
+  if contains(TEXT, "```") then fence = "~~~~" end
+  local lang = ROC and "roc" or "lua"
+  local note = "# Review: " .. repo .. " `" .. FILE .. "`\n\n"
+    .. #LS .. " lines in " .. #parts .. " chunks, as of commit " .. trim(head) .. (dirty and ", with uncommitted changes" or "") .. ". Reply under any chunk; this paragraph is for the file as a whole.\n\n"
+  for k = 1, #parts do
+    local c = trimmed(parts[k])
+    note = note .. fence .. lang .. "\n" .. join(slice(LS, c.from, c.to), "\n") .. "\n" .. fence .. "\n\n"
+      .. "**Lines " .. c.from .. "–" .. c.to .. "**" .. summary(ps, parts[k]) .. "\n\n"
+  end
+
+  must(run({"tee", note_path}, {stdin = note, timeout_ms = 5000, whole = 10000000, want = "write: the note"}))
+  must(run({"git", "-C", ESSAYS, "add", "notes/" .. slug .. ".md"}, {timeout_ms = 10000, whole = 10000, want = "git: add the note"}))
+  local staged = run({"git", "-C", ESSAYS, "diff", "--cached", "--quiet", "--", "notes/" .. slug .. ".md"}, {timeout_ms = 10000, whole = 10000})
+  if staged.code ~= 0 then
+    must(run({"git", "-C", ESSAYS, "commit", "-q", "-m", "notes/" .. slug .. ": " .. FILE .. " for review", "--", "notes/" .. slug .. ".md"}, {timeout_ms = 10000, whole = 10000, want = "git: commit the note"}))
+    must(run({"git", "-C", ESSAYS, "push", "-q"}, {timeout_ms = 60000, whole = 10000, want = "git: push the note"}))
+  end
+  print(#parts .. " chunks: http://143.244.172.148:9100/notes/" .. slug .. ".md")
+end
