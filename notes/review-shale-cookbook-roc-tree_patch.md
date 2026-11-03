@@ -1,6 +1,6 @@
 # Review: shale `cookbook/roc/tree_patch.shale`
 
-43 lines in 2 chunks, as of commit 208f2c6 cookbook/roc/tree_patch.shale: plain-sentence header, a usage line that names the script. Reply under any chunk; this paragraph is for the file as a whole.
+42 lines in 2 chunks, as of commit 320086e cookbook/roc/tree_patch.shale: reflow the header. Reply under any chunk; this paragraph is for the file as a whole.
 
 ```lua
 -- This script turns a changed copy of a folder into a patch. Copy the
@@ -10,10 +10,9 @@
 --   cd <repo> && shale <shale>/cookbook/roc/tree_patch.shale old=roc new=<copy>/roc under=roc out=test/new_kind/sheep.patch
 --
 -- Give `old` and `new` relative to where the run starts; `under` is the
--- folder's path in the repository. The patch compares the
--- files that match `like` (`*.roc` unless you give one). A file that is
--- only in the copy is added. A file deleted from the copy stays out of the
--- patch.
+-- folder's path in the repository. The patch compares the files that match
+-- `like` (`*.roc` unless you give one). A file that is only in the copy is
+-- added. A file deleted from the copy stays out of the patch.
 --
 -- budget: steps=100000000
 
@@ -26,7 +25,7 @@ const LIKE = arg("like", "*.roc")
 if OLD == "" or NEW == "" or UNDER == "" or OUT == "" then fail("tree_patch: old=<folder> new=<changed copy> under=<folder's path in the repo> out=<patch file>") end
 ```
 
-**Lines 1–21**: `OLD`, `NEW`, `UNDER`, `OUT`, `LIKE`
+**Lines 1–20**: `OLD`, `NEW`, `UNDER`, `OUT`, `LIKE`
 
 ```lua
 local patch = ""
@@ -52,5 +51,5 @@ replace(OUT, patch)
 print(OUT .. ": " .. changed .. " of " .. files .. " files changed")
 ```
 
-**Lines 23–43**: `patch`, `files`, `changed`
+**Lines 22–42**: `patch`, `files`, `changed`
 
