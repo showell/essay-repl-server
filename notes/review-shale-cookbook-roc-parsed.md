@@ -1,12 +1,12 @@
 # Review: shale `cookbook/roc/parsed.shale`
 
-33 lines in 1 chunks, as of commit 59803a5 cookbook/roc/parsed.shale: plain-sentence comments, fewer. Reply under any chunk; this paragraph is for the file as a whole.
+34 lines in 1 chunks, as of commit 7fafea5 cookbook/roc: parsed and pinned headers in plain speech, for a cold reader. Reply under any chunk; this paragraph is for the file as a whole.
 
 ```lua
--- This library is for the Roc recipes that hunt over `roc_tree`. A file that
--- roc-ast refuses never hides the findings in the others: the recipe judges
--- every file that parses, prints its findings, and then fails, naming each
--- refused file.
+-- The Roc recipes (name_hunt, nest_depth and the rest) check every .roc
+-- file in a tree, and some files may not parse. This library lets a recipe
+-- check the files that do parse, print what it found, and then fail with a
+-- list of the files it couldn't parse and why.
 
 -- The files that parse, and a `path: reason` line for each that doesn't.
 function roc_parsed(paths)
@@ -24,8 +24,9 @@ function roc_parsed(paths)
   return {files = files, refused = refused}
 end
 
--- Prints each refused file, and each file no root of the types reached
--- (`roc_types_hunted`'s lines), then fails. A recipe calls it last.
+-- A recipe calls this after printing what it found. It lists the files
+-- that didn't parse, and the files no root imports (which were checked
+-- without their types), then fails.
 function fail_if_refused(who, refused, unreached?)
   local missed = unreached or {}
   if #refused == 0 and #missed == 0 then return nil end
@@ -38,5 +39,5 @@ function fail_if_refused(who, refused, unreached?)
 end
 ```
 
-**Lines 1–33**: `roc_parsed`, `fail_if_refused`
+**Lines 1–34**: `roc_parsed`, `fail_if_refused`
 
