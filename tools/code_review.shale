@@ -19,8 +19,9 @@
 -- chunk costs its distance from `TARGET` lines, squared, and a break costs
 -- less after a blank line, between two kinds of unit, or before a comment.
 --
--- The surface keeps replies by paragraph number, so a review with replies
--- is never overwritten: they would hang under the wrong chunks.
+-- If a review already has replies, the tool stops instead of rewriting it.
+-- The surface files replies by paragraph number, so a rewrite would put
+-- them under the wrong chunks.
 
 const FILE = arg("file", "")
 if FILE == "" then fail("code_review: file=<path to a .roc or .shale file>, run from its repo") end
