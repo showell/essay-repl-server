@@ -1,19 +1,38 @@
 # Review: roc-apps `canvas_apps/safari/Angle.roc`
 
-141 lines in 5 chunks, as of commit e054794 safari: the rider's angles as nominal types. Reply under any chunk; this paragraph is for the file as a whole.
+156 lines in 6 chunks, as of commit 161d669 safari/Angle: explain yaw, pitch and roll, and which types measure which. Reply under any chunk; this paragraph is for the file as a whole.
 
 ```roc
-## Safari's angles, in radians, as three types. A bearing is a direction in
-## the world: 0 is north, and a bearing grows to the rider's right. A turn is
-## the angle between two directions, such as how far the rider's gaze is
-## from straight ahead. A turn added to a bearing gives a bearing, and two
-## bearings give the turn between them, but two bearings can't be added. A
-## lean is how far the bike rolls from upright. It turns the bike only
-## through a rate (`steer`), never by being added to a direction. Each operation does the plain float arithmetic its name says,
-## so code moved onto these types computes exactly what it did before.
+## Safari's angles, in radians, as three types.
+##
+## Anything that moves through the world, a rider, a camera or an aircraft,
+## can rotate three ways. Yaw is turning left or right, about an axis that
+## points straight up: which way the rider is heading, or where they look.
+## Pitch is tipping the nose up or down, about an axis from side to side.
+## Safari has no pitch: the camera always looks level. Roll is tipping
+## sideways, about an axis that points straight ahead, as a bike leans into
+## a curve. The camera rides with the bike, so it rolls too, and the whole
+## picture tilts with the lean.
+##
+## Two of the types measure yaw. A bearing is a direction in the world: 0 is
+## north, and a bearing grows to the rider's right. A turn is the angle
+## between two directions, such as how far the rider's gaze is from straight
+## ahead. A turn added to a bearing gives a bearing, and two bearings give
+## the turn between them, but two bearings can't be added.
+##
+## The third type, a lean, measures roll: how far the bike tips from
+## upright. A lean is never added to a direction. It turns the bike only
+## through a rate (`steer`), the way a leaning bike follows a curve.
+##
+## Each operation does the plain float arithmetic its name says, so code
+## moved onto these types computes exactly what it did before.
 import lib.DeviceMath
 import lib.Trig
+```
 
+**Lines 1–25**
+
+```roc
 Angle :: [].{
 
 	Bearing := F64.{
@@ -46,7 +65,7 @@ Angle :: [].{
 	}
 ```
 
-**Lines 1–41**: `Angle`, `Bearing`
+**Lines 27–56**: `Angle`, `Bearing`
 
 ```roc
 	Turn := F64.{
@@ -75,7 +94,7 @@ Angle :: [].{
 		min = |Angle.Turn.(t), Angle.Turn.(other)| Angle.Turn.(DeviceMath.real_min(t, other))
 ```
 
-**Lines 43–66**: `Turn` (part 1 of 2)
+**Lines 58–81**: `Turn` (part 1 of 2)
 
 ```roc
 		## This turn, held to no more than `limit` either way.
@@ -102,7 +121,7 @@ Angle :: [].{
 	}
 ```
 
-**Lines 68–89**: `Turn` (part 2 of 2)
+**Lines 83–104**: `Turn` (part 2 of 2)
 
 ```roc
 	Lean := F64.{
@@ -148,7 +167,7 @@ Angle :: [].{
 	}
 ```
 
-**Lines 91–131**: `Lean`
+**Lines 106–146**: `Lean`
 
 ```roc
 	north : Angle.Bearing
@@ -162,5 +181,5 @@ Angle :: [].{
 }
 ```
 
-**Lines 133–141**: `north`, `straight_ahead`, `upright`
+**Lines 148–156**: `north`, `straight_ahead`, `upright`
 
