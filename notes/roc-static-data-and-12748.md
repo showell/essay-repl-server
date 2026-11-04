@@ -1,6 +1,6 @@
 # How Roc freezes constants, and what #12748 fixed
 
-Anton merged [roc-lang/roc#12748](https://github.com/roc-lang/roc/pull/12748) on 2026-11-03, with one extra commit from his bot: a compiler-level unit test that reaches the bug without running the CLI. He also [asked](https://github.com/roc-lang/roc/pull/12748#issuecomment-6580311118) us to open a Zulip discussion about the PR's last section, which questions whether compiler invariants should stay checked in release builds. This note gives the background and ends with a draft of that Zulip post.
+Anton merged [roc-lang/roc#12748](https://github.com/roc-lang/roc/pull/12748) on 2026-11-03, with one extra commit of his own: a compiler-level unit test that reaches the bug without running the CLI. He also [asked](https://github.com/roc-lang/roc/pull/12748#issuecomment-6580311118) us to open a Zulip discussion about the PR's last section, which questions whether compiler invariants should stay checked in release builds. This note gives the background and ends with a draft of that Zulip post.
 
 ## The C picture you already have
 
@@ -82,7 +82,7 @@ Only the dev backend (`--opt=dev`) crashed. The interpreter and the LLVM backend
 
 ## The fix
 
-It's one branch in `evalLowLevel`, plus a layout check that Anton's bot added:
+It's one branch in `evalLowLevel`, plus a layout check that Anton added:
 
 ```zig
 if (op == .list_with_capacity) {
