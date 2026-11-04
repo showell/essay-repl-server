@@ -4,7 +4,7 @@ Anton merged [roc-lang/roc#12748](https://github.com/roc-lang/roc/pull/12748) on
 
 ## The C picture you already have
 
-In C, `static const char *greeting = "hi";` puts the bytes `hi\0` in `.rodata`, and the linker patches the pointer to them in with a relocation. The loader maps `.rodata` read-only. Reading it is free, and writing through the pointer is undefined behaviour, which on Linux usually means a SIGSEGV.
+In C, `static const char *greeting = "hi";` puts the bytes `hi\0` in `.rodata` (read-only data), and the linker patches the pointer to them in with a relocation. The loader maps `.rodata` read-only. Reading it is free, and writing through the pointer is undefined behaviour, which on Linux usually means a SIGSEGV.
 
 Roc does the same thing for top-level constants. The new compiler evaluates them while compiling (compile-time function evaluation, or CTFE) and, when it can, freezes the result into read-only data symbols, with relocations for the pointers inside it. `src/static_data.zig` describes itself as "Target-layout readonly data symbols for internal constants and provided data."
 
@@ -38,9 +38,20 @@ digraph freeze {
 
 Each of the first three steps did the right thing on its own:
 
-1. **CTFE** ran `["a"].drop_first(1)`, which gives an empty list that still holds the one slot it started with.
+1. **CTFE** ran `["a"].drop_first(1)`, which gives an empty list that still holds the one slot it started with. (Why it keeps that slot is explained below.)
 2. **The const store** keeps an empty list's capacity deliberately.
 3. **Lowering** turns the stored value back into an expression the backend can compile. For an empty list with capacity n, that's the low-level op `list_with_capacity(n)`, so that if the value is built at runtime, the first append can go in place.
+
+### Why doesn't `drop_first` just set the capacity to zero?
+
+It's a fair question, and the answer is that Roc lists never shrink on their own. `drop_first` is `List.sublist(list, { start: n, len: len })`, and when the range is empty, `listSublist` (`src/builtins/list.zig`) does this:
+
+- **If the list is unique**, it releases the elements, sets the length to 0, and returns *the same allocation*. Capacity stays at 1.
+- **If the list is shared**, it decrements the refcount and returns a fresh `RocList.empty()`, with capacity 0.
+
+The literal `["a"]` is unique, so it takes the first branch. This is the same policy as Rust's `Vec::truncate` or `clear`, or keeping a C buffer instead of calling `realloc` to shrink it. Shrinking would cost a reallocation and a copy, while keeping the capacity makes the next append free. Code that drains a list and refills it, which is common, never touches the allocator. If you do want the memory back, you ask for it with `List.release_excess_capacity`.
+
+So at runtime, capacity 1 is the right answer. It only becomes pointless once the value is frozen, because frozen data is never unique and nothing can ever append to it in place. That's where the fix discards it, and only there.
 
 The fourth step is the one that broke. When the constant is eligible for static data, its restored expression goes to `StaticInitializerMachine`, a small evaluator that turns construction code into bytes and relocations. It's meant to see only construction, and the only low-level op it accepted was `box_box` (making a `Box`). `list_with_capacity` wasn't on its list. A record holding a `Str` is what makes the constant freeze through this path, which is why our chat app's `Topic` record triggered it.
 
