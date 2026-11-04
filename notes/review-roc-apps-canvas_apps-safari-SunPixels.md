@@ -1,12 +1,13 @@
 # Review: roc-apps `canvas_apps/safari/SunPixels.roc`
 
-56 lines in 2 chunks, as of commit 82f22a6 safari: the sun moves to SunPixels; ScreenRoll.pixel_point is shared. Reply under any chunk; this paragraph is for the file as a whole.
+57 lines in 2 chunks, as of commit 19ea037 safari: the sky and grass move to BackdropPixels; SafariFrame is the glue. Reply under any chunk; this paragraph is for the file as a whole.
 
 ```roc
 ## SunPixels paints Safari's sun into a frame's pixels for SafariFrame, so it
-## is test code too: the game never runs it. It paints the sun's glow and then
-## its disc, as SafariShapes describes them, and clips both to the sky. The
-## frame paints the sun before the draw commands, so the mountains can hide it.
+## is test code too: the game never runs it (see SafariFrame for more
+## context). It paints the sun's glow and then its disc, as SafariShapes
+## describes them, and clips both to the sky. The frame paints the sun before
+## the draw commands, so the mountains can hide it.
 import lib.Brush
 import PixelGrid
 import SafariShapes
@@ -26,7 +27,7 @@ SunPixels :: [].{
 }
 ```
 
-**Lines 1–21**: `SunPixels`, `paint`
+**Lines 1–22**: `SunPixels`, `paint`
 
 ```roc
 paint_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sky.SunPlace } -> List(U32)
@@ -65,5 +66,5 @@ paint_glow_and_disc = |pixels, { roll, sun }| {
 }
 ```
 
-**Lines 23–56**: `paint_glow_and_disc`
+**Lines 24–57**: `paint_glow_and_disc`
 
