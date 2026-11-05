@@ -1,4 +1,4 @@
-*Second draft for Steve's review, 2026-11-05: the opening, the sky and the cat, in a neutral voice, with code expanded by the builder. The bracketed notes are where the live ride and the widgets go.*
+*Second draft for Steve's review, 2026-11-05, now with module diagrams: the opening, the sky and the cat, in a neutral voice, with code expanded by the builder. The bracketed notes are where the live ride and the widgets go.*
 
 # Safari Ride: a tour of a real Roc program
 
@@ -9,6 +9,46 @@ This is Safari Ride. A rider cycles down a long road through open country, past 
 Safari Ride has the important parts of a game's world: terrain, physics, a camera, things that react to the player, and a day that ends. It doesn't have game mechanics yet. Nothing keeps score.
 
 This tour reads the program from the bottom up. It's about seventy modules of Roc, which is enough to show how Roc holds up in a program with a lot going on. It assumes you can already read Roc. Each chapter points out a few Roc ideas as they come up, and the useful ones come up more than once.
+
+Here's the whole system, simplified. An arrow points from a module to one it imports. The dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so every diagram in this tour reads downward.
+
+```dot
+digraph system {
+  node [shape=box, fontname="Helvetica"];
+  web [label="web.roc"];
+  plans [label="the plans\nCatPlan, BirdPlan, TreePlan, TruckPlan, ...", style=dashed];
+  drawing [label="the drawing\nCatDraw, RocBird, Tree, Tower, TruckDraw, ...", style=dashed];
+  shapes [label="lib.Shapes"];
+  web -> SafariApp;
+  SafariApp -> SafariRide;
+  SafariApp -> SafariShapes;
+  SafariRide -> Safari;
+  Safari -> Rider;
+  Safari -> Truck;
+  Safari -> Sky;
+  Safari -> Mountains;
+  Safari -> Render;
+  Safari -> ItemDraw;
+  ItemDraw -> Render;
+  Render -> plans;
+  ItemDraw -> drawing;
+  SafariShapes -> Sky;
+  Mountains -> Sky;
+  Rider -> World;
+  Truck -> World;
+  plans -> World;
+  World -> Cat;
+  World -> BirdFlight;
+  plans -> Cat;
+  plans -> BirdFlight;
+  Cat -> Animation;
+  BirdFlight -> Animation;
+  drawing -> shapes;
+  SafariShapes -> shapes;
+}
+```
+
+`Safari` holds the ride and steps it. `Render` asks the plans what's in view, and `ItemDraw` paints it. `World` holds the route. The browser only sees `SafariApp`, which hands it a list of shapes each frame.
 
 ## All that's stored
 
@@ -42,6 +82,24 @@ Purity makes some things free. Safari Ride can pause and step backward, because 
 ## The sky
 
 The sky is the simplest thing that moves, because it depends on one number.
+
+```dot
+digraph sky {
+  node [shape=box, fontname="Helvetica"];
+  Sky [style=bold];
+  Safari -> Sky;
+  SafariRide -> Sky;
+  SafariShapes -> Sky;
+  Mountains -> Sky;
+  Sky -> Angle;
+  Sky -> Lens;
+  Sky -> Screen;
+  Lens -> Angle;
+  Lens -> Screen;
+}
+```
+
+`Sky` sits near the bottom of the system. It imports only the angle type and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
 
 *[The sky widget goes here: drag the clock and watch the sun set.]*
 
@@ -147,6 +205,26 @@ sun_pos = |
 ## The cat
 
 The cat is the best scene in Safari Ride. It walks out, freezes in the lane as the rider bears down on it, and leaps clear at the last moment.
+
+```dot
+digraph cat {
+  node [shape=box, fontname="Helvetica"];
+  Cat [style=bold];
+  World -> Cat;
+  CrossingReaction -> Cat;
+  CrossingReaction -> World;
+  CatPlan -> Cat;
+  CatDraw -> Cat;
+  CatDraw -> CatStills;
+  CatStills -> Cat;
+  Cat -> Animation;
+  Cat -> Easing;
+  Animation -> Easing;
+  Animation -> Speed;
+}
+```
+
+`Cat` says what a cat does, and `Animation` holds what a cat shares with a bird. Everything that uses a cat imports it, and `Cat` imports none of them: it doesn't know it's drawn, placed or reacted to.
 
 *[The cat widget goes here: drag the rider's gap and watch the crossing play.]*
 
@@ -343,7 +421,23 @@ playing_at = |track, { step, steps }| {
 
 ### What it does to the rider
 
-So far the cat hasn't touched the rider. That's a separate question, answered in one place. `..others` in the argument's type makes it an open record: this function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `Pose.RiderState`. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
+So far the cat hasn't touched the rider. That's a separate question, answered in one place.
+
+```dot
+digraph reaction {
+  node [shape=box, fontname="Helvetica"];
+  CrossingReaction [style=bold];
+  Throttle -> CrossingReaction;
+  RideFocal -> CrossingReaction;
+  CrossingReaction -> Cat;
+  CrossingReaction -> World;
+  World -> Cat;
+}
+```
+
+`Throttle` and `RideFocal` used to know about cats. Now they ask `CrossingReaction`, and it's the only part of the rider's code that does.
+
+`..others` in the argument's type makes it an open record: this function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `Pose.RiderState`. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 
 ```roc
 ## The reaction to `segment`'s crossing of a rider on that segment.
@@ -374,7 +468,29 @@ Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdFlies` or `Q
 
 ### Getting it on screen
 
-The last step is finding the cat in the rider's view. `CatPlan` asks for the moment, places it, and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe", because the caller flattens them with `join_map`.
+The last step is finding the cat in the rider's view.
+
+```dot
+digraph screen {
+  node [shape=box, fontname="Helvetica"];
+  CatPlan [style=bold];
+  CatDraw [style=bold];
+  ItemDraw -> Render;
+  ItemDraw -> CatDraw;
+  ItemDraw -> CatPlan;
+  Render -> CatPlan;
+  CatPlan -> Cat;
+  CatPlan -> Frame;
+  CatPlan -> DepthSort;
+  CatDraw -> Cat;
+  CatDraw -> CatStills;
+  CatStills -> Cat;
+}
+```
+
+`CatPlan` and `CatDraw` never import each other. `ItemDraw` is what carries a plan's answer to the drawing.
+
+`CatPlan` asks for the moment, places it, and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe", because the caller flattens them with `join_map`.
 
 ```roc
 ## The cat crossing the segment at `position` in the chain, as far through its
