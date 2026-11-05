@@ -25,6 +25,7 @@
 - **An entire module appears early:** `Clock.roc`, 30 lines, right after the modules section, then `Pond.roc`, 52 lines, in "What never changes".
 - **The tone is dry and restrained** (Steve, on the "tour of a tour" line: "Perfect tone."). Jokes are delivered flat, and buzzwords appear only where they're earned.
 - **Good words for it** (Steve): composable, charming.
+- **The JS layer comes early, at a high level** (Steve): a short section in the modules chapter, with details in `canvas_apps/ARCHITECTURE.md` and the platform chapter.
 - **Metaphors are welcome** (Steve): the flipbook for the loop, sightings for what's in view.
 - **Diagrams have at most 10 boxes** (Steve), collapsing modules into dashed families like "the plans" where needed.
 - **Habits taken from it:** short snippets, cut where the detail isn't the point; show code that fails, with the real compiler message; say what the reader can stop thinking about; name the bug a feature prevents; state limits flatly.
