@@ -8,6 +8,7 @@
 | A simulated duration | `Steps` | Whole. Subtracting two `Clock`s gives one |
 | A position along an animation | `Beats` | Fractional, and tied to no clock: "the cat freezes at beat 10" |
 | A ratio from 0 to 1 | `Fraction`, opaque | Progress, dusk, easing. Anything that can pass 1, like `scale`, gets its own name |
+| How strongly something holds the rider's eye | `Attention`, opaque | From 0 upward: the cat reaches 1.8 |
 | A length in metres | `Distance` | |
 | A position on the road | `Along`, `Across` | Mirrors `Bearing` and `Turn`: two `Along`s subtract to a `Distance`, and neither can be passed as the other |
 | A length on screen | `Pixels` | Stops at the edge of `lib.Shapes` |
