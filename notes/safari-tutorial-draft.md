@@ -47,7 +47,7 @@ The sky is the simplest thing that moves, because it depends on one number.
 
 ### A function of the clock
 
-Every function in this chapter's arrow is `->`, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky.
+Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky.
 
 ```roc
 ## How high the sun stands above the horizon at `clock`, in pixels at
