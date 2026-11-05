@@ -10,45 +10,49 @@ Safari Ride has the important parts of a game's world: terrain, physics, a camer
 
 This tour reads the program from the bottom up. It's about seventy modules of Roc, which is enough to show how Roc holds up in a program with a lot going on. It assumes you can already read Roc. Each chapter points out a few Roc ideas as they come up, and the useful ones come up more than once.
 
-Here's the whole system, simplified. An arrow points from a module to one it imports. The dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so every diagram in this tour reads downward.
+Here's the whole system, simplified. An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
 
 ```dot
 digraph system {
   node [shape=box, fontname="Helvetica"];
+  fontname="Helvetica";
   web [label="web.roc"];
-  plans [label="the plans\nCatPlan, BirdPlan, TreePlan, TruckPlan, ...", style=dashed];
-  drawing [label="the drawing\nCatDraw, RocBird, Tree, Tower, TruckDraw, ...", style=dashed];
-  shapes [label="lib.Shapes"];
   web -> SafariApp;
   SafariApp -> SafariRide;
-  SafariApp -> SafariShapes;
   SafariRide -> Safari;
+  subgraph cluster_ride {
+    label="the ride";
+    Rider; Truck; World; Cat; BirdFlight; Animation;
+    scenery [label="the scenery\nTrees, Herd, Pigs", style=dashed];
+  }
+  subgraph cluster_view {
+    label="the view";
+    Render; ItemDraw; Sky; Mountains;
+    plans [label="the plans\nCatPlan, BirdPlan, TreePlan, TruckPlan, ...", style=dashed];
+    drawing [label="the drawing\nCatDraw, RocBird, Tree, Tower, TruckDraw, ...", style=dashed];
+  }
+  shapes [label="lib.Shapes"];
   Safari -> Rider;
   Safari -> Truck;
-  Safari -> Sky;
-  Safari -> Mountains;
-  Safari -> Render;
-  Safari -> ItemDraw;
-  ItemDraw -> Render;
-  Render -> plans;
-  ItemDraw -> drawing;
-  SafariShapes -> Sky;
-  Mountains -> Sky;
   Rider -> World;
   Truck -> World;
-  plans -> World;
+  World -> scenery;
   World -> Cat;
   World -> BirdFlight;
-  plans -> Cat;
-  plans -> BirdFlight;
   Cat -> Animation;
   BirdFlight -> Animation;
+  Safari -> ItemDraw;
+  Safari -> Mountains;
+  ItemDraw -> Render;
+  ItemDraw -> drawing;
+  Render -> plans;
+  Mountains -> Sky;
   drawing -> shapes;
-  SafariShapes -> shapes;
+  plans -> World [style=dotted, constraint=false];
 }
 ```
 
-`Safari` holds the ride and steps it. `Render` asks the plans what's in view, and `ItemDraw` paints it. `World` holds the route. The browser only sees `SafariApp`, which hands it a list of shapes each frame.
+There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the plans find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `Safari` sits over both, holding the ride and stepping it, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
 
 ## All that's stored
 
@@ -61,7 +65,7 @@ A record alias is the plainest way to name a shape in Roc, and it's all this nee
 Ride : {
 	rider : Pose.RiderState,
 	truck : Truck.TruckState,
-	clock : F64,
+	clock : Clock,
 }
 ```
 
@@ -167,7 +171,7 @@ digraph sky {
 }
 ```
 
-`Sky` sits near the bottom of the system. Leaving out small maths helpers, it imports only the angle type and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
+`Sky` sits near the bottom of the system. Leaving out small math helpers, it imports only the angle type and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
 
 *[The sky widget goes here: drag the clock and watch the sun set.]*
 
@@ -178,17 +182,17 @@ Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promi
 ```roc
 ## How high the sun stands above the horizon at `clock`, in pixels at
 ## rest; below it once negative.
-sun_height_px : F64 -> F64
-sun_height_px = |clock| (sun_start_px - (sun_drop_px_per_step * clock))
+sun_height_px : Clock -> F64
+sun_height_px = |clock| (sun_start_px - (sun_drop_px_per_step * clock.to_f64()))
 ```
 
-The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730.
+`Clock` is another small opaque type: a whole number of steps that only ever goes up by one. `to_f64` is its one door to a float, and this is the only place that uses it. The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730.
 
 Dusk is a curve and then a line, which means two cases. `Sky` keeps the two halves below its block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
 
 ```roc
 ## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
-dusk_at : F64 -> F64
+dusk_at : Clock -> F64
 dusk_at = |clock| {
 	height = sun_height_px(clock)
 	if (height >= sun_fully_set_px) dusk_while_up(height) else dusk_after_set(height)
@@ -220,7 +224,7 @@ The horizon's warmth is a third shape, a tent centred on the moment the sun touc
 ```roc
 ## How warm the horizon is at `clock`: most while the sun touches it, none
 ## once the sun is `warmth_falloff_px` above or below.
-sunset_warmth : F64 -> F64
+sunset_warmth : Clock -> F64
 sunset_warmth = |clock| DeviceMath.real_max(
 	0.0,
 	(1.0 - (DeviceMath.real_abs(sun_height_px(clock)) / warmth_falloff_px)),
@@ -243,7 +247,7 @@ Opaque types do the most work in this next function. `Angle.Bearing` is a direct
 ## The sun in a frame, for a rider facing `heading`.
 sun_pos : {
 	heading : Angle.Bearing,
-	clock : F64,
+	clock : Clock,
 	cam_focal : F64,
 } -> Sky.SunPos
 sun_pos = |
@@ -271,12 +275,10 @@ sun_pos = |
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry.
 
 ```roc
-app
-	[main!]
-	{
-		game: "../../game.roc",
-		lib: "../../../lib/main.roc",
-	}
+app [main!] {
+	game: "../../game.roc",
+	lib: "../../../lib/main.roc",
+}
 
 import game.Angle
 
@@ -289,7 +291,7 @@ main! = |_args| {
 ```
 
 ```
-── ✗ type mismatch ─────────────────────────────────── turn_as_bearing.roc:13:24
+── ✗ type mismatch ─────────────────────────────────── turn_as_bearing.roc:11:24
 
 The first argument being passed to this function has the wrong type.
 
@@ -353,12 +355,12 @@ A crossing and an approach go in, and a moment comes out. The same crossing at t
 Approach : { gap : F64, speed : Speed }
 ```
 
-`Speed` wraps an `F64`, and its methods live in a block after the type. `Speed.(s)` in a parameter list is how the module opens one. Outside this module, nothing can, so a distance can't be passed as a speed.
+`Speed` wraps an `F64`, and its methods live in a block after the type. `Speed.(s)` in a parameter list is how the module opens one. Outside this module, nothing can, so a distance can't be passed as a speed. An animation's beats are an opaque type too, `Beats`: fractional, and tied to no clock, so a place in an animation can't be passed as a step of the ride.
 
 ```roc
-## How many metres this speed covers in `steps` steps.
-distance_in : Speed, F64 -> F64
-distance_in = |Speed.(s), steps| s * steps
+## How many metres this speed covers in `length`, at a beat a step.
+distance_in : Speed, Beats -> F64
+distance_in = |Speed.(s), length| s * length.to_f64()
 ```
 
 `Speed` also defines `is_lte`, which is what lets `speed <= standstill` work in the next snippet with an ordinary operator.
@@ -377,23 +379,23 @@ Stage : [
 
 ```roc
 ## Where the crossing has got to. A cat has to finish before the rider
-## reaches it however fast the rider comes, so it plays over steps.
+## reaches it however fast the rider comes, so it plays over beats.
 crossing_stage : Animation.Approach -> Animation.Stage
 crossing_stage = |approach|
-	Animation.over_steps({ steps: cross_frames, buffer: road_buffer }, approach)
+	Animation.over_beats({ length: crossing_beats, buffer: road_buffer }, approach)
 ```
 
 The rule lives in `Animation`. Its first argument is destructured in place, and so is the `Approach` after it, so the body reads in plain names.
 
 ```roc
-## An animation that takes `steps` steps at the rider's speed, and ends
-## with the rider `buffer` metres short, however fast the rider comes. It
-## is playing from the moment the rider is that many steps away, and a
-## rider standing still inside that stretch holds it at its start.
-over_steps : { steps : F64, buffer : F64 }, Animation.Approach -> Animation.Stage
-over_steps = |{ steps, buffer }, { gap, speed }| {
+## An animation `length` long, played at a beat a step at the rider's
+## speed, that ends with the rider `buffer` metres short, however fast the
+## rider comes. It is playing from the moment the rider is that far away,
+## and a rider standing still inside that stretch holds it at its start.
+over_beats : { length : Beats, buffer : F64 }, Animation.Approach -> Animation.Stage
+over_beats = |{ length, buffer }, { gap, speed }| {
 	gap_left = gap - buffer
-	stretch = speed.distance_in(steps)
+	stretch = speed.distance_in(length)
 	if gap_left <= 0.0 {
 		Past(0.0 - gap_left)
 	} else if gap_left > stretch {
@@ -406,7 +408,7 @@ over_steps = |{ steps, buffer }, { gap, speed }| {
 }
 ```
 
-The cat plays over steps rather than over a stretch of road because it has to finish before the rider reaches it, however fast the rider comes. A faster rider makes it start earlier. The bird uses `over_gap`, because a bird simply reacts to how close the rider is. Each critter picks the rule that suits it.
+The cat plays over beats rather than over a stretch of road because it has to finish before the rider reaches it, however fast the rider comes. A faster rider makes it start earlier. The bird uses `over_gap`, because a bird simply reacts to how close the rider is. Each critter picks the rule that suits it.
 
 ### What it looks like
 
@@ -417,40 +419,43 @@ A timeline is data, so the cat's whole performance reads in one place, like a sc
 looks: {
 	stretches: [
 		{
-			until: Through(enters_road_steps),
+			until: Through(enters_road_beats),
 			plays: Alternates({
 				up: Stride,
 				down: Rest,
-				count: strides_in(enters_road_steps),
-				over: enters_road_steps,
+				count: strides_in(enters_road_beats),
+				over: enters_road_beats,
 			}),
 		},
 		{ until: Through(escape_at), plays: Holds(Frozen) },
-		{ until: Through(escape_at + coil_ends_steps), plays: Holds(Coil) },
-		{ until: Through(escape_at + flight_ends_steps), plays: Holds(Flight) },
-		{ until: Through(escape_at + land_ends_steps), plays: Holds(Land) },
+		{ until: Through(escape_at.plus(coil_ends_beats)), plays: Holds(Coil) },
+		{ until: Through(escape_at.plus(flight_ends_beats)), plays: Holds(Flight) },
+		{ until: Through(escape_at.plus(land_ends_beats)), plays: Holds(Land) },
 	],
 	finally: Holds(Collapse),
 	# ...
 ```
 
-There are two tracks because a cat's looks and its movement change at different moments. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 steps into the escape, while the `path` track below cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
+There are two tracks because a cat's looks and its movement change at different moments. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 beats into the escape, while the `path` track below cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
 
 ```roc
 # ...
 path: {
 	stretches: [
 		{
-			until: Through(enters_road_steps),
+			until: Through(enters_road_beats),
 			plays: Line({
 				from: start,
 				to: middle,
 				ease: Steady,
 			}),
 		},
-		{ until: Before(escape_at + leaves_ground_steps), plays: StaysAt(middle) },
 		{
-			until: Before(escape_at + touches_down_steps),
+			until: Before(escape_at.plus(leaves_ground_beats)),
+			plays: StaysAt(middle),
+		},
+		{
+			until: Before(escape_at.plus(touches_down_beats)),
 			plays: Arc({
 				line: {
 					from: middle,
@@ -474,28 +479,28 @@ path: {
 Pose : [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
 ```
 
-A cut has to say which side of it its own step falls on, and two tags say that better than a boolean would. `crossing_timeline`'s comment says why it matters: those leap steps sum to a float just under the step they stand for.
+A cut has to say which side of it its own beat falls on, and two tags say that better than a boolean would. `crossing_timeline`'s comment says why it matters: those leap beats sum to a float just under the beat they stand for.
 
 ```roc
-## Where a stretch ends, in steps from the timeline's start: the cut's own
-## step belongs to the stretch that ends `Through` it, and to the next one
+## Where a stretch ends, in beats from the timeline's start: the cut's own
+## beat belongs to the stretch that ends `Through` it, and to the next one
 ## after a stretch that ends `Before` it.
-Cut : [Through(F64), Before(F64)]
+Cut : [Through(Beats), Before(Beats)]
 ```
 
 Finding the stretch that's playing shows one more Roc idea. `var $from` is a local variable that a `for` loop reassigns, inside a pure function. Roc allows that because nothing outside can see it: `playing_at` still has a `->` arrow, and the `$` marks what changes. An early `return` ends the loop.
 
 ```roc
-## What a track plays at `step`, of `steps` in all.
-playing_at : Animation.Track(kind), { step : F64, steps : F64 } -> StretchPlaying(kind)
-playing_at = |track, { step, steps }| {
-	var $from = 0.0
+## What a track plays at `beat`, of a timeline `length` long.
+playing_at : Animation.Track(kind), { beat : Beats, length : Beats } -> StretchPlaying(kind)
+playing_at = |track, { beat, length }| {
+	var $from = Beats.zero
 	for stretch in track.stretches {
 		to =
 			match stretch.until {
 				Through(cut) | Before(cut) => cut
 			}
-		if is_short_of(step, stretch.until) {
+		if is_short_of(beat, stretch.until) {
 			return {
 				plays: stretch.plays,
 				from: $from,
@@ -507,7 +512,7 @@ playing_at = |track, { step, steps }| {
 	{
 		plays: track.finally,
 		from: $from,
-		to: steps,
+		to: length,
 	}
 }
 ```
@@ -555,7 +560,7 @@ reaction_to = |segment, rider|
 
 A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone, so the call site reads as a sentence.
 
-This is the only loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. It settles, and it's also why `over_steps` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
+This is the only loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. It settles, and it's also why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
 Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdFlies` or `QuietRoad`. A cat and a bird in the same place can't be written down.
 
