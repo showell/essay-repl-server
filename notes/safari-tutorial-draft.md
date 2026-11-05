@@ -1,4 +1,4 @@
-*Second draft for Steve's review, 2026-11-05, now with module diagrams: the opening, the sky and the cat, in a neutral voice, with code expanded by the builder. The bracketed notes are where the live ride and the widgets go.*
+*Third draft for Steve's review, 2026-11-05: the opening, what never changes, the sky and the cat, with diagrams, shorter snippets and one real compiler error. The bracketed notes are where the live ride and the widgets go.*
 
 # Safari Ride: a tour of a real Roc program
 
@@ -52,7 +52,7 @@ digraph system {
 
 ## All that's stored
 
-A record alias is the plainest way to name a shape in Roc, and it's all this needs. `Safari` itself is a module written as a type: `Safari :: [].{ ... }` holds the definitions other modules can reach.
+A record alias is the plainest way to name a shape in Roc, and it's all this needs. `Safari` itself is a void module: `Safari :: [].{ ... }` is a type with no values, and its block holds the definitions other modules can reach.
 
 ```roc
 ## All that is kept from one step to the next: the rider and the truck, each
@@ -78,6 +78,74 @@ That gives three kinds of moving thing, and the tour is organized around them:
 Trees and cows are a fourth kind, the easiest of all: they never change.
 
 Purity makes some things free. Safari Ride can pause and step backward, because a step back only needs an older `Ride`. The cat follows along, since it was never anywhere but where the rider's position puts it, and the sun rises again.
+
+The game itself has no effectful functions at all. It has no `!` names, no `=>` arrows, no `?` and no `where`. Effects live in the platform, which is the last chapter.
+
+## What never changes
+
+Trees, cows, the pond and the road are built once and only read after that, so they're the place to start.
+
+```dot
+digraph world {
+  node [shape=box, fontname="Helvetica"];
+  World [style=bold];
+  World -> Trees;
+  World -> Herd;
+  World -> Pigs;
+  World -> Scenery;
+  World -> Cat;
+  World -> BirdFlight;
+  Herd -> Trees;
+  Herd -> Scenery;
+  Trees -> Scenery;
+  Pigs -> Scenery;
+}
+```
+
+`World` turns a route, a plain list of records, into segments of road. A plan shows how much tag unions can do with no declaration. `[WithBull, NoBull]` is written right in the field's type, and it says more than a boolean would at every place a segment is written down.
+
+```roc
+## One segment of the route as planned: its length and scenery, its turn
+## into the next (right is positive), what lives along it, and
+## the creature at its end.
+SegmentPlan : {
+	length : F64,
+	scheme : Scenery.Scheme,
+	turn : Angle.Turn,
+	crossing : [CatCrosses, BirdCrosses, QuietRoad],
+	pigs : Pigs.PigPresence,
+	bull : [WithBull, NoBull],
+	ending : [Continues, Terminates],
+	creature : Scenery.Creature,
+}
+```
+
+A `match` on a closed union has to cover it: leaving out a tag is a compile-time error.
+
+```roc
+## The conifer that sets off a scheme's green.
+accent : Scenery.Scheme -> Trees.Conifer
+accent = |scheme|
+	match scheme {
+		YellowGreen => Gold
+		RedGreen => Red
+		AllGreen => Green
+	}
+```
+
+The first opaque type in the tour is a small one. `SegmentIndex :: U32.{ ... }` is a `U32` that only its own block can open, and the block is also where its methods live. A segment's place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. Opaque types come back in every chapter.
+
+`crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle, and `??` says what to do with the missing value.
+
+```roc
+# ...
+## The segment of `world` at this index.
+segment_in : World.SegmentIndex, List(World.Segment) -> World.Segment
+segment_in = |index, world|
+	world.get(index.count_before())
+		?? crash "World.SegmentIndex.segment_in: the world has no segment there"
+		# ...
+```
 
 ## The sky
 
@@ -105,7 +173,7 @@ digraph sky {
 
 ### A function of the clock
 
-Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky.
+Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky. If a function has no `=>` and no `$` in sight, there's nothing behind it to think about.
 
 ```roc
 ## How high the sun stands above the horizon at `clock`, in pixels at
@@ -202,6 +270,43 @@ sun_pos = |
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry.
 
+```roc
+app
+	[main!]
+	{
+		game: "../../game.roc",
+		lib: "../../../lib/main.roc",
+	}
+
+import game.Angle
+
+main! = |_args| {
+	north = Angle.Bearing.radians(0.0)
+	quarter = Angle.Turn.radians(1.5)
+	echo!(north.turn_from(quarter).to_radians().to_str())
+	Ok({})
+}
+```
+
+```
+── ✗ type mismatch ─────────────────────────────────── turn_as_bearing.roc:13:24
+
+The first argument being passed to this function has the wrong type.
+
+echo!(north.turn_from(quarter).to_radians().to_str())
+                      ^^^^^^^
+
+This argument has the type:
+
+    Angle.Turn
+
+But turn_from needs the first argument to be:
+
+    Angle.Bearing
+
+── 1 error and 0 warnings ────────────────────────────────── turn_as_bearing.roc
+```
+
 ## The cat
 
 The cat is the best scene in Safari Ride. It walks out, freezes in the lane as the rider bears down on it, and leaps clear at the last moment.
@@ -258,7 +363,7 @@ distance_in = |Speed.(s), steps| s * steps
 
 `Speed` also defines `is_lte`, which is what lets `speed <= standstill` work in the next snippet with an ordinary operator.
 
-The stage is a tag union where two of the tags carry a payload. `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest somewhere no part of its animation reaches.
+The stage is a tag union where two of the tags carry a payload. `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest somewhere no part of its animation reaches. If `Waiting` were just 0, a perched bird would show the first frame of its flight.
 
 ```roc
 ## Where an animation has got to: not begun, playing and this far through,
@@ -308,71 +413,59 @@ The cat plays over steps rather than over a stretch of road because it has to fi
 A timeline is data, so the cat's whole performance reads in one place, like a score. Tags with payloads do almost everything here: `Through` and `Before` say where a stretch ends, `Holds` and `Alternates` say how the cat looks, and `Line`, `StaysAt` and `Arc` say where it goes. `Animation.Timeline.( ... )` wraps a record in the nominal type `Timeline`. Nominal (`:=`) is the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding.
 
 ```roc
-## The whole of a crossing: the cat walks out to the middle of the lane,
-## freezes there, and leaps clear to the far verge. Each leap pose's cut
-## sums to a float just under the step it stands for, so that float goes
-## with the pose before it, which is why those cuts are `Through`.
-crossing_timeline : Cat.Crossing -> Animation.Timeline(Cat.Pose)
-crossing_timeline = |cat| {
-	start = spot_across(cat.start_across)
-	middle = spot_across(cat.mid_across)
-	end = spot_across(cat.end_across)
-	Animation.Timeline.(
+# ...
+looks: {
+	stretches: [
 		{
-			steps: cross_frames,
-			before: { pose: Rest, spot: start },
-			after: { pose: Collapse, spot: end },
-			looks: {
-				stretches: [
-					{
-						until: Through(enters_road_steps),
-						plays: Alternates({
-							up: Stride,
-							down: Rest,
-							count: strides_in(enters_road_steps),
-							over: enters_road_steps,
-						}),
-					},
-					{ until: Through(escape_at), plays: Holds(Frozen) },
-					{ until: Through(escape_at + coil_ends_steps), plays: Holds(Coil) },
-					{ until: Through(escape_at + flight_ends_steps), plays: Holds(Flight) },
-					{ until: Through(escape_at + land_ends_steps), plays: Holds(Land) },
-				],
-				finally: Holds(Collapse),
-			},
-			path: {
-				stretches: [
-					{
-						until: Through(enters_road_steps),
-						plays: Line({
-							from: start,
-							to: middle,
-							ease: Steady,
-						}),
-					},
-					{ until: Before(escape_at + leaves_ground_steps), plays: StaysAt(middle) },
-					{
-						until: Before(escape_at + touches_down_steps),
-						plays: Arc({
-							line: {
-								from: middle,
-								to: end,
-								ease: ThreeQuarterPower,
-							},
-							rise: leap_height,
-						}),
-					},
-				],
-				finally: StaysAt(end),
-			},
+			until: Through(enters_road_steps),
+			plays: Alternates({
+				up: Stride,
+				down: Rest,
+				count: strides_in(enters_road_steps),
+				over: enters_road_steps,
+			}),
 		},
-	)
-}
+		{ until: Through(escape_at), plays: Holds(Frozen) },
+		{ until: Through(escape_at + coil_ends_steps), plays: Holds(Coil) },
+		{ until: Through(escape_at + flight_ends_steps), plays: Holds(Flight) },
+		{ until: Through(escape_at + land_ends_steps), plays: Holds(Land) },
+	],
+	finally: Holds(Collapse),
+	# ...
 ```
 
-There are two tracks because a cat's looks and its movement change at different moments. Its body moves just ahead of its path, so the `looks` track cuts at 0.8, 2.8 and 3.8 steps into the escape while the `path` track cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
+There are two tracks because a cat's looks and its movement change at different moments. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 steps into the escape, while the `path` track below cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
 
-`Timeline(pose)` takes a type parameter, which is how a cat and a bird share it. A cat's pose is a closed tag union, and nothing outside `Cat` needs to know its tags. Because it's closed, a `match` on it that misses a pose won't compile.
+```roc
+# ...
+path: {
+	stretches: [
+		{
+			until: Through(enters_road_steps),
+			plays: Line({
+				from: start,
+				to: middle,
+				ease: Steady,
+			}),
+		},
+		{ until: Before(escape_at + leaves_ground_steps), plays: StaysAt(middle) },
+		{
+			until: Before(escape_at + touches_down_steps),
+			plays: Arc({
+				line: {
+					from: middle,
+					to: end,
+					ease: ThreeQuarterPower,
+				},
+				rise: leap_height,
+			}),
+		},
+	],
+	finally: StaysAt(end),
+	# ...
+```
+
+`Timeline(pose)` takes a type parameter, which is how a cat and a bird share it. A cat's pose is a closed tag union, and nothing outside `Cat` needs to know its tags. Because it's closed, a `match` on it that misses a pose is a compile-time error.
 
 ```roc
 ## How the cat holds itself: walking, it is at rest or mid-stride; then
