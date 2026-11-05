@@ -12,7 +12,7 @@ Three facts decide it:
 
 1. **The frame doesn't fit.** A rocco `Scene` is meshes loaded from files plus a UI of upright rectangles and text. Safari's frame is a list of polygons with gradients, all leaning through a rotation. Nothing in the `Scene` carries that.
 2. **The pin mostly doesn't matter, as far as a type check can tell.** Rocco's Roc code checks under our 11-03 compiler with 0 errors. A small adapter holding safari's real `SafariApp` under rocco's real platform also checks with 0 errors. Linking and running are untested.
-3. **Rocco is native only, and web is out of scope on its roadmap.** Safari's page would stay on the wasm runner, so stops off the road would exist only in the native build.
+3. **Rocco is native only today, and web is deferred rather than refused.** `docs/ROADMAP.md` lists "Web builds until Odin and sokol have a shared web path" among things not planned, and `docs/RESEARCH-SCALING.md` says "Out of scope while the glue is 64-bit only and sokol and Odin have no shared web path." Each states a condition, so this is a question for the author. Until then, safari's page would stay on the wasm runner, so stops off the road would exist only in the native build.
 
 The trigger to look again would be rocco gaining 2D drawing, or runtime meshes, or game shaders. Its roadmap lists world-space sprites and game shaders as later work. If you'd like to play with the stop-off idea sooner, there is a cheap experiment below that needs no engine change, but it has to run on Windows.
 
