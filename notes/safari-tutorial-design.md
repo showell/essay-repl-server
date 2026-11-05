@@ -18,6 +18,16 @@
 - **The name is Safari Ride,** at least in the opening. The intro is dry: it has the important parts of a game's world, and no game mechanics yet. No kangaroo.
 - **Each code example is prefaced by the interesting Roc concepts in it.** Each chapter introduces a few, and repetition is important: opaque types come back throughout. Mainstream things aren't belaboured.
 
+- **Chapters:** the ride, things that never change, clock-driven, rider-driven, stepped, proving it, the platform.
+- **The official Roc tutorial is a tiebreaker, not a plan** (notes/roc-tutorial-survey.md). The kinds set the chapters. When a chapter could introduce one concept or another, it picks the one the official tutorial introduces earlier.
+- **Habits taken from it:** short snippets, cut where the detail isn't the point; show code that fails, with the real compiler message; say what the reader can stop thinking about; name the bug a feature prevents; state limits flatly.
+
+## Changes to the code it asks for
+
+- `Angle`'s types become opaque (`::`), as the draft says they are.
+- Safari's specs move to `expect`, run by `roc test` (Steve's decision), so the proving chapter shows the idiomatic way. This follows the units work, because both touch every module.
+- The emitter's leftover style goes before the tour quotes it: `if (x) a else b`, and whole bodies in parentheses.
+
 ## How it's made
 
 - **Snippets are real code.** Shale constructs the document from the source, rather than a gate checking hand-pasted copies.
