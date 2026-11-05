@@ -99,7 +99,7 @@ digraph sky {
 }
 ```
 
-`Sky` sits near the bottom of the system. It imports only the angle type and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
+`Sky` sits near the bottom of the system. Leaving out small maths helpers, it imports only the angle type and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
 
 *[The sky widget goes here: drag the clock and watch the sun set.]*
 
@@ -435,7 +435,7 @@ digraph reaction {
 }
 ```
 
-`Throttle` and `RideFocal` used to know about cats. Now they ask `CrossingReaction`, and it's the only part of the rider's code that does.
+`Throttle` and `RideFocal` know nothing of cats. They ask `CrossingReaction`, which is the only part of the rider's code that does.
 
 `..others` in the argument's type makes it an open record: this function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `Pose.RiderState`. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 
