@@ -26,6 +26,8 @@
 - **The tone is dry and restrained** (Steve, on the "tour of a tour" line: "Perfect tone."). Jokes are delivered flat, and buzzwords appear only where they're earned.
 - **Good words for it** (Steve): composable, charming.
 - **The JS layer comes early, at a high level** (Steve): a short section in the modules chapter, with details in `canvas_apps/ARCHITECTURE.md` and the platform chapter.
+- **The tour names patterns, in the loose sense** (Steve), to showcase what Roc is good at. A lot of Safari Ride is math and physics, which is very natural for a compiled functional language, and a chapter deep-dives on that layer once the tour reaches it. It calls out the few workhorse modules, since having so few shows how composable the code is, and code that reads almost like configuration or is declarative in an elegant way.
+- **Drafts run mostly forward, and a topic that segues to a later chapter or appendix can be drafted there and then.** A major second pass for fact-checking and late code changes comes later; early drafts are worth the rework.
 - **Metaphors are welcome** (Steve): the flipbook for the loop, sightings for what's in view.
 - **Diagrams have at most 10 boxes** (Steve), collapsing modules into dashed families like "the plans" where needed.
 - **Habits taken from it:** short snippets, cut where the detail isn't the point; show code that fails, with the real compiler message; say what the reader can stop thinking about; name the bug a feature prevents; state limits flatly.
