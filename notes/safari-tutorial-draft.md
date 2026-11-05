@@ -16,38 +16,29 @@ Here's the whole system, simplified. An arrow points from a module to one it imp
 digraph system {
   node [shape=box, fontname="Helvetica"];
   fontname="Helvetica";
-  web [label="web.roc"];
-  web -> SafariApp;
-  SafariApp -> SafariRide;
-  SafariRide -> Safari;
+  app [label="the app\nweb.roc, SafariApp, SafariRide", style=dashed];
   subgraph cluster_ride {
     label="the ride";
-    Rider; Truck; World; Cat; BirdFlight; Animation;
+    Rider; Truck; World;
+    critters [label="the critters\nCat, BirdFlight, Animation", style=dashed];
     scenery [label="the scenery\nTrees, Herd, Pigs", style=dashed];
   }
   subgraph cluster_view {
     label="the view";
-    Render; ItemDraw; Sky; Mountains;
-    plans [label="the plans\nCatPlan, BirdPlan, TreePlan, TruckPlan, ...", style=dashed];
-    drawing [label="the drawing\nCatDraw, RocBird, Tree, Tower, TruckDraw, ...", style=dashed];
+    sky [label="the sky\nSky, Mountains", style=dashed];
+    drawing [label="the drawing\nItemDraw, CatDraw, RocBird, Tree, ...", style=dashed];
+    plans [label="the plans\nRender, CatPlan, BirdPlan, TreePlan, ...", style=dashed];
   }
-  shapes [label="lib.Shapes"];
+  app -> Safari;
   Safari -> Rider;
   Safari -> Truck;
   Rider -> World;
   Truck -> World;
+  World -> critters;
   World -> scenery;
-  World -> Cat;
-  World -> BirdFlight;
-  Cat -> Animation;
-  BirdFlight -> Animation;
-  Safari -> ItemDraw;
-  Safari -> Mountains;
-  ItemDraw -> Render;
-  ItemDraw -> drawing;
-  Render -> plans;
-  Mountains -> Sky;
-  drawing -> shapes;
+  Safari -> sky;
+  Safari -> drawing;
+  drawing -> plans;
   plans -> World [style=dotted, constraint=false];
 }
 ```
