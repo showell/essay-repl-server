@@ -143,6 +143,28 @@ So I wouldn't build any of that now. The `Reaction` tag is the only generalizati
 - **Float rounding.** The cat's arithmetic has particular forms, such as `three_quarter_power`. `Ease` needs a tag for it, and it has to round the same way.
 - **The feedback loop already exists.** Braking lowers the speed, which changes the cat's progress, which changes the braking. It settles today, and this design doesn't alter it, but it's why `OverSteps` has to stay the cat's rule.
 
+## Revised after an adversarial review (2026-11-05)
+
+This section replaces anything above that it disagrees with. Steve agreed to it.
+
+**The timeline has two tracks.** `Phase` tied looks to moves, but both critters cut them at different points. The cat's `leap_pose` cuts at steps 0.8, 2.8 and 3.8 of the leap while `escaping` cuts its path at 1 and 3. The bird runs one smoothstep and one arc over the whole flight while `pose_at` cuts at 0.12 and 0.88, and its wing beat runs through every phase without restarting. So `Timeline(pose)` holds a pose track and a path track, each with its own cuts.
+
+**Lengths are in steps, not shares.** `moment` computes `progress * total`. A share form changes the cat's floats: 2,367 of 10,000 samples of the walk's `across` differed in bits between `(p*38)/10` and `p/(10/38)`. This also gives `cross_frames` one home. `state` uses `<=` at its cuts and `escaping` uses `<`, so each cut says which side it's on.
+
+**`progress` answers `[Waiting, Playing(F64), Past(F64)]`,** and the timeline holds a rest moment for before and for after. The bird is Perched only outside its flight, and no phase covers a single point.
+
+**Cycles are `Alternates({ up, down, count })`,** computing the sign of `sin((p * count) * two_pi)`, which is how both real cycles work. Cat `entering` gives Rest at 0 because `sin(0) > 0` is false, and an index-based cycle would change every waiting cat.
+
+**`Timeline(pose)` is nominal** (`:=`), so it can carry `.moment` and refuse an empty list.
+
+**No shared `AnimationPlan`.** `lift` means metres for the bird and still units for the cat, `Render` joins their keys at different places so tie order matters, and only the bird's stills have no flip. Share a small place-and-cull helper at most, and keep two lists.
+
+**No `Reaction` tags.** Instead one function answers what a segment's crossing does to the rider now, as a small record such as `{ throttle : [Free, Held], eye_pull : F64 }`, reading `Approach` directly. It's one place that matches on `crossing`, which is possible now that a segment has exactly one. `Throttle` and `RideFocal` stop knowing about cats. A bird answers nothing. `Throttle.pig_gate` and `Gaze` stay as they are: a pig's gaze has no timeline. Note that `cat_gate` holds the throttle at steady rather than braking, and that reactions apply only on the rider's own segment, while animations run along the chain ahead.
+
+**Keep `Spot`s relative to a home spot,** so a future herd can share one timeline.
+
+**A one-time bit-for-bit sweep proves the move.** Two proof frames can't prove the cuts. Before deleting the old code, compare old and new `state` for both critters over many inputs, covering progress 0 and 1, steps 10, 34, 34.8, 35, 36.8, 37, 37.8 and 38, at several speeds. Then delete the old code and the sweep.
+
 ## How I'd build it
 
 1. Hold cat frames in the gate.
