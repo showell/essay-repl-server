@@ -14,7 +14,9 @@
 - **It's quite long,** mixing prose, dependency diagrams and small snippets.
 - **Each chapter has a small live widget.** Roc runs on the page: drag the rider's gap to make the cat cross or the bird fly, or scrub the clock to watch the sun set.
 - **One late chapter is on proving it,** after the stepped things: how a pure game lets us hash exact frames and refactor 50 modules with confidence. It's strong evidence for the main point, and it stays out of the fun chapters.
-- **The voice is Steve's,** first person as the designer. A short section says plainly that Claude wrote most of the code under his direction, and how he judged it.
+- **The voice is neutral** (Steve: "I don't like ghost writing"): no I or we, and a short credits note at the end.
+- **The name is Safari Ride,** at least in the opening. The intro is dry: it has the important parts of a game's world, and no game mechanics yet. No kangaroo.
+- **Each code example is prefaced by the interesting Roc concepts in it.** Each chapter introduces a few, and repetition is important: opaque types come back throughout. Mainstream things aren't belaboured.
 
 ## How it's made
 
