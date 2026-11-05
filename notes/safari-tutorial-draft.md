@@ -45,6 +45,26 @@ digraph system {
 
 There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the plans find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `Safari` sits over both, holding the ride and stepping it, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
 
+### What's a plan?
+
+Most things in the view come in pairs, and the names say which half is which: `CatPlan` and `CatDraw`, `TreePlan` and `Tree`, `TowerPlan` and `Tower`, `TruckPlan` and `TruckDraw`.
+
+A plan answers one question each frame: which of these can the rider see right now, and how should each one look? `CatPlan` goes through the segments ahead, asks `Cat` for its moment, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
+
+```roc
+## A cat to draw: where it stands in the rider's view, its height, its
+## pose, and how high its leap has raised it.
+CatItem : {
+	right : F64,
+	forward : F64,
+	height : F64,
+	pose : Cat.Pose,
+	lift : F64,
+}
+```
+
+`Render` gathers every plan's items, a depth sort puts them in order, and `ItemDraw` hands each one to the module that paints it. Because a plan's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a plan decides, and drawing paints.
+
 ## All that's stored
 
 A record alias is the plainest way to name a shape in Roc, and it's all this needs. `Safari` itself is a void module: `Safari :: [].{ ... }` is a type with no values, and its block holds the definitions other modules can reach.
