@@ -10,6 +10,32 @@ Safari Ride has the important parts of a game's world: terrain, physics, a camer
 
 This tour reads the program from the bottom up. It's about seventy modules of Roc, which is enough to show how Roc holds up in a program with a lot going on. It assumes you can already read Roc. Each chapter points out a few Roc ideas as they come up, and the useful ones come up more than once.
 
+## The problem
+
+The problem is simple to state. Design a world once. Then, each time the clock ticks, move what moves, find everything near enough to see, and draw it against the backdrop.
+
+```dot
+digraph problem {
+  node [shape=box, fontname="Helvetica"];
+  world [label="design the world\n(once)"];
+  tick [label="the clock ticks"];
+  move [label="move the rider and the truck"];
+  look [label="look around:\nwhat's near enough to see?"];
+  draw [label="draw it against the backdrop"];
+  world -> tick;
+  tick -> move;
+  move -> look;
+  look -> draw;
+  draw -> tick [label="  next step"];
+}
+```
+
+It works like a flipbook, the little stack of drawings that seems to move when you riffle the pages with your thumb. No page knows about the page before it, and each one is drawn whole. Safari Ride draws a page about thirty times a second.
+
+The middle box is the heart of it. On a real safari, a guide scans the land and calls out what's there: a cat by the third tree, a bird on the far side. Each of those is a sighting, true for that moment and gone the next. Safari Ride takes its sightings the same way, fresh on every page.
+
+## The modules
+
 Here's the whole system, simplified. An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
 
 ```dot
