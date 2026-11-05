@@ -23,6 +23,7 @@
 - **Almost every example shows a function and then a call to it** (Steve). When the calling code is itself a tiny function, walk up the stack and show its caller too.
 - **The framing is zoom in, then zoom out** (Steve): the big picture, then the details, then back out at the end to tie everything together. It isn't strictly bottom-up, in how it's built or how it opens.
 - **An entire module appears early:** `Clock.roc`, 30 lines, right after the modules section, then `Pond.roc`, 52 lines, in "What never changes".
+- **Good words for it** (Steve): composable, charming.
 - **Metaphors are welcome** (Steve): the flipbook for the loop, sightings for what's in view.
 - **Diagrams have at most 10 boxes** (Steve), collapsing modules into dashed families like "the plans" where needed.
 - **Habits taken from it:** short snippets, cut where the detail isn't the point; show code that fails, with the real compiler message; say what the reader can stop thinking about; name the bug a feature prevents; state limits flatly.
