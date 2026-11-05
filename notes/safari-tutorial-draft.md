@@ -118,13 +118,13 @@ Opaque types do the most work in this next function. `Angle.Bearing` is a direct
 sun_pos : {
 	heading : Angle.Bearing,
 	clock : F64,
-	view : Camera.View,
+	cam_focal : F64,
 } -> Sky.SunPos
 sun_pos = |
 	{
 		heading,
 		clock,
-		view,
+		cam_focal,
 	},
 | {
 	turn_from_view = sun_bearing.turn_from(heading)
@@ -135,7 +135,7 @@ sun_pos = |
 			sun_place({
 				turn_from_view,
 				clock,
-				view,
+				cam_focal,
 			}),
 		)
 	}
@@ -380,20 +380,24 @@ The last step is finding the cat in the rider's view. `CatPlan` asks for the mom
 ## The cat crossing the segment at `position` in the chain, as far through its
 ## crossing as the rider's approach has brought it, if it is in view: one
 ## item, or none.
-cat_in_view : CatPlan.View,
+cat_in_view : Frame.Viewpoint,
 {
 	position : Frame.ChainPosition,
 	crossing : Cat.Crossing,
+	speed : Speed,
 } -> List(CatPlan.CatItem)
-cat_in_view = |view, { position, crossing }| {
-	gap = CatPlan.gap_to_segment(view, position)
-	moment = Cat.moment_at(crossing, { gap: (gap + crossing.along), speed: view.speed })
+cat_in_view = |
+	view,
+	{
+		position,
+		crossing,
+		speed,
+	},
+| {
+	gap = Frame.gap_to_segment(view.road, position)
+	moment = Cat.moment_at(crossing, { gap: (gap + crossing.along), speed })
 	seen = Frame.rider_point_ahead(
-		{
-			world: view.world,
-			chain: view.chain,
-			pose: view.pose,
-		},
+		view.road,
 		{
 			position: position,
 			along: (crossing.along + moment.spot.along),
