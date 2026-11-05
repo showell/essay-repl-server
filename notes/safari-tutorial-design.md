@@ -20,6 +20,7 @@
 
 - **Chapters:** the ride, things that never change, clock-driven, rider-driven, stepped, proving it, the platform.
 - **The official Roc tutorial is a tiebreaker, not a plan** (notes/roc-tutorial-survey.md). The kinds set the chapters. When a chapter could introduce one concept or another, it picks the one the official tutorial introduces earlier.
+- **Almost every example shows a function and then a call to it** (Steve). When the calling code is itself a tiny function, walk up the stack and show its caller too.
 - **Metaphors are welcome** (Steve): the flipbook for the loop, sightings for what's in view.
 - **Diagrams have at most 10 boxes** (Steve), collapsing modules into dashed families like "the plans" where needed.
 - **Habits taken from it:** short snippets, cut where the detail isn't the point; show code that fails, with the real compiler message; say what the reader can stop thinking about; name the bug a feature prevents; state limits flatly.
