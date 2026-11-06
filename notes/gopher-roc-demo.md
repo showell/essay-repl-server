@@ -2,6 +2,7 @@
 
 The pure core rendering the sample transcript below. What follows is the demo's page, produced by `zig build demo -- gopher-roc demo/gopher-roc.transcript`, and then every line of its code.
 
+```raw
 <div class=gopher-roc-demo>
 
 <style>
@@ -41,6 +42,7 @@ time,.ref{color:#777;font-size:.85em}
 </div></article>
 
 </div>
+```
 
 ## The code
 
