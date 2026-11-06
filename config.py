@@ -47,6 +47,13 @@ REPL_KEEP_RUNS = 20          # newest kept; older run dirs are deleted
 REPL_OUTPUT_CAP = 2 * 1024 * 1024  # RLIMIT_FSIZE on the generated program
 REPL_CPU_QUOTA = '100%'      # one core; the box is shared with the ladder
 
+# What turns a note's markdown into HTML: 'python' (Python-Markdown) or 'roc'
+# (renderer/render_note.roc, which ops/build_renderer.sh builds). Choosing 'roc'
+# means every page needs that program; one it can't run fails, with no fallback.
+MARKDOWN_RENDERER = 'python'
+ROC_RENDERER_BIN = REPO / 'bin' / 'render_note'
+ROC_RENDER_TIMEOUT = 10  # seconds per page
+
 BLURBS = {
     'essays': 'Published essays on working with Claude. Log in to leave '
               'paragraph-anchored notes.',

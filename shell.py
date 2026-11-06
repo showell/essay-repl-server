@@ -12,13 +12,14 @@ nav { margin-bottom: 16px; font-size: 13px; display: flex; gap: 14px; }
 nav a { color: #000080; }
 nav .who { margin-left: auto; color: #666; display: flex; gap: 10px; }
 code { background: #f4f0e4; padding: 1px 4px; border-radius: 3px; font-size: 90%; }
-pre { background: #f4f0e4; padding: 12px 14px; border-radius: 4px; overflow-x: auto; }
+pre { background: #f4f0e4; padding: 12px 14px; border-radius: 4px; overflow-x: auto; tab-size: 4; }
 pre code { background: none; padding: 0; }
 .sub { color: #666; margin-bottom: 28px; font-size: 14px; }
 .muted { color: #888; }
 .error { color: #a00; margin: 12px 0; }
 table { border-collapse: collapse; margin: 16px 0; }
-th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #eee; }
+th, td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+th:not([align]), td:not([align]) { text-align: left; }
 th { background: #f4f0e4; }
 ul.essays { list-style: none; padding: 0; margin: 0; }
 ul.essays li { padding: 10px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; gap: 20px; align-items: baseline; }

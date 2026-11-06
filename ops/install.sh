@@ -3,6 +3,8 @@
 # Rerun after editing the unit file. Idempotent.
 set -euo pipefail
 cd "$(dirname "$0")"
+# Built first, so a failed build leaves the service as it was.
+./build_renderer.sh
 mkdir -p ~/.config/systemd/user
 ln -sf "$PWD/essay-repl-server.service" ~/.config/systemd/user/
 systemctl --user daemon-reload

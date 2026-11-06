@@ -18,6 +18,19 @@ Dependencies are system packages: `python3-flask python3-markdown
 python3-waitress` (apt). No CLI flags anywhere; configuration is
 `config.py`.
 
+    python3 -m unittest tests.test_render  # needs ops/build_renderer.sh run first
+
+## The renderer
+
+`config.MARKDOWN_RENDERER` picks what turns a note into HTML: `python` is
+Python-Markdown, and `roc` is `bin/render_note`, built from
+`renderer/render_note.roc` by `ops/build_renderer.sh` (`ops/install.sh` runs it)
+against `../roc-markdown`, with the Roc that `roc-version` pins. With `roc`
+chosen, a program that is missing or fails is a failed page, never a Python one.
+
+Under `roc`, a ```` ```raw ```` fence in a note is HTML, passed through as
+written. Other HTML in a note shows as text.
+
 ## Routes
 
 - `/essays` — published essays (served from the claude-collab clone's

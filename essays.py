@@ -1,10 +1,11 @@
 """Essay listing and rendering: the two faces of a collection. Markdown
-via python-markdown with GFM-ish extensions; YAML front-matter stripped
-before rendering, first '# ' heading is the display title."""
+goes through the renderer config.MARKDOWN_RENDERER names; YAML front-matter
+is stripped before rendering, first '# ' heading is the display title."""
 import datetime
 import html
 import pathlib
 import re
+import subprocess
 
 import markdown
 
@@ -17,6 +18,8 @@ IMAGE_SUFFIXES = {'.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico'}
 # the graphviz renderer an AST-diagram essay embeds, say. Served verbatim,
 # like an image; the server hosts our own files, not a user's.
 ASSET_SUFFIXES = {'.js', '.css', '.wasm', '.woff', '.woff2'}
+# Linux stops one argument at 128 KiB, and a character is at most four bytes.
+ROC_PART_CHARS = 32000
 
 
 def collection_dir(collection):
@@ -35,9 +38,30 @@ def is_asset(name):
     return pathlib.PurePath(name).suffix.lower() in ASSET_SUFFIXES
 
 
+def render_with_python(source):
+    return markdown.markdown(source, extensions=MD_EXTENSIONS)
+
+
+def render_with_roc(source):
+    if not config.ROC_RENDERER_BIN.is_file():
+        raise RuntimeError(f'{config.ROC_RENDERER_BIN} is missing: '
+                           'run ops/build_renderer.sh')
+    parts = [source[at:at + ROC_PART_CHARS]
+             for at in range(0, len(source), ROC_PART_CHARS)]
+    done = subprocess.run([config.ROC_RENDERER_BIN, *parts],
+                          capture_output=True,
+                          timeout=config.ROC_RENDER_TIMEOUT)
+    if done.returncode != 0:
+        raise RuntimeError(f'{config.ROC_RENDERER_BIN} exited '
+                           f'{done.returncode}: {done.stderr.decode(errors="replace")}')
+    return done.stdout.decode()
+
+
+RENDERERS = {'python': render_with_python, 'roc': render_with_roc}
+
+
 def render_markdown(text):
-    return markdown.markdown(FRONT_MATTER_RE.sub('', text),
-                             extensions=MD_EXTENSIONS)
+    return RENDERERS[config.MARKDOWN_RENDERER](FRONT_MATTER_RE.sub('', text))
 
 
 def extract_title(path):
