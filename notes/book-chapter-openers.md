@@ -1,15 +1,17 @@
 # Safari Ride: something to look at, at the top of every chapter
 
-*Plan, 2026-11-06. The book is at http://143.244.172.148:9210/tutorial/ and its source is `canvas_apps/safari/tutorial/tutorial.md`. Nothing in the book has changed yet: it waits for the renames merge. Numbers quoted here come from the book, from `gates/proof.expected` and from the widgets. The five new widgets are built, and can be dragged on the dev channel at the links below.*
+*Plan, 2026-11-06. The book is at http://143.244.172.148:9210/tutorial/ and its source is `canvas_apps/safari/tutorial/tutorial.md`. Nothing in the book has changed yet: it waits for the renames merge. Numbers quoted here come from the book, from `gates/proof.expected` and from the widgets. The four new widgets are built, and can be tried on the dev channel at the links below.*
 
 ## The rule
+
+A slider is only for where motion or change is the experience, as it is for the sunset, the cat and the bird. Elsewhere the thing to look at can be a static demonstration of the code at work, a small click-through or a table.
 
 Each chapter opens with a very brief intro, then the thing to look at, then the text that follows from it. Each section gets a widget, a diagram or both near its top. Where a widget would be forced, the section opens on something real the code did: a compiler message, a table of real values, a worked number, a before and after, or a frame from a proof depth.
 
 Three changes do most of the work:
 
 - **Four existing widgets move up.** Sky, cat, beacon and bird all sit below a dependency diagram today. They go first, and the diagram follows.
-- **Five new widgets fill the chapters that have none:** route, bends, step, rehearsal and proof. The widgets table below says what each shows.
+- **Four new widgets fill chapters that have none:** route, bends, step and rehearsal. The widgets table below says what each shows.
 - **"New in this chapter" moves below the opener.** It sits between the intro and the first picture in every chapter, which is exactly where the reader should be looking at something. It becomes the first thing after the widget.
 
 ## Chapters and sections
@@ -54,7 +56,7 @@ The last column says what kind of opener it is: **W** a widget, **D** a diagram,
 | The bike | The modules diagram | A worked number: one degree of lean through `yaw_per_tilt` to a turn in a step, and how far that moves the bike | N, then D |
 | The throttle | The modules diagram | The gate chain as a left-to-right diagram, then a table of one real step showing the acceleration after each gate | D, T |
 | The truck | The modules diagram | The step widget's truck line covers this. A table of its schedule at five points on the route, to show the 500 metres closing to 100 | T |
-| **The math layer** | Prose and a five-point list | The rehearsal widget, which is the chapter's best idea. The reader then knows what all the geometry is for. Its real step, 370, runs 3,593 steps of physics in twelve tries | W |
+| **The math layer** | Prose and a five-point list | The rehearsal click-through, which is the chapter's best idea. The reader then knows what all the geometry is for. Its real step, 370, runs 3,593 steps of physics in twelve tries | W |
 | The workhorses | Prose, then a table | Rename to "The most imported modules", with the word workhorse gone. The table goes first | T |
 | Numbers with units | The table of types | A compiler message first: a `Speed` added to a `Distance`, as a new `fails/` program, then the table | C |
 | One record per space | Prose, then types | A compiler message: a `RoadPoint` where a `RiderPoint` is wanted. The draft already asks for this program. Then one real point written in all four spaces | C, T |
@@ -62,9 +64,9 @@ The last column says what kind of opener it is: **W** a widget, **D** a diagram,
 | Cutting a polygon | Prose | A before and after: one real ground patch with a corner behind the camera, its corners before and after `clip_near`, and the frame it would have spoiled | B, T |
 | Rehearsal | The widget note | A worked number: 12 arcs plus 1, about 44 simulated steps each, so about 570 per real step and four million a ride. Then a diagram of the call down from `Rider.decide` to `Bike.simulate_rider_step`. The widget has already been seen at the top of the chapter | N, D |
 | Arithmetic all the way down | Prose | A table of real values: `Num_.exp_real` at three inputs, term by term, against the true value | T |
-| **Proving it** | Prose, then a diagram, then the widget note | The proof widget: ride to a step, ride there again, and compare the shapes. Then the diagram | W, then D |
+| **Proving it** | Prose, then a diagram, then the widget note | A table of real values, generated from `gates/proof.expected`: each step the gate looks at, what its frame shows, its hash, and its shapes. Two rides of the same step are the same frame, and the table is what says so. Then the diagram | T |
 | A fixture is a value | Prose | The fixture itself, as two lines of code, before the explanation | code |
-| The frame hash | Prose, then the table | The table first, with a hash column from `proof.expected` and a contact sheet of the nine frames | T, F |
+| The frame hash | Prose, then the table | The chapter's table has already been seen, so this opens on a contact sheet of the nine frames, or on one before and after: a planted change and the hash that moved | F, B |
 | Two more proofs | Prose | The gate's own output, quoted: `differ 0 of 576000`, with the triangles and shapes at each step. And StepBack's before and after: a step back from 3,000 landing on 2,047, then on 2,999 | T, B |
 | `expect` | Prose | The real summary line of a `roc test` run: how many passed, and how long it took | N |
 | Crashes that help | Prose | A real crash, quoted: `Fraction.of(1.5)` and the sentence it stops with | C |
@@ -87,17 +89,22 @@ The last column says what kind of opener it is: **W** a widget, **D** a diagram,
 
 Sizes are release wasm, against 57 KB for sky and 284 KB for cat. Each link is the widget's own page.
 
-| Widget | The one idea | What you drag | Chapters it frames | Size |
+| Widget | The one idea | What you do | Chapters it frames | Size |
 |---|---|---|---|---|
 | [route](http://143.244.172.148:9210/route_widget/) | The world is a list of records | Along the route, on a map of the nineteen segments | The world; Round the bends; Finding a tree | 76 KB |
 | [bends](http://143.244.172.148:9210/bends_widget/) | A bend is two straight lines and where their outer edges meet | The turn, from 80 degrees left to 80 right, skipping the straight road, which has no apex. The ruler marks the route's own bends. The rail swaps sides as you cross the middle | The road | 156 KB |
 | [step](http://143.244.172.148:9210/step_widget/) | Three fields are the whole state, and forward has to be played while back is a lookup | The clock, over the first 2,000 steps. Clicking right plays the ride up to the pointer, 8 steps a frame, and it lags. Clicking left reads the list, 200 a frame | The ride instant; The stepped things; The truck | 114 KB |
-| [rehearsal](http://143.244.172.148:9210/rehearsal_widget/) | The rider chooses a lean by trying futures | Through the twelve tries of step 370's search, each coasting arc drawn on the road, closing in on the line the rider is aiming for | The math layer; Rehearsal | 154 KB |
-| [proof](http://143.244.172.148:9210/proof_widget/) | A frame is a value, so two rides can be compared exactly | To one of four steps the gate holds a hash for. It rides there, starts over, rides there again, and compares the shapes with `==`. Its counts match the gate's: 2,287 at step 100 and 2,712 at step 1,570 | Proving it | 760 KB |
+| [rehearsal](http://143.244.172.148:9210/rehearsal_widget/) | The rider chooses a lean by trying futures | Nothing: click through the twelve tries of step 370's search, each coasting arc drawn on the road, closing in on the line the rider is aiming for | The math layer; Rehearsal | 154 KB |
 
-`proof` is the one big widget, because comparing frames takes all of the ride's drawing code. It's about the size of the ride itself. A smaller one could compare the three stored fields instead, but it would stop showing frames, and the frames are what the chapter is about.
+Which kind each one is, by the rule at the top:
 
-The widgets hold themselves to the game. `rehearsal`'s rider is a record written out, and an `expect` rides to step 370 and compares it field by field. Its list of tries has to end on the lean `LeanSearch.best_tilt_correction` gives, and each path where `Arc.project_arc` says it ends.
+- **`route`, slider.** Steve's favourite, and it stays as it is.
+- **`bends`, slider.** The change is the point: the apex slides out as a bend sharpens, and the rail jumps to the other side as the turn crosses the middle.
+- **`step`, slider.** The difference between dragging right and dragging left is the whole lesson, and it has to be felt. It's the one widget that lags on purpose.
+- **`rehearsal`, click-through.** The twelve tries are separate things, not a motion. On a ruler they were 14 stops, so the picture moved in 42-pixel jumps under the pointer, which is what felt sluggish. The time was never the problem: a frame took 1.7 ms, because the tries are worked out when the widget is built. A click or the right arrow now shows the next try, the left arrow goes back, and a row of marks counts them off.
+- **`proof`, dropped.** A table does this better, and it saves 760 KB.
+
+`rehearsal`'s rider is a record written out, and an `expect` rides to step 370 and compares it field by field. Its list of tries has to end on the lean `LeanSearch.best_tilt_correction` gives, and each path where `Arc.project_arc` says it ends.
 
 Considered and left out, for now:
 
@@ -108,7 +115,10 @@ Considered and left out, for now:
 ## What this needs from outside the widgets
 
 - **`game.roc`** has to list the modules a widget imports. `rehearsal` needs `Acceleration`, `Arc`, `Bike` and `LeanSearch`, and `bends` needs `Joint`, none of which are there. That's a five-line change, held until the renames merge, so those two widgets were built against a scratch copy with the names added, and don't compile on the branch yet.
+- **The proof table** is an include in `tutorial/build.shale` that reads `gates/proof.expected`, so the table can't go stale. Its hash and shape columns come from there, and what each frame shows comes from the book.
 - **The frames from proof depths** need the book to show an image: a small fence or include in `BookFence.roc`, and a step in the build that renders the frames. The `F` rows above and the contact sheet depend on it. Without that, those rows fall back to their tables.
 - **New `fails/` programs:** `clock + 7`, a `Speed` added to a `Distance`, and a `RoadPoint` as a `RiderPoint`.
 - **Quoted output** (a real crash, a builder failure, a `roc test` line) should go through the builder the way `{{fails ...}}` does, or it will go stale. Hand-pasted, it's the first thing in the book that can be wrong without anything failing.
 - **A check that the book names every game module**, in `tutorial/build.shale`: the build stops on a module the book never names. The exceptions are named: `web`, `main`, `game`, `*Stills` and `*App`. It's self-tested on both sides, one name found and one missing. Five modules are unnamed today: `Joint`, `GroundSighting`, `RailSighting`, `SafariCritter` and `CanvasRoll`. The new chapter and sections above cover them, and they should land together with the check.
+- **The 61 fixes** in notes/book-forward-references.md go in with the openers, since both rewrite how each chapter starts: a chapter's opening stands alone by restating its premise.
+- **The throttle's "gates" get a new name**, in `Throttle.roc`, wherever else it's used and in the prose, so they don't collide with the book's merge gate.
