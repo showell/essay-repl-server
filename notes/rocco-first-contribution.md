@@ -33,7 +33,7 @@ After that, all of these were measured:
 - If the menu reopens by mouse, the focus reappears on item 11.
 - The same thing happens if a mouse press outside closes the menu while an item has the focus.
 
-Nothing in his tests covers it. The Bridge check sends Tab, Shift-Tab and Enter, but it picks menu items only by mouse, so the focus is never on an item. His own text in that example says "Tab moves the focus. Enter clicks." His notes record no decision about where the focus goes after a close, so I'm not overriding a choice.
+Nothing in his tests covers it. The Bridge check sends Tab, Shift-Tab and Enter, but it picks menu items only by mouse, so the focus is never on an item. His own text in that example says "Tab moves the focus. Enter clicks." The notes in his repo record no decision about where the focus goes after a close, so I'm not overriding a choice.
 
 This corrects the earlier essay in two places. It suggested setting `Focus.on(filter_id)` on `Selected`. That misses the press-outside case, and it would also move the focus on a mouse pick. It also said tests couldn't be run without running his code. In fact `roc test` needs no engine and takes about a second, so the check was cheap. The rest of its item 6 was right.
 
@@ -177,7 +177,7 @@ I also broke the fix three ways, one at a time, and put it back afterward:
 |---|---|
 | `step` doesn't call `keep_focus` | Keyboard pick, press outside |
 | `keep_focus` ignores whether the menu is closed | Open menu keeps the focus, keyboard pick |
-| A closed menu always takes the focus | Other focus stays, mouse pick, and his own Shift-Tab test |
+| A closed menu always takes the focus | Other focus stays, keyboard pick, mouse pick, and his own Shift-Tab test |
 
 Other checks:
 
@@ -242,6 +242,6 @@ If Enter and Tab land in one step on an item, the Tab is lost, because the butto
 
 ## What I didn't look at
 
-I read `packages/ui` closely, most of `linalg` and `mesh`, and pong. I didn't hunt through the entity game, `glow`, `mask`, `cards`, the tutorial or the Odin engine, beyond a few checks. A better bug could be there.
+I read `packages/ui` closely, parts of `linalg` and `mesh`, and most of pong. I didn't hunt through the entity game, `glow`, `mask`, `cards`, the tutorial or the Odin engine, beyond a few checks. A better bug could be there.
 
 My clone is shallow, so I can't say when `main` landed or how old the focus bug is. Before posting, run `git ls-remote` again, because he ships daily.
