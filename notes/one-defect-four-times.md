@@ -184,7 +184,7 @@ written down as a standing item nobody has built yet.
 Three things resolved after this was written, and one of them changes the
 argument rather than just updating it.
 
-**The second compiler PR is sent** — [#101][], with the measurement it was
+**The second compiler PR is sent** — [#101](https://github.com/damiant3/Cobblestone/pull/101), with the measurement it was
 waiting on: clean 326 to 330 on the corpus, zero regressions, `hamt-test` and
 `kvstore-test` both matching, and `list-test` staying blocked exactly as
 finding 59's "PARTIAL" said it would.
@@ -197,7 +197,7 @@ a clean program. The register's claim that this program goes "markers to match"
 was measured on the old base and no longer holds; the difference between those
 two trees is Update 53.
 
-**Finding 68 is filed** as [#102][], with the mechanism traced to the line: the
+**Finding 68 is filed** as [#102](https://github.com/damiant3/Cobblestone/issues/102), with the mechanism traced to the line: the
 call-site name reference carries the lambda's own function type nested inside
 its own return position, because `build-curried-fun-ty` prepended three
 parameters to a type that already had them. Compiler, not plug — the seed
@@ -218,6 +218,3 @@ That last one is the small lesson of the evening: **a finding whose header does
 not carry its disposition will be picked up again.** Three entries were in that
 state today, and each one cost a few minutes of re-deriving something already
 decided.
-
-[#101]: https://github.com/damiant3/Cobblestone/pull/101
-[#102]: https://github.com/damiant3/Cobblestone/issues/102

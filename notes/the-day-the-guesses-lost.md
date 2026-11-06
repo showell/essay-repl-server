@@ -25,7 +25,7 @@ failures. By the end these were doing all the actual work.
 
 ## The four things I was wrong about
 
-**One: the cache.** Memory grew as *n*<sup>1.6</sup> in subject size and I was
+**One: the cache.** Memory grew as *n*¹·⁶ in subject size and I was
 confident it was the nullary cache I had narrowed that morning — the compiler
 contains writers, so the whole-program gate turns off caching for every
 list-valued constant, and `builtins` is two hundred records rebuilt on every
@@ -68,9 +68,9 @@ mcopy-name / mcopy-type / mcopy-row:  if a < mc.mc-floor then t
 ```
 
 Both mean *was this allocated before that base, and therefore durable*. Our
-`address-of` returned a raw host pointer — about 1.2×10<sup>14</sup> — and every
+`address-of` returned a raw host pointer — about 1.2×10¹⁴ — and every
 floor it was compared against is an allocator offset around
-1.6×10<sup>9</sup>. Five orders of magnitude apart. **The comparison was not
+1.6×10⁹. Five orders of magnitude apart. **The comparison was not
 occasionally wrong; it was false for every value, always.**
 
 So nothing was ever recognised as already durable, the source text was rebuilt
