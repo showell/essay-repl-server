@@ -94,14 +94,14 @@ Sizes are release wasm, against 57 KB for sky and 284 KB for cat. Each link is t
 | [route](http://143.244.172.148:9210/route_widget/) | The world is a list of records | Along the route, on a map of the nineteen segments | The world; Round the bends; Finding a tree | 76 KB |
 | [bends](http://143.244.172.148:9210/bends_widget/) | A bend is two straight lines and where their outer edges meet | The turn, from 80 degrees left to 80 right, skipping the straight road, which has no apex. The ruler marks the route's own bends. The rail swaps sides as you cross the middle | The road | 156 KB |
 | [step](http://143.244.172.148:9210/step_widget/) | Three fields are the whole state, and forward has to be played while back is a lookup | The clock, over the first 2,000 steps. Clicking right plays the ride up to the pointer, 8 steps a frame, and it lags. Clicking left reads the list, 200 a frame | The ride instant; The stepped things; The truck | 114 KB |
-| [rehearsal](http://143.244.172.148:9210/rehearsal_widget/) | The rider chooses a lean by trying futures | Nothing: click through the twelve tries of step 370's search, each coasting arc drawn on the road, closing in on the line the rider is aiming for | The math layer; Rehearsal | 154 KB |
+| [rehearsal](http://143.244.172.148:9210/rehearsal_widget/) | The rider chooses a lean by trying futures | Nothing: click a mark to see any of the twelve tries of step 370's search, each coasting arc drawn on the road, closing in on the line the rider is aiming for | The math layer; Rehearsal | 154 KB |
 
 Which kind each one is, by the rule at the top:
 
 - **`route`, slider.** Steve's favourite, and it stays as it is.
 - **`bends`, slider.** The change is the point: the apex slides out as a bend sharpens, and the rail jumps to the other side as the turn crosses the middle.
 - **`step`, slider.** The difference between dragging right and dragging left is the whole lesson, and it has to be felt. It's the one widget that lags on purpose.
-- **`rehearsal`, click-through.** The twelve tries are separate things, not a motion. On a ruler they were 14 stops, so the picture moved in 42-pixel jumps under the pointer, which is what felt sluggish. The time was never the problem: a frame took 1.7 ms, because the tries are worked out when the widget is built. A click or the right arrow now shows the next try, the left arrow goes back, and a row of marks counts them off.
+- **`rehearsal`, click-through.** The twelve tries are separate things, not a motion. On a ruler they were 14 stops, so the picture moved in 42-pixel jumps under the pointer, which is what felt sluggish. The time was never the problem: a frame took 1.7 ms, because the tries are worked out when the widget is built. There's now a row of marks, one for each try and a square for the choice: a click on a mark goes straight to it, a click anywhere else does nothing, and the arrow keys go one at a time.
 - **`proof`, dropped.** A table does this better, and it saves 760 KB.
 
 `rehearsal`'s rider is a record written out, and an `expect` rides to step 370 and compares it field by field. Its list of tries has to end on the lean `LeanSearch.best_tilt_correction` gives, and each path where `Arc.project_arc` says it ends.
