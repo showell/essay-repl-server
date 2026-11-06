@@ -10,15 +10,16 @@ The renames are still landing on their branch, and nearly everything below waits
 
 ## First thing tomorrow
 
-1. **Land the renames.** One agent is nearly through the safari renames, with more than 50 commits so far. I'll merge them and run the gate.
-2. **Embed the new widgets.** `route`, `bends`, `step` and `rehearsal` go into their chapters.
-3. **Move the existing widgets up.** A chapter with a widget opens with a very brief intro, then the widget, which frames the rest of the chapter.
+**Code comes first, as you said, so we can close the book on it:** land the renames, then `Pixels`, the bare-F64 lint, the throttle's gates rename, and the 12 `if`-under-a-lambda sites. The tutorial work below follows.
+
+1. **Embed the new widgets.** `route`, `bends`, `step` and `rehearsal` go into their chapters.
+2. **Move the existing widgets up.** A chapter with a widget opens with a very brief intro, then the widget, which frames the rest of the chapter.
 
 ## Then, in the same pass
 
 The chapter agent has all of this queued, and most of it comes from your comments tonight.
 
-- **An opening chapter** with a little prose before the ride, since the demo takes a moment to load. The book's title stays.
+- **An opening chapter, "Introduction",** with a little prose before the ride, since the demo takes a moment to load. The book's title stays.
 - **A new chapter, "The road":** `Joint`, `GroundSighting` and `RailSighting`, opening with the `bends` widget.
 - **Two short sections:** `SafariCritter` in "The world", and `CanvasRoll` in "The stepped things", quoted whole.
 - **A builder check** that every module is named in the book.
@@ -27,10 +28,6 @@ The chapter agent has all of this queued, and most of it comes from your comment
 - **"The workhorses" section** stops using that word. The modules become "core utility modules", if they need a name at all.
 - **A table for the proof,** generated from `gates/proof.expected`, where the slider was.
 - **A widget or diagram near the top of each section,** following [the openers plan](book-chapter-openers.md), which also suggests other framing for chapters with no widget.
-
-## One decision for you
-
-The opening chapter's name: the agent suggests **"Setting off"**, and "Introduction" is the plain alternative. Given that you asked for concrete nouns over cute titles, I lean toward "Introduction", but it's yours.
 
 ## After that
 
@@ -44,4 +41,4 @@ The opening chapter's name: the agent suggests **"Setting off"**, and "Introduct
 
 - **Odin:** parked until tomorrow, as you said. The next step there is your call.
 - **The Rocco rerun and PR** come in a couple of days: `foreign.shale` is ready, and the `Dropdown` fix is written up in [the first contribution note](rocco-first-contribution.md).
-- **Safari's remaining code stages,** after the renames: `Pixels`, the bare-F64 lint, the 12 `if`-under-a-lambda sites, and Shale's time budgets and shared parse.
+- **Shale's time budgets and shared parse** come after the code work.
