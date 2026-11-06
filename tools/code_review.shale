@@ -6,7 +6,7 @@
 -- `dry=1` prints each chunk's lines, size, names and edges instead, and
 -- writes nothing.
 --
---   cd ~/showell_repos/gopher-roc && shale ../essay-repl-server/tools/code_review.shale file=app/Transcript.roc
+--   cd ~/showell_repos/roc-chat && shale ../essay-repl-server/tools/code_review.shale file=app/Transcript.roc
 --   cd ~/showell_repos/shale && shale ../essay-repl-server/tools/code_review.shale file=cookbook/roc/parsed.shale dry=1
 --
 -- Chunks end at the file's own boundaries, in two passes. The first finds
