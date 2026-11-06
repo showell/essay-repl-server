@@ -1,44 +1,32 @@
 # The tutorial: what's next
 
-*2026-11-06, written at the end of the night, for tomorrow morning.*
+*2026-11-06, updated at the end of the day's long session.*
 
 ## Where it stands
 
-The book is live on the dev channel at http://143.244.172.148:9210/tutorial/, with 18 pages, a table of contents, 19 diagrams and 5 widgets. It names 67 of the 72 modules. Eight widgets are built and running on the dev channel, and four of those are new to the book.
+The book is live on the dev channel at http://143.244.172.148:9210/tutorial/, with 25 pages, 29 diagrams and 11 embedded widgets. Safari's code list is closed, so the book is the main work now.
 
-The renames are still landing on their branch, and nearly everything below waits on them, because it edits the same text.
+The chapter order is: Introduction, The problem, One whole module, The modules, The ride instant, The world, The road, The sky, Birds and cats: drawing the stills, The cat, The bird, The elephant, Rhinos, giraffes and the other corner critters, A pig, Herds: cows and pigs, The beacons and the headlights, The stepped things, The math layer, Proving it, The platform, Zooming back out, then the appendices and credits.
 
-## First thing tomorrow
+The voice follows the Roc tutorial to a degree: "we" and "you", a rare "hooray", short plain sentences, Hemingway over Faulkner. Prose work stays with me, with no delegating.
 
-**Code comes first, as you said, so we can close the book on it:** land the renames, then `Pixels`, the bare-F64 lint, the throttle's gates rename, and the 12 `if`-under-a-lambda sites. The tutorial work below follows.
+## Next
 
-1. **Embed the new widgets.** `route`, `bends`, `step` and `rehearsal` go into their chapters.
-2. **Move the existing widgets up.** A chapter with a widget opens with a very brief intro, then the widget, which frames the rest of the chapter.
+1. **A stretch of chapters about the rider.** The stepped things is now the longest chapter, at 56 KB, and it should become several chapters. The rider is always deciding whether to accelerate, brake or hold steady, and that's the likely spine. It takes in the bike, the throttle's limits, "What a cat does to the rider", and a new section on the rider's gaze, which the pig chapter foreshadows through `Distracting` (`Gaze.roc`). The truck may want its own chapter too.
+2. **The later chapters** to the same proofreading standard, once the split is done. The math layer is the next longest.
+3. **"Zooming back out"** still ends in a placeholder.
+4. **The fact-check pass,** after the dust settles: the `[check:]` notes, "about eighty modules", "the JS keeps the clock", the cat's timing depending on speed as well as position, and the hand-pasted tables of real values, which nothing keeps from drifting.
+5. **Publishing to roc.lynrummy.com.** `site/publish.sh` needs a small change to know about the book.
 
-## Then, in the same pass
+## Small open calls for Steve
 
-The chapter agent has all of this queued, and most of it comes from your comments tonight.
-
-- **An opening chapter, "Introduction",** with a little prose before the ride, since the demo takes a moment to load. The book's title stays.
-- **A new chapter, "The road":** `Joint`, `GroundSighting` and `RailSighting`, opening with the `bends` widget.
-- **Two short sections:** `SafariCritter` in "The world", and `CanvasRoll` in "The stepped things", quoted whole.
-- **A builder check** that every module is named in the book.
-- **The 61 reader fixes** from [the forward-references list](book-forward-references.md), including chapter openings that restate their premise. The list also defines "the gate", which most of "Proving it" depends on.
-- **The throttle's "gates" get a new name,** so they stop colliding with the merge gate.
-- **"The workhorses" section** stops using that word. The modules become "core utility modules", if they need a name at all.
-- **A table for the proof,** generated from `gates/proof.expected`, where the slider was.
-- **A widget or diagram near the top of each section,** following [the openers plan](book-chapter-openers.md), which also suggests other framing for chapters with no widget.
-
-## After that
-
-- **"Zooming back out":** the closing chapter is still a stub.
-- **The later chapters** to the shape of Sky and Cat, adding 🌳 and 🍃 as each is reworked.
-- **The fact-check pass,** which clears the 9 remaining `[check:]` notes.
-- **Publishing to roc.lynrummy.com.** `site/publish.sh` needs a small change to know about the book.
-- **Trying the stylesheet on the essay surface,** after comparing roc-markdown with Python-Markdown across the notes.
+- Is the sun's `scale` as a `Fraction` right? The lens only widens, so it can't pass 1, and it crashes loudly if that ever changes.
+- `lift.mapped(...)` would let the bird's arc read as a formula, but it's an escape hatch on `Distance`. I'd leave it.
+- The comment "note" button shows on every paragraph. Should it show only on hover?
+- `gates/FrameBench.roc` compiles only at publish. It checks clean in 0.16 s, so it could join the merge gate.
 
 ## Parked or waiting
 
-- **Odin:** parked until tomorrow, as you said. The next step there is your call.
-- **The Rocco rerun and PR** come in a couple of days: `foreign.shale` is ready, and the `Dropdown` fix is written up in [the first contribution note](rocco-first-contribution.md).
-- **Shale's time budgets and shared parse** come after the code work.
+- **Odin:** the next step is Steve's call.
+- **The Rocco rerun and PR** come around 2026-11-08: `foreign.shale` is ready, and the `Dropdown` fix is written up in [the first contribution note](rocco-first-contribution.md).
+- **The flaky widget check** in `book_check` hasn't come back since the two-frame wait went in. Its failure message now says whether the canvas felt the press.
