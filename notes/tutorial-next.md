@@ -4,16 +4,23 @@
 
 ## Where it stands
 
-The book is live on the dev channel at http://143.244.172.148:9210/tutorial/, with 25 pages, 29 diagrams and 11 embedded widgets. Safari's code list is closed, so the book is the main work now.
+The book is live on the dev channel at http://143.244.172.148:9210/tutorial/, with 36 pages, 29 diagrams and 14 embedded widgets. Safari's code list is closed, so the book is the main work now.
 
-The chapter order is: Introduction, The problem, One whole module, The modules, The ride instant, The world, The road, The sky, Birds and cats: drawing the stills, The cat, The bird, The elephant, Rhinos, giraffes and the other corner critters, A pig, Herds: cows and pigs, The beacons and the headlights, The stepped things, The math layer, Proving it, The platform, Zooming back out, then the appendices and credits.
+The order follows [the chapter order note](book-chapter-order.md), with two rules: progressive difficulty, tempered by categories. The first half holds one frame still, and it's fine to tease concepts there that get explained later.
+
+- **The big picture:** Introduction, The problem, One whole module, The modules.
+- **One frame:** The world; nature (Trees, Grass, The sky, Mountains); man-made things (The road, Rails, Radio towers); billboard critters (Stills, The elephant, the corner critters, A pig, Herds).
+- **Motion:** The ride instant, The beacons, The cat, The bird, The stepped things, The rider, The bike, The throttle, What a cat does to the rider, The rider's gaze, The truck.
+- **Under the hood:** The math layer, Proving it, The platform, Zooming back out, then the appendices and credits.
+
+The sky comes before Mountains because `Mountains` imports `Sky`.
 
 The voice follows the Roc tutorial to a degree: "we" and "you", a rare "hooray", short plain sentences, Hemingway over Faulkner. Prose work stays with me, with no delegating.
 
 ## Next
 
-1. **A stretch of chapters about the rider.** The stepped things is now the longest chapter, at 56 KB, and it should become several chapters. The rider is always deciding whether to accelerate, brake or hold steady, and that's the likely spine. It takes in the bike, the throttle's limits, "What a cat does to the rider", and a new section on the rider's gaze, which the pig chapter foreshadows through `Distracting` (`Gaze.roc`). The truck may want its own chapter too.
-2. **The later chapters** to the same proofreading standard, once the split is done. The math layer is the next longest.
+1. **Settle the new order.** Fix what a cold read finds, and show the parts on the contents page, which is still one flat list.
+2. **The later chapters** to the same proofreading standard. The cat and the math layer are the longest, at 42 KB each.
 3. **"Zooming back out"** still ends in a placeholder.
 4. **The fact-check pass,** after the dust settles: the `[check:]` notes, "about eighty modules", "the JS keeps the clock", the cat's timing depending on speed as well as position, and the hand-pasted tables of real values, which nothing keeps from drifting.
 5. **Publishing to roc.lynrummy.com.** `site/publish.sh` needs a small change to know about the book.
