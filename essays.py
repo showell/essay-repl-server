@@ -114,7 +114,7 @@ DOT_SCRIPTS = ('<script src="/assets/viz-standalone.js"></script>'
 
 def view_body(collection, name, text):
     rendered = render_markdown(text)
-    body = (f'<p><a href="/{html.escape(collection)}">&larr; Back</a></p>'
+    body = (f'<p class="back"><a href="/{html.escape(collection)}">&larr; Back</a></p>'
             f'<div class="wiki-md">{rendered}</div>')
     if 'class="language-dot"' in rendered:
         body += DOT_SCRIPTS

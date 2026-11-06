@@ -91,16 +91,16 @@ WIDGET_JS = r"""
   var style = document.createElement('style');
   style.textContent = [
     '.para-wrap { position: relative; }',
-    '.para-add-btn { margin-left: 8px; cursor: pointer; font-size: 13px; border: 1px solid #000080; background: white; color: #000080; padding: 1px 6px; border-radius: 3px; vertical-align: middle; }',
-    '.para-add-btn:hover { background: #000080; color: white; }',
-    '.para-comments { margin: 6px 0 14px 24px; padding-left: 10px; border-left: 3px solid #d6d0be; }',
-    '.para-comment { background: #faf7ef; border: 1px solid #e8e1cc; border-radius: 3px; padding: 10px 12px; margin: 6px 0; font-size: 14px; font-family: sans-serif; color: #333; line-height: 1.55; }',
-    '.para-comment .meta { color: #888; font-size: 11px; margin-bottom: 2px; }',
-    '.para-compose { margin: 6px 0 14px 24px; padding: 8px; background: #fff3a8; border: 1px solid #e6d670; border-radius: 4px; font-family: sans-serif; }',
-    '.para-compose textarea { width: 100%; min-height: 120px; padding: 8px 10px; font-size: 14px; font-family: sans-serif; line-height: 1.5; box-sizing: border-box; border: 1px solid #c9bfa7; border-radius: 3px; }',
-    '.para-compose button { margin-top: 6px; margin-right: 6px; padding: 4px 12px; font-size: 13px; border: none; border-radius: 3px; cursor: pointer; }',
-    '.para-compose .save { background: #000080; color: white; }',
-    '.para-compose .cancel { background: #eee; color: #333; }',
+    '.para-add-btn { margin-left: 0.4em; padding: 0 0.3em; cursor: pointer; border: none; background: none; color: var(--quiet); font: 0.62rem/1 var(--plain); }',
+    '.para-add-btn:hover { color: var(--accent); }',
+    '.para-comments { max-width: calc(var(--measure) - 1.3rem); margin: 0.3rem 0 0.8rem 1.3rem; padding-left: 0.6rem; border-left: 3px solid var(--rule); }',
+    '.para-comment { background: var(--shade); border: 1px solid var(--rule); border-radius: 3px; padding: 0.55rem 0.7rem; margin: 0.3rem 0; font: 0.78rem/1.5 var(--plain); }',
+    '.para-comment .meta { color: var(--quiet); font-size: 0.62rem; margin-bottom: 2px; }',
+    '.para-compose { max-width: calc(var(--measure) - 1.3rem); margin: 0.3rem 0 0.8rem 1.3rem; padding: 0.45rem; background: var(--draft); border: 1px solid var(--draft-rule); border-radius: 4px; font-family: var(--plain); }',
+    '.para-compose textarea { width: 100%; min-height: 120px; padding: 8px 10px; font: 0.78rem/1.5 var(--plain); background: var(--paper); color: var(--ink); border: 1px solid var(--quiet); border-radius: 3px; }',
+    '.para-compose button { margin-top: 6px; margin-right: 6px; padding: 4px 12px; font-size: 0.72rem; border: none; border-radius: 3px; cursor: pointer; }',
+    '.para-compose .save { background: var(--accent); color: var(--paper); }',
+    '.para-compose .cancel { background: var(--shade); color: var(--ink); }',
   ].join('\n');
   document.head.appendChild(style);
 

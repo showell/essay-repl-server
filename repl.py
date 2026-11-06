@@ -406,9 +406,9 @@ def _pane(key, label, text, size, rawhref):
 REPL_JS = r"""
 <style>
 .pane pre { max-height: 420px; overflow: auto; }
-.pane .meta { font-size: 12px; color: #666; margin-bottom: 4px; }
-.prov { font-size: 12px; color: #666; }
-#go { padding: 6px 16px; font-size: 14px; border: none; border-radius: 3px; background: #000080; color: white; cursor: pointer; }
+.pane .meta { font-size: 12px; color: var(--quiet); margin-bottom: 4px; }
+.prov { font-size: 12px; color: var(--quiet); }
+#go { padding: 6px 16px; font-size: 14px; border: none; border-radius: 3px; background: var(--accent); color: var(--paper); cursor: pointer; }
 </style>
 <script>
 (function(){
