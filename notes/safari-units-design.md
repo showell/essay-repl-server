@@ -12,6 +12,7 @@
 | A length in metres | `Distance` | |
 | A position on the road | `Along`, `Across` | Mirrors `Bearing` and `Turn`: two `Along`s subtract to a `Distance`, and neither can be passed as the other |
 | A length on screen | `Pixels` | Stops at the edge of `lib.Shapes` |
+| A length in a cat's height | `CatHeights` | A cat's lift and its head; added 2026-11-06, because a bird's lift is in metres and a cat's isn't |
 | Real time | none in safari | `dt` is removed from safari's path, so real time can't reach it |
 
 A simulated step is always whole. The fractional "steps" of the old timelines were never moments in time: they were positions along an animation, which is why they become `Beats`.
