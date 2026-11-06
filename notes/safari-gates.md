@@ -20,10 +20,11 @@ digraph gates {
   check [label="check.shale\n39 apps, fmt\n11 s"];
   lints [label="lints\n10 recipes\n57 s"];
   expects [label="expects\n4 roots\n21 s"];
+  widgets [label="widgets\n8 apps\n13 s"];
   tutorial [label="tutorial\n3 s"];
   proof [label="proof tools\n70 s"];
   page [label="build.sh\npage + hash\n29 s"];
-  check -> lints -> expects -> tutorial -> proof -> page;
+  check -> lints -> expects -> widgets -> tutorial -> proof -> page;
 }
 ```
 
@@ -31,10 +32,12 @@ digraph gates {
 |---|---|---|---|
 | `roc check web.roc` | 1.1 s warm, 4.9 s cold | Type errors, warnings | Never: it's the cheapest thing we have |
 | `roc test`, one root | 2.2 s warm, 5.5 s cold | Logic; 1,471 of the 1,476 expects | Never |
+| `roc fmt --check` | 0.1 s | Formatting in safari, `lib`, `widget_kit` and the widgets | Never |
 | Lints, changed files | about 1.3 s for one file | Style and naming in what you touched | Never, once it exists |
 | One frame: build and render | 2 s + 2 to 3 s | An arithmetic slip that no expect covers | When no drawn or moving code changed |
 | `part=tutorial` | 3.3 s | A quoted function renamed or gone | Unless you renamed something |
 | `part=expects`, 4 roots | 21 s (6 s warm) | The rest of the expects, plus the count | Yes, until merge |
+| `part=widgets`, 8 widgets | 13 s warm, 16 s cold; 2 s of it is `roc check`, the rest `roc test` running the game's expects again from each widget | A change to a game type a widget uses; the 189 expects in the widgets and `widget_kit` | Yes, until merge |
 | All lints | 57 s | Cross-file findings, and the held counts | Yes, until merge |
 | Proof: `StepBack` | 3 s + 7 s | Stepping backward through the ride | Yes, unless `Tour` changed |
 | Proof: `ShapesFrame`, 9 depths | 5.5 s + 28 s | The two ways of painting a frame agreeing | Yes, unless the painter changed |
@@ -76,7 +79,7 @@ Each step took about as long as a clean run, 1.8 seconds for the test and 2 for 
 |---|---|---|---|
 | **Fast** | Every edit | check, one test root, lints on changed files; stops at the first failure | About 5 s |
 | **Fast with a frame** | Anything drawn or moving | Fast, plus a build and one frame against its held hash | About 10 s |
-| **Merge** | Before a push | Everything in safari, warm caches, all failures reported | About 2 min now, about 1 min with the work below (estimate) |
+| **Merge** | Before a push | Everything in safari and the widgets, warm caches, all failures reported | About 2 min now, about 1 min with the work below (estimate) |
 | **Publish** | Before the site moves | Merge, plus `check.shale`, cold caches, release wasm, every widget page | About 3 to 4 min (estimate) |
 
 Agents would run only the fast tiers, and one merge gate would run at a time. On 2 cores that matters more than any other change here.
