@@ -90,7 +90,16 @@ Repros on roc-apps branch `roc-findings` (worktree lanes/roc-findings, keep it):
 - A director for the hand of god: "almost more like a screenwriter has scripted the whole route. I haven't seen any code that begs this question yet." No action until code asks for it.
 - The segments stay in code; the film metaphor isn't a commitment.
 - "Opaque by default, nominal needs a reason" (in roc-style.md now). **Queued: a survey lane** listing every `:=` record type in Safari with its reason or none, for my decisions (e.g. Scene, which widgets and the gate build from records).
-- Debugging widgets: no strong opinion. Useful for debugging and eye feel (a bird flapping between two trees and nothing else), but rarely worth saving in the repo; widgets are quick to build. So a throwaway widget for a lane's question is fine, and it doesn't need to land.
+- Widgets are real clients; a maker they use is fine (in roc-style.md).
+- An opaque `Focal` type: no. "Leave the crash as the guard."
+- Debugging widgets: no strong opinion.
+
+## Queued from the scenery review (2026-11-07)
+
+- **scenery-types lane, after scenery-tests lands** (both edit CME): BigPigHerd reshaped so the standout is always in the front row (`columns_before_standout`, `columns_after_standout`, `rows_behind_front`), CowHerd `rows` becomes `cows_per_column` with a crash at World's one constructor; `RailQuad` corners named `{ low_start, low_end, high_end, high_start }` (list built only at `Camera.clipped_polygon`; bends_widget:187 reads it), Pond's far shore `{ first, middle, last }`, the pond outline type named; `Conifer.small_height = 4.896 m` "chosen by eye", `TreeShapes.tree_parts` private; "critter" becomes billboard (`sight_billboard`, `bend_billboards`, Billboard's doc); inline `RailSighting.rails_at` (its reason is the parked book; log it).
+- **For Steve:** one size rule for everything in Pipeline (critters through the camera's lens, Billboard's own 1 px cut gone). This MOVES pixels: far critters come and go at different distances when the view is wide.
+- Pig/PigHerd stays split (an earlier deliberate decision). `Geom.herd_front_distance` stays in Geom for now.
+- **For Steve:** `FarHeight`, a unit for heights at infinity (asked 2026-11-07). Useful for debugging and eye feel (a bird flapping between two trees and nothing else), but rarely worth saving in the repo; widgets are quick to build. So a throwaway widget for a lane's question is fine, and it doesn't need to land.
 
 ## Next free slot
 
