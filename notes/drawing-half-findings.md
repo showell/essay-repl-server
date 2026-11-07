@@ -95,3 +95,16 @@ Without it: name that rule and test it, or stop the chain by distance.
 ## Clean, leave alone
 
 Picture and Rendered; Pixels; the Bearing/Turn/Lean split and Along/Across; `Geom.Placed` and `Sighted` living in Geom; `Tower.sink_radius`; `Screen.width_px` and `SunFills.glow_radius`; `Sun.visible_turn_limit` 1.4, which deserves a comment.
+
+## Decisions
+
+*2026-11-07. Steve handed these to me as straightforward.*
+
+- **2:** yes, an opaque type for a point past the near plane, which only the near-plane cut can build, and `Camera.project` takes it. After the predicate lands.
+- **5:** yes, a skyline height is an elevation, a unit of its own, and Camera owns the one projection Sun and Mountains share.
+- **10:** yes, two color types, one without alpha and one with, so a plain color can't go to a gradient as invisible.
+- **11:** state the sun's drop as the step it sets at, and `dusk_at_set` as a plain named fraction, keeping today's values so no pixel moves.
+- **12:** yes, `Continues({ next, exit_turn, commit_along })`, so the last segment holds no bend.
+- **14:** keep 7, but as a named rule with a test that the shortest run of that many segments reaches past where towers fade.
+- **Tower.sink_radius:** say what it is for, how far a tower stays in view, and derive the radius from that distance if no pixel moves; otherwise keep the number and name the rule in its doc.
+- **"chain":** retire it in the vocabulary lint, after renaming its other senses: Throttle's chain of limits and the hull's walks.
