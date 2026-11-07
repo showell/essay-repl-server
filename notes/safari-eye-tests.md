@@ -4,6 +4,14 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 8db6237b
+
+This deploy has the stills lane in it. The still data was rewritten by script: thousands of negative numbers and every color, plus the gradients and fills reshaped. Every held frame kept its hash. Glance at the critters:
+
+1. **The bull,** whose 40 gradients became 18 linear and 22 radial tags. Its shading should look as it did.
+2. **The cat, the birds, the cows, pigs, elephants, giraffes, zebras, rhinos and ducks.** Their colors are now written in hex, and they should all look as before.
+3. **Shapes that might have flipped.** A sign lost in the negatives rewrite would mirror or smear part of a critter. Look for anything inside out.
+
 ## 2026-11-07, master fd32d1a5
 
 This deploy has the first World lane in it: World split into the route plan and `Segment`, a `Route` type, and placed things carrying a whole road point. That reaches nearly every module, but every held frame kept its hash. Watch the whole ride once at normal speed:
