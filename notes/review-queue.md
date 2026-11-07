@@ -9,7 +9,7 @@ This is the orchestrator's state for the type review, so it survives a compactio
 | scene-shapes | roc-apps `scene-shapes` | lane 6 below |
 | truck | roc-apps `truck` | strip_corners, the setting like the tower's (Steve, notes/truck-setting.md), TruckFace gone, private helpers and `Screen.distance`, the beam's middle, restated tests |
 | units | roc-apps `units` | lane 3 below |
-| top review | (read-only) | Tour, RideInstant and Scene |
+| trees | roc-apps `trees` | the cones measured from the foot (lift was always 0), `height_down_crown` written once, restated tests out, private helpers, `crown_top_y` the short way (it may move a last bit), Detail's tree thresholds into TreeShapes with `trunk_finish_of` and Detail folded into Pipeline, Conifer's doc. Rejected: renaming Green back to BigGreen, which Steve decided. |
 | tuning | roc-apps `tuning` | lane 4 below: the "chosen by eye" docs, `small_height` from the tree's parts, one Scatter function, the perched critter drawn over its tree (its own commit; pixels move). `brake_decay` stays with the rider. |
 
 ## Next lanes, in order (each waits on the lanes it shares modules with)
@@ -26,7 +26,8 @@ This is the orchestrator's state for the type review, so it survives a compactio
    - `GuardRail.quad_rendering`, with `quad_shape` and `quad_depth` private.
    - The module doc says "orders", and the context doc names no list of kinds.
    - `nearer_tree_count.to_u16_wrap()`, which wraps silently.
-7. **Small leftovers:**
+7. **The frame's top** (after SceneShapes, and before World if Steve answers notes/frame-record.md in time): the frame-building moves out of RideInstant into its own module; the truck's lead is worked out once; private helpers; Tour's comment; the restated expects; `billboards_in_view`.
+8. **Small leftovers:**
    - RailSighting's `runup_points` and `run_out_points` are public for nobody.
    - `VehicleLimits.base_speed` should be `starting_speed` (Truck and CrossModuleExpects use it).
    - `Gaze.look_swivel_rate` and `Motorcycle.turn_per_lean` are public but used only in their own files.
