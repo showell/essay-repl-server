@@ -115,6 +115,10 @@ Clear, for one or two lanes, split by file:
 
 For Steve (with the read-heavy nominal question): 7. the invariants Segment, Tour and RideInstant can break as nominal records today (a segment's crossing by its trees, trees planted for its length, only the last segment `RouteEnds`, broken already by the bends widget's 60 m cut and `{ ..seg, ending }` in tests; Tour's route and its one-step history, broken by FrameWidgetApp:90). 8. `RoadAhead.SegmentInView` stores `index` and `segment`, which can disagree; opaque means churn across about 30 readers. 2b. A Route of `{ bending_segments, last_segment }` would remove the remaining crashes.
 
+## Test-only imports, now visible (2026-11-07)
+
+The type walk prints `# Imported for tests only: ...` per module (shale master, walk-test-imports). Across Safari's 94 files, 22 modules have at least one: PosedBird (9), Billboard and PosedCat (5+), and Pipeline (Across, Along, Angle, Route, World, from its post fixtures). Each is a finding under Steve's rule. **Queued:** lanes by family, after the deploy (overlaps the route review's item 1). Pending, roc-apps docs/type-review.md: add the "Imported for tests only" bullet after the "Imported but not in any printed type" bullet (wait until publish.shale is off master). walk_uses.shale (1059 lines) and type_walk.shale (1025) are past ~1000 lines; a split is for later.
+
 ## Small follow-ups (2026-11-07)
 
 - FrameWidgetApp builds the camera itself, copying `frame_view_at`: one home (a FrameView camera maker).
