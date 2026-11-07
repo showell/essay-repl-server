@@ -4,6 +4,10 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 81d5d8d5: the sky, the frame, the truck, the scene
+
+The ride is unchanged (every held value matched). It has three lanes in it: the sky and frame cleanup (dusk is now "darkness", and the backdrop is named in the frame), the truck's tease named in code (`Truck.tease_position`), and the animals posed with no camera (EncounterPoses). The one visible change is in the sky widget, whose readouts say `Sky.darkness_at`, `Sun.height_at` and `Sky.horizon_warmth_at`. The new bird on the third segment comes in the next deploy.
+
 ## 2026-11-07, master 3031f1b6: the rider's code, tidied
 
 **Steve: passes.**
