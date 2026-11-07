@@ -59,3 +59,9 @@ The cost is that every kind's setting now carries a spot, and most ask only for 
 C. It's the one where the wrong state has nowhere to live. It also makes `Setting` say what the book will want to say: a kind is drawn from where it stands, the camera, and whatever else it needs. One call to `spot.foot()` per kind is a small price. I'd make it a single lane holding Pipeline, Picture, RoadAhead and SceneShapes, after the billboard lane merges, since that lane touches the sightings too.
 
 If C feels like too much of the pipeline for one finding, B is the safe half-step. It moves nothing that C would have to undo.
+
+## The same smell, one floor up: `lift`
+
+The cat review found the height version of this. `PosedCat := { pose, lift }` and `PosedBird := { pose, lift }` hold how high off the ground the critter is, which is part of where it is. `Animation.placed_instant` splits the animation's `Spot { along, across, lift }`: along and across go to `Geom.Placed`, and lift goes into the kind, because `Placed` and `Sighted` sit flat on the ground. The rule "a kind holds how it looks, never where it is" bends there.
+
+C opens the clean fix. The spot already carries the foot, so it can carry a height above the ground too. Then `PosedCat` and `PosedBird` are pure pose, and `placed_instant` stops splitting a spot. The other choice is to call a leap's height part of the pose and say so in the doc. That costs nothing, but the smell stays, under a name.
