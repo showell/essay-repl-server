@@ -343,3 +343,20 @@ Possible upstream finding: Roc accepts `import sub.Foo` in an app with no packag
 - Every held frame is named by the event it shows, not a step number, so physics changes can't silently empty it. The proof tools take named events, worked out from the ride (for example "the ride starts", "the first step the cat is frozen", "the cat at its leap's height", "the truck braking far", "the truck braking near", "the first step after the restart").
 - Each held frame says what it's there to catch. A frame with nothing to look for goes ("we can be somewhat ruthless with tests"). One mid-ride frame is fine if it's named.
 - Smells guide, structure: how to judge a split. No rule, only judgment. Mostly it's whether the code changes for its own reasons (the sky's colors are tuned apart from the sun); a distinct noun helps too. Tiny modules tend to grow.
+
+## Boundary hints (the recipe is merged: `cookbook:roc/boundary_hints.shale`)
+
+On Safari it gave 143 "fed to one" hints (19 drawn with in the using function) and 44 borrowed nouns. The top ten, decided:
+
+1. The grass rectangle (`Screen.below_grass_top_rect`) and `Screen.grass_top_y` move into Grass, which owns its line and its rectangle. That's the Backdrop smell again, one level down.
+2. `Grass.grass_color` used by Mountains for the rolling land: kept. Grass's doc says the land shares the color on purpose.
+3. `StillShapes.screen_points` moves into the stills widget, its only user; StillShapes itself never uses it.
+4. `Tower.corner_offset` for the beacon widget: already in the sightings lane (a footprint on level ground, `corner_offset` private).
+5. `Sun.height_when_set` used by Sky: the sun's fall belongs to Sun, as `Sun.set_progress(height)`, and Sky maps it to dusk.
+6. Merged into 1.
+7. TruckShape's dimensions: shared geometry by design. Only `cab_bottom` is TruckBody's own; move it.
+8. `Mountains.is_sun_behind_mountains` used by FrameView's headlights: fine, since the skyline owns it.
+9. `Segment.segment_standout_pig`: the standout choice belongs with PigHerd or Gawking. A short look in the lane decides which.
+10. `CanvasRoll.rider_roll`: CanvasRoll exists for one call from RiderCamera. Fold it in if the book's include allows.
+
+These become one "boundary moves" lane.
