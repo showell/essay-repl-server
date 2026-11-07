@@ -87,7 +87,7 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
 
 ## After the Polygon lane
 
-- **Stills** (notes/stills-data.md, all decided): `Still := List(Still.Polygon)`; the gradient as a `[Linear, Radial]` tag; the fill as `[Flat, Shaded]`; `is_drawable` goes and the data tests draw through the real path; restated expects go; private helpers; one description of the still's frame; `Point`; negatives and hex in the data; `EmojiStill` drops `codepoint`.
+- **Stills** (notes/stills-data.md, all decided), plus Polygon's tail: `triangle` and `rectangle` take corners first too (decided; `triangle` keeps its place, since the shapes widget and the book use it), with `shapes_widget/TwoShapes.roc` updated and the book's include left resolving; roc-style.md:697's `gradient_polygon`; Tower.roc:142's doc naming the now-private `Ground.ground_curve_radius`; and `Brush.clamp01`, if it has lost its last caller. The rest: `Still := List(Still.Polygon)`; the gradient as a `[Linear, Radial]` tag; the fill as `[Flat, Shaded]`; `is_drawable` goes and the data tests draw through the real path; restated expects go; private helpers; one description of the still's frame; `Point`; negatives and hex in the data; `EmojiStill` drops `codepoint`.
 
 ## After World and FrameView
 
