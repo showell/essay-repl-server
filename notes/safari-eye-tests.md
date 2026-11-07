@@ -6,9 +6,13 @@ The newest entry is at the top. Each one says what should look different, and wh
 
 ## 2026-11-07, master 3031f1b6: the rider's code, tidied
 
+**Steve: passes.**
+
 The ride is unchanged from e126238f (every held value matched). It's the rider-physics cleanup: one home for braking, for the lean search's window and for the gawking rule. The one visible change is in the gaze widget, whose status text now says the gaze "turns back" rather than "eases back".
 
 ## 2026-11-07, master e126238f: the animals play on their own clock
+
+**Steve: passes.**
 
 **This one changes the ride.** It has the animation decisions (option C) in it. Watch a whole ride at normal speed, especially the cats and birds:
 
