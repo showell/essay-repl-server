@@ -4,6 +4,18 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 625e84b1: one size rule for far things
+
+**This one changes what you see.** Far billboard animals are now size-tested through the camera's own lens, like the trees, so the ones that were 1 to 2 px specks no longer draw. Where to look:
+
+| steps | what changes |
+|---|---|
+| **657–681** | **the clearest place:** a whole far herd goes, about 80 billboards down to 18 |
+| 1572–1579 | about 35 down to 17 |
+| 2936–2942 | in a bend at full lean, the widest lens: 42 down to 19 |
+
+Near animals are unchanged, and so is the ride: it still finishes at step 6746. If the far herds look missed, it's one revert. Also in this deploy, with nothing to see: the rider's step now lives in RiderState, Motorcycle owns its geometry, ScrubWidget is renamed WidgetPage, and HexColor is ColorShade.
+
 ## 2026-11-07, master a0f5e7f4: types made honest (nothing to see)
 
 The ride is unchanged (every held value matched). This deploy has the post-prod lanes: the route and Tour cleanup (`Tour.at_step` no longer loops forever past the finish), the scenery's types (pig and cow herds that can't hold an impossible herd, rail corners named), six types made opaque, the widgets' cleanup, and the dead-code lint now counting widgets as real callers. No eye test needed beyond a glance.
