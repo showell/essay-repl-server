@@ -294,3 +294,11 @@ Steve's answers (notes/animation-gaps.md):
 3. makers, then camera-road.
 
 Possible upstream finding: Roc accepts `import sub.Foo` in an app with no package `sub`, and `roc test` says "All (0) tests passed". Reduce it to a repro in `findings/` before reporting.
+
+## From the makers lane (follow-ups, decided)
+
+- **The outer side moves to Geom** (`Geom.OuterSide`, `Geom.outer_side`, beside `left_edge` and `Bend`), so Wildlife can use it. Wildlife can't import BendView: Segment imports Wildlife, and BendView imports Segment. Pond then stops importing BendView too. BendView's `outer_edge` and the bends widget match on it, and GroundSighting's own inner-edge `is_right()` goes. Do it after camera-road, which reshapes BendView.
+- A left-turn pond's ducks are mirrored in place but keep their facing; mirror the facing too.
+- Test that `bank_under_water` keeps the bank inside the water.
+- The pond seam's last 3 pixels: pull the bank's inner corners in, so its end edges cross the shore at an angle.
+- The brief: a module must be in `game.roc` before CrossModuleExpects can import it.
