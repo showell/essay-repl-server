@@ -25,7 +25,7 @@ This is the orchestrator's state for the type review, so it survives a compactio
    - `GuardRail.quad_rendering`, with `quad_shape` and `quad_depth` private.
    - The module doc says "orders", and the context doc names no list of kinds.
    - `nearer_tree_count.to_u16_wrap()`, which wraps silently.
-7. **The frame's top** (after SceneShapes, and before World if Steve answers notes/frame-record.md in time): the frame-building moves out of RideInstant into its own module; the truck's lead is worked out once; private helpers; Tour's comment; the restated expects; `billboards_in_view`.
+7. **The frame's top** (after world-split, since both reshape RideInstant): the frame-building moves out of RideInstant into `FrameView` (Steve's name), which holds the shapes, the sun, the sky colors and the roll, so painting a frame is one call; the truck's lead is worked out once; private helpers; Tour's comment; the restated expects; `billboards_in_view`.
 8. **Pipeline** (after trees, which moves `min_scenery_px` into it):
    - `SizeTest : { focal_length, smallest_height_on_screen }`, since BillboardSighting fills the focal length with `resting_focal`, not the camera's.
    - Pipeline's own expects, through a private test kind: the near plane, the size threshold, and the rendering's depth.
@@ -70,3 +70,11 @@ Steve (2026-11-07): deploy Safari often. After each green gate, master is built 
 Merged since the queue was written: lib-tidy (no lib/Color, ConvexCut, records for float runs, range crashes, lib/Eye); tuning (the perch rule, Scatter); rider (Motorcycle, RiderEyes, Gawking, one Limit, LeanChange; pixels held); kinds-names (LitTruck, Green, EmojiStill, standing_still); type_walk's `clients=` (walk lib with `root=lib clients=*` from canvas_apps).
 
 Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checking. Small leftover: EmojiStills' `still_facts` uses I64 counts.
+
+## Next free slot
+
+- **The kinds' closure** (Steve: "That actually feels like a code smell. Have a cold agent see if there's an alternative"). Every walk of anything that holds the scene drags in each kind's internals: stills, emoji stills, poses, Tower's corners. Have a read-only agent find out why, and whether there's a better shape.
+
+## After the route split
+
+- **One camera record** `{ heading, vantage, cam_focal }`, replacing `Lens.CameraAim` and `RoadAhead.CameraView` (Steve: "something we should definitely do").
