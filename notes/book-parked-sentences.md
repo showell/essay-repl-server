@@ -43,3 +43,11 @@
 - "Those two lives are two records, and each says where the tree stands in a different way", with its table row saying `Sighted` is `right` and `forward`. `Pipeline.Sighted` also holds the road place.
 - The table under "This is what `CatSighting` answers" lists `right`, `forward`, `pose` and `lift`. The record also has `place`, `along` and `across`.
 - `Sighted` moved from `Geom` to `Pipeline`, and `sighting_of` split in two: `tall_sighting_of` adds the size test.
+
+## The object half's fixes
+
+- About 1233: "`Ahead(position)` is a tag carrying a payload…" now sits beside `{{code TowerSighting.end_tower_of}}`, which shows `place: in_view.place`.
+- 169 and 171: `CrossingSighting` and `PosedCat` don't pair by name, and `CrossingSighting` finds birds too.
+- 2023: "`CrossingSighting` and `PosedCat` never import each other" is false.
+- 2052: `CrossingSighting` is listed as new in the bird chapter; the cat chapter introduced it.
+- Dot diagrams around 97-104, 1844-1846, 2008-2018 and 2060-2065 still name CatSighting, CatShapes, BirdSighting and BirdShapes. book_names doesn't read diagrams.
