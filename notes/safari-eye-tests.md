@@ -4,6 +4,19 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 50306f59: the new rider physics
+
+**This is the one where the ride changes.** It has your seven physics decisions in it, and the held frames moved on purpose. Watch a whole ride once, at normal speed:
+
+1. **The weave is gone.** The rider aims at the road's middle instead of a target that moved with it (`lean_target` deleted). The line through bends should look steadier.
+2. **No throttle hold when leaned** (`lean_hold` deleted), and **no sudden lift to the bend's exit speed.** Speed through and out of bends should change more smoothly.
+3. **The gaze returns at one even rate,** with no ease-then-snap. Watch the head come back after a look (the pigs, the cat): it should glide home, not settle and then jump.
+4. **The ride's end.** The rider brakes to a stop instead of jumping to the end. Watch the last few seconds.
+5. **The timing moved:** the ride finishes at step 6779, not 7071. The sunset's climax still falls on the long road west (the new test holds it), and full night comes before the end (the other new test).
+6. **The road margin:** the rider's widest point is now 1.97 m of the road's 2 m half-width, against 1.9996 m before (0.4 mm from the edge).
+
+Kept on purpose: the 60 m bend approach. Every firmest-brake option moved the whole ride, so it waits for the Motion chapter.
+
 ## 2026-11-07, master 63f60b48
 
 This deploy has several lanes in it: World's second half, FrameView, the backdrop cleanup, the sunset and night tests, `RiderCamera`, and **the road seams**. Every held frame kept its hash. The one change you should see:
