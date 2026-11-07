@@ -360,3 +360,8 @@ On Safari it gave 143 "fed to one" hints (19 drawn with in the using function) a
 10. `CanvasRoll.rider_roll`: CanvasRoll exists for one call from RiderCamera. Fold it in if the book's include allows.
 
 These become one "boundary moves" lane.
+
+## Steve's views from the questions (2026-11-07, learning only, no action)
+
+- **The book rewrite's pictures:** a high bar for real widgets, a low bar for simple pictures drawn from the code. A chapter about a world thing (a mountain) shows it rendered. Don't force it: trig needs no picture. The flip side: a chapter not worth a picture probably belongs in the math section near the end.
+- **Imports are only prod code:** a strong leaning, not yet a ruling. A lib import only a test uses (Ground's `lib.Brush`): move it. Unit types: undecided. The case to look at is `Cat.roc`, which imports Along and Across only to build a test crossing, a sign the test builds another module's input.
