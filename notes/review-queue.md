@@ -125,6 +125,10 @@ Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrum
 - gpu, games, machine and framebuffer name their Cobblestone checkout four ways (`KERNELS_ROOT`, `GAMES_ROOT`, `CHECKOUT`, `quires.tsv`), all defaulting to the missing `cobblestone-u66rel`. Their builds would fail today. The real fix is for the build to record its checkout in BUILT. This matters only when those apps are next published.
 - `site/deploy.sh:31`'s uncommitted-changes check passes silently if git itself fails. A small fix.
 
+## Gate: concurrent runs share one cache (2026-11-07)
+
+Master's gate stopped at run.shale:198 (`clear_full_caches`). `du -sm` on the shared CACHES folder failed ("cannot access ..."), because another gate in a lane worktree was clearing it, and `tonumber` then read du's error text as a number. Two problems: the gate trusts du's output without checking its exit, and every worktree's gate shares one cache folder, which one run can clear under another (a build could break the same way). Fix: check du's exit and fail by name; and either key the cache per checkout, or clear only under a lock, or never clear while another gate holds it. A small lane, after the current ones.
+
 ## Small follow-ups (2026-11-07)
 
 - FrameWidgetApp builds the camera itself, copying `frame_view_at`: one home (a FrameView camera maker).
