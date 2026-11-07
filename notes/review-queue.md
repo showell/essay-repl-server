@@ -327,3 +327,13 @@ Possible upstream finding: Roc accepts `import sub.Foo` in an app with no packag
 - Billboard's own `still` field becomes `emoji`, so nothing reads `billboard.still.still()`.
 - StillsWidgetApp :745 (drawn shapes equal polygons) can't fail usefully, so delete it.
 - **The brief:** a Shale script over the still data files needs a `-- budget: steps=100000000` header; the default (5M) runs out partway through.
+
+## The gates reorganization: the plan is in (the CME survey, at the end of the queue)
+
+- Six groups plus `Fixtures.roc` under `gates/expects/`, one root `Expects.roc`: Road, Encounter, Sighting, Scene, Ride and Story. The survey's report (in this session's transcript) has the exact line ranges against master's 1,525-line file, the ~60 prunes with reasons, the fixtures with their users, and the name clashes (`first_road`, `bird_at`, `tree_at`).
+- Decided:
+  - `SceneShapes.nearer_tree_count` takes a `List(Distance)`, so its tests stay beside it.
+  - The ride's second wave (EncounterReaction, Gawking, Gaze, Throttle, Rider and Truck test-only World/Route imports) moves too, into RideExpects or a seventh group.
+- **Steve's call when the lane runs:** tests beside their code that import only a unit type or a lib module (Along, Across, Brush, Camera, Steps, Trig…) just to build an input. Keep them (the import is a unit wrapper) or move them (the rule says never)? One yes/no then.
+- The survey lists three expects that each ride the whole route (1117, 1214, 1236); one shared ride-trace fixture could serve them.
+- Fixed line numbers will drift with the lanes merging before it; re-survey briefly at start.
