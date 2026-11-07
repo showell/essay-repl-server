@@ -255,3 +255,34 @@ Steve's answers (notes/animation-gaps.md):
 - **Zero-length Span or Linear:** `Brush.shade` gives the far color, but BrushGlsl and `shapes_canvas.js` still divide by zero. Make all three painters agree, or have Safari's makers (Polygon, Backdrop, StillShapes) crash on a zero-length gradient.
 - **A gate holding the Keys/Mouse bit numbers equal** to `web/canvas_app_runner.js` (a wrong bit would silently bind the wrong key).
 - The remaining `to_u32_wrap` calls in WasmApp (`tone_count`, `width`, `height`).
+
+## Widgets (two reviews, all decided; two lanes after the rider merge)
+
+**Lane 1, the game's side:**
+- `Tour.at_step : U32 -> Tour`. Gaze and rehearsal derive `first_rider` from it, and frame's `paused_tour` uses it.
+- `Coast.coast_path` and `LeanSearch.search_tries` return what they compute. The rehearsal widget's copies go; they had drifted from the game (no `longest_coast`, no edge widening). Measure that `project` stays as cheap.
+- `Beacon.brightness_at` (with the sightings lane's version).
+- World exposes `is_distracting`, `has_cat` and "the first cat, bird and distracting segment" lookups (Gaze and Gawking hard-code index 2 too).
+- `FrameView.parts`, so the frame widget only filters.
+- `Spot.straight_ahead : { forward, right, lift } -> Try(Spot, [BehindCamera])` for the tree, beacon and bird widgets and the kinds' tests.
+- TreeShapes' `cone_reach` and `crown_shade_reach` become public for the tree widget.
+
+**Lane 2, the kit and the widgets:**
+- A palette and `PlanView` (ground, road and rider colors, plus a mapping). The road color is unified, so one widget's road moves.
+- `ScrubWidget.picture_backdrop`.
+- Click helpers (`click_point`, an `Area` with `contains`, and snapshot makers for expects).
+- `ScrubWidget.still_app({ title, shapes })` at a low fps for still pictures.
+- `readout` takes size, align and first-row options, for stills, tree and bends.
+- Frame keeps its own layout but shares the colors.
+- The sky widget's curves become one `Curve` record.
+- Stills: `Pose : [Cat(..), Bird(..)]` in the model.
+- Rehearsal: `Stop : [Start, Shown(U64), Choice]`, plus records for the argument runs.
+- Step: `steps_a_frame : U32`, `Str.inspect`, and `Angle.Lean`.
+- Frame: `last_layer_on : Layer`.
+- Gaze: `shown_clock`.
+- `row_height_on_screen : Pixels`.
+- Delete the held and restated numbers both reviews listed, including the route's frozen record (the book is parked). Keep the rule tests both listed.
+
+**Brief:** for a widget as the walked module, use `root=<name>_widget` with no clients.
+
+**For Steve:** subagents report that plain `bash` (`cat`, `ls`, `mkdir`) ran without the hook refusing it.
