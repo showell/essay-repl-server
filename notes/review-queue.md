@@ -240,3 +240,11 @@ Steve's answers (notes/animation-gaps.md):
 - The throttle hold stays, as a story rule.
 - Every bird flies: `StaysPut` goes, and `Habit` is the flight.
 - The rest is as decided in option C and the animation review.
+
+## Next after this wave merges: the gates reorganization (Steve, 2026-11-07)
+
+- `gates/pixels/`: SafariFrame, BackdropPixels, SunPixels, ShapesPixels, ScanlineFill, PixelGrid, PixelColor, ScreenRoll, RasterFrame, ShapesFrame and Hex.
+- `gates/expects/`: CrossModuleExpects split by subject into four or five modules: road and route, sightings and scene, the ride, the story rules (sunset, night, the bird not overtaken), and the stills. Pick the groups by what the tests share. Give one test road one home. Prune with Steve's "will never fail usefully" rule. This absorbs the queued tests lane: the test-only imports from TreeSighting, TowerSighting, TruckSighting, Pipeline and SceneShapes move here.
+- `gates/` keeps StepBack, OnRoad, ProofRide, FrameBench and the shale scripts.
+- Update run.shale, fast.shale, the brief, docs/review-workflow.md and notes/safari-gates-roc.md. No pixels move.
+- It waits until rider-pixels, rider-camera, road-seams and lib-third merge, since they all touch CrossModuleExpects.
