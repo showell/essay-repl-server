@@ -82,7 +82,7 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
 
 ## After World and FrameView
 
-- **Scene erases its kinds** (notes/scene-kinds.md, decided): the fields hold `Rendered`, and `scene_in_view` sights and renders. SceneShapes folds in or shrinks.
+- **Scene erases its kinds** (notes/scene-kinds.md, decided): the fields hold `Rendered`, and `scene_in_view` sights and renders. SceneShapes folds in or shrinks. Steve again (2026-11-07): "no reason to tag something once the tag is no longer actionable", and "All the interaction between elements (like cat crossing because driver approaches) should NOT require any drawing code." So the lane also moves any reaction decided inside a sighting (the cats' sighting takes the rider's speed) out into the ride's state, and there is one generic place that joins pictures. READY: World and FrameView have landed; next free slot.
 - **GroundSighting** (the ground review): its expects move home from CrossModuleExpects, with three members going private; `BendView.inner_edge`; `pond_patches` takes the SegmentInView whole and matches `bend_life`; `chunks_along` becomes `chunk_count`. After the earth work, Ground becomes `GroundPatch`.
 
 ## After the Polygon lane
