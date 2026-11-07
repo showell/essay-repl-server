@@ -222,3 +222,11 @@ Small: `canvas_apps/safari/README.md` (lines 61 and 94) lists the proof tools wi
 Decided: `Past(Steps)`; Placed instead of `Animation.Location`; Habit `[FliesTo(Flight), StaysPut(tree)]`; one home for the start's rounding (`Animation.start_for`), tested on both sides; EncounterSighting's gap callback goes; test-only imports and restating tests in PosedBird, PosedCat and Cat go; `bird_height`, `segment_cat` and `flight_arc` go private; the docs describing the estimate get rewritten; Cat and BirdFlight stay namespaces.
 
 **Tool:** type_walk refuses `Scene.roc` and `gates/CrossModuleExpects.roc` (roc-ast reports parse problems, probably `var $x` with `while`), so their callers drop out of the use counts. Fix roc-ast's syntax, or have the walk report the refused files loudly.
+
+## Road seams (found and fixed; rebasing onto master)
+
+- **The cause:** the browser antialiases each road polygon separately, so where two chunks share an edge, grass shows through. The exact rasterizer can't see it, but a browser-AA emulator found seams in 136 of 137 frames.
+- **The fix:** one polygon per segment's road (`road_along`) and one per bend's paving (`bend_paving`). The emulator then found 0 seams in 273 frames, and no held frame moved.
+- **Zig:** no road-seam fix in its history. The Zig native renderer supersamples, which may be what Steve remembers.
+- **Scratch tools:** `/tmp/claude-1000/road-seams/scan/` holds `SeamScan.roc`, `conflate.mjs` (the AA emulator) and `depths.mjs`.
+- **Lesson:** a lane cut from an unpushed master can carry a merge that later gets taken off. Cut lanes from `origin/master`.
