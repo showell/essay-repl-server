@@ -4,6 +4,14 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master db1777b9
+
+This deploy has the Polygon lane in it. Every held frame kept its hash. These are the places to glance at:
+
+1. **The bull's shading.** Its 40 gradients now take their offsets as checked fractions instead of being clamped quietly. The bull's billboard should look as it did.
+2. **The truck's headlight beams and brake glow,** whose gradient makers were renamed (circular and elliptical).
+3. **The mountains and the tower,** which now pass corners first to the flat-polygon maker.
+
 ## 2026-11-07, master d67bc638
 
 **Steve: passes.**
