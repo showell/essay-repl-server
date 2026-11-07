@@ -112,3 +112,12 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - `BigGreen` at 373, 454, 494 and 496: now `Green`.
 - 1163: a critter's codepoint no longer "finds its still" through a match. Each kind names its `EmojiStills.EmojiStill` directly.
 - Near 2480: the prose says `PosedBird.scenery_picture` calls `Camera.project`. The still is now drawn on its feet by `StillShapes.standing_anchor` and `standing_still_shapes`, for the cat, the bird and the billboards alike.
+
+## From the rider lane (Motorcycle, RiderEyes, Gawking, one Limit)
+
+- `Bike` (tutorial.md:1546-1578, 2329, 2416, 2637, and the diagrams at 1466-1570 and 2403-2406): now `Motorcycle`, with `RiderEyes` beside it in `RiderState`. `Bike.Motion` (2281, 2333, 2808) and its "others" fields are gone: Motorcycle holds the six fields the physics reads and writes, and `segment_index` stays on RiderState.
+- `Bike.bike_motion_at_next_step` (2322, 2329, 2353): now `motorcycle_at_next_step`, taking a `LeanChange` and an acceleration. `Bike.with_lean` (1522, 2337) is `Motorcycle.with_lean`.
+- `NoAcceleration` and `MayAccelerate` (1632, 2285): the limits are one shape, `VehicleLimits.Limit : [NoLimit, AtMost(Acceleration)]`, folded with `min`.
+- `bend_brake`, `crossing_limit` and `pig_limit` (1640, 1648, 1757, diagrams 1621 and 1701): `pig_limit` is gone (`Gawking.gawk_brake`), and the crossing gives `CrossingReaction.crossing_throttle`. `CrossingReaction.reaction_to` (2281) is split into `crossing_throttle` and `crossing_attention`.
+- `Throttle.shoulder_brake_at` (2541) is private; Throttle's only public function is `acceleration`.
+- A lean minus a lean is now a `LeanChange` (`Lean.change_from`), not a Lean.
