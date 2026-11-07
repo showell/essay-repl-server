@@ -63,3 +63,14 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - The prose after `{{code Pig.pig_billboard}}` (formerly `Pigs.pig`) still says "two places, an emoji, a height and a way to face", but the billboard holds no places.
 - The paragraph after `{{code PigHerd.herd_pigs}}` describes a three-branch match on the rider's interest, which never matched that code.
 - `PigInterest` is now `World.PigInterest`, and `PigPresence` is `World.PigPresence`.
+
+## From the truck cleanup (TruckAhead holds the lights, Truck is its state)
+
+- `Truck.truck_state_at_next_step` at tutorial.md:1483, 2647 and 2807: now `Truck.at_next_step`.
+- `TruckState` at 1840 and 2647: the state is now `Truck` itself, and `brake_lights` is `pace : [Slowing, NotSlowing]`. The prose near 1840 still calls `brake_lights` the truck's state.
+- `Truck.Lights` at 1875: the lights are `TruckAhead`'s own fields.
+- The diagram at 1867 still shows `TruckAhead -> Truck`, which is no longer an import.
+
+## From the Tower cleanup
+
+- `{{code Tower.rod_shapes}}` now includes `Geom.ahead_line`, the near-plane cut of a line. The prose after it still describes the four-way match, which still holds.
