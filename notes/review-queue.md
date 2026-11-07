@@ -302,3 +302,8 @@ Possible upstream finding: Roc accepts `import sub.Foo` in an app with no packag
 - Test that `bank_under_water` keeps the bank inside the water.
 - The pond seam's last 3 pixels: pull the bank's inner corners in, so its end edges cross the shore at an angle.
 - The brief: a module must be in `game.roc` before CrossModuleExpects can import it.
+
+## Small, next free moment
+
+- The skyline's docs (Steve: (b)): Backdrop's doc says the backdrop is the sky, the sun and the grass, and Mountains' says the skyline is the farthest of the ride's shapes, painted first among them.
+- The browser and lib still disagree in two corners (lib-follow): Glow and Radial with no ring return the outer color directly in the JS while Brush.shade mixes to it, and the JS `twoStops` clamps the end offset to 1. Make the JS follow Brush.shade.

@@ -21,3 +21,7 @@ The mountains are the first entry in the *ride's* shapes (`FrameView`), not part
 ## My recommendation
 
 **(b).** The mountains turn with the camera and darken with the dusk, like the ride's things and unlike the flat sky. Treating them as the farthest of the ride's shapes is honest, and it keeps the pixel gate simple. The real smell is the two docs disagreeing, and (b) fixes that.
+
+## Steve's answer (2026-11-07)
+
+**(b).** The mountains stay the farthest of the ride's shapes. Backdrop's and Mountains' docs get fixed to agree: the backdrop is the sky, the sun and the grass.
