@@ -4,6 +4,12 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 8731a0de: the pond's last seam
+
+This deploy has the sightings and polish lanes in it. Every held frame kept its hash, and so did the page. The one thing you should see:
+
+1. **No line at the pond's ends.** The bank's inner end corners are pulled 2 m in toward the road, under the water, so the last place the bank and the water met along an edge is gone. Watch the pond around steps 4911 to 4968, at both ends of the water.
+
 ## 2026-11-07, master 6c0029c7: the pond, and the camera built once
 
 **Steve: passes.**
