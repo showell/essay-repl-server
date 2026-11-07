@@ -6,6 +6,8 @@ The newest entry is at the top. Each one says what should look different, and wh
 
 ## 2026-11-07, master d67bc638
 
+**Steve: passes.**
+
 This deploy has the leftovers and Pipeline lanes in it. Every held frame kept its hash. These are the places to glance at:
 
 1. **The truck's brake glow.** Its outer edge color is now built with `ArgbColor.from_rgb`, not by reading an RGB number as an ARGB one. The glow should fade out to nothing at its edge, just as before.
