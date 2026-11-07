@@ -123,3 +123,8 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
 - Every module's test-only imports go: TreeSighting (Across, Along, Angle, Distance, World), TowerSighting (Steps, World), TruckSighting (Angle, World), Pipeline (World, Along, Across, Angle, from the Pipeline lane), and SceneShapes (PosedBird, for the perch expects). Their tests move to CrossModuleExpects, with one test road there in place of five copies.
 - Prune with a critical eye: any test that restates, duplicates, or would never fail usefully goes. Keep the boundaries, tie orders and the near sides of crashes.
 - Lanes from here on follow the rule: no import only a test uses.
+
+## Shale
+
+- **`shale --help` prints the mounts table, including the `keys:` line.** Agents run it to read about the language, so the secrets folder's path lands in their transcripts. Make `--help` describe the language without listing mount paths, or mask `keys:` (a separate `--mounts` could show the rest). Until then, never tell an agent to run `shale --help`.
+- Agents' pain points (family-mode lane): a `use`d library can't call another library's functions; functions see only `const`s, not top-level locals; map keys must be strings; `find` takes at most 3 arguments; `wc` is refused as a text tool; there's no `now_ms`.
