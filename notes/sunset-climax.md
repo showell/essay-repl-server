@@ -39,3 +39,8 @@ If (a) stands, the new rider physics passes both rules, and I'll merge it. The h
 ## One more physics question, for whenever
 
 The rider lane left out one change, braking from the firmest brake. The rule had no memory: the rider would leave the braking zone, open the throttle, and near a bend get asked for a brake firmer than its own speed, which crashes. The ways out are to clamp the brake at the exit speed, to give the rider a braking state, or to measure braking distance in whole steps. I'd leave it for the Motion chapter, where the brake fade and turn speeds get derived anyway. Say if you'd rather have it sooner.
+
+## Steve's answer (2026-11-07)
+
+- **(a)**: the climax is the sun starting to sink behind the west range. The test as written is merged.
+- **The firmest brake:** "pick the option that most closely preserves behavior". The rider lane tries all three, measures each against the current ride, and keeps the closest.
