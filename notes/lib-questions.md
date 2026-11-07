@@ -24,3 +24,7 @@ Four questions are yours. Each has my recommendation.
 **4. Two meanings of "View".** `lib/View.roc` is a movie's eye, used only by trick_or_treat. `View(...)` is also a mark in `Shapes.Shape`, setting the space for the shapes after it. *Recommend: rename the module (`Eye`?). It has one user, while the mark crosses to JS.*
 
 A word per item is enough.
+
+## Steve's answer (2026-11-07)
+
+Yes to all four: delete `lib/Color` and move its apps to RgbColor/ArgbColor; make `Brush.Rgba` opaque if it unifies with Frame; give the cut's pieces their own type; rename the `View` module. For any change that touches other canvas apps, the only bar for those apps is `roc check`.
