@@ -54,7 +54,7 @@ A package root with package dependencies runs fine as a `roc test` root (branch 
 
 ## Steve's answer (2026-11-07)
 
-"LGTM. We can scale back the agents during the CME split." So the folder is `gates/proof/`, FrameBench is deleted, and Fixtures may be a namespace. The CME split runs with no other lane open.
+"LGTM. We can scale back the agents during the CME split." So the folder is `gates/proof/`, and Fixtures may be a namespace. The CME split runs with no other lane open. **FrameBench stays** (changed the same day): the start-up stutter turned out to be the cost of computing a frame, and FrameBench is the tool for profiling that, so it moves to `gates/proof/` with the others.
 
 ## Your three calls
 
