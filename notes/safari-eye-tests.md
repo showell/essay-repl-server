@@ -6,6 +6,8 @@ The newest entry is at the top. Each one says what should look different, and wh
 
 ## 2026-11-07, master db1777b9
 
+**Steve: passes.**
+
 This deploy has the Polygon lane in it. Every held frame kept its hash. These are the places to glance at:
 
 1. **The bull's shading.** Its 40 gradients now take their offsets as checked fractions instead of being clamped quietly. The bull's billboard should look as it did.
