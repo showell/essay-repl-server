@@ -27,3 +27,13 @@
 - 484: `OutOfView` for a tree was already false.
 - 2156: says 79 modules, and there are 83. `Geom`'s importer count in the table says 20, and it's about 31.
 - The items already parked in the project memory: Pond, `TreeAhead`, TreeSighting as a type, `{{module Conifer}}` showing `scenery_picture` early, `where` in the tree chapter, the glossary's "cutouts", the truck's lead table.
+
+## The drawing substrate
+
+- 290: the empty-list example, "`Ground.patch_shape` knows...". It answers a `Try` now.
+- 637: "`pack` gets there with method calls ... `shl_wrap` and `bitwise_or` ... That makes `pack` a leaf". It calls `pack_rgb`.
+- 656: "A range is highest in its middle" was already false.
+- 670: "`snow_color` uses the sky's own `color_between`". It's HexColor's now.
+- 718: "`before` and `after` say where the two segments lie". There is no `after` field; `BendView.place_after(bend)` answers it.
+- 2312: "`Ground`, `GuardRail` and `TruckShape` call it the same way...". Only `Camera.clipped_polygon` calls it.
+- The sky chapter now quotes HexColor, and the Mountains chapter still lists it as new.
