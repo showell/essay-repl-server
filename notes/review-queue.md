@@ -248,3 +248,10 @@ Steve's answers (notes/animation-gaps.md):
 - `gates/` keeps StepBack, OnRoad, ProofRide, FrameBench and the shale scripts.
 - Update run.shale, fast.shale, the brief, docs/review-workflow.md and notes/safari-gates-roc.md. No pixels move.
 - It waits until rider-pixels, rider-camera, road-seams and lib-third merge, since they all touch CrossModuleExpects.
+
+## From lib's third pass (follow-ups)
+
+- **Font crashes on a byte with no glyph.** Check every widget label and readout string (they reach `Font.plotted` in the native runner) for characters outside the alphabet (`'`, `?`, `°`), and either add the glyphs or change the strings. A test over the strings that exist would hold it.
+- **Zero-length Span or Linear:** `Brush.shade` gives the far color, but BrushGlsl and `shapes_canvas.js` still divide by zero. Make all three painters agree, or have Safari's makers (Polygon, Backdrop, StillShapes) crash on a zero-length gradient.
+- **A gate holding the Keys/Mouse bit numbers equal** to `web/canvas_app_runner.js` (a wrong bit would silently bind the wrong key).
+- The remaining `to_u32_wrap` calls in WasmApp (`tone_count`, `width`, `height`).
