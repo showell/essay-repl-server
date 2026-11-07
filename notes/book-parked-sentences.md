@@ -105,3 +105,10 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - `RoadAhead.Position` at 2442: now `SegmentPlace.Position`, in a module of its own below World.
 - `Animation.Spot` is now `Animation.Location`; "spot" means only the sighting's `Spot`.
 - The glossary has a Spot row, and its Sighting and Placed rows were updated (the one prose change made on purpose).
+
+## From the kinds lane (LitTruck, Green, the still as the value)
+
+- `TruckAhead` at tutorial.md:169, 1794 and 1887, and in diagrams at 1804, 1866 and 1867: now `LitTruck`.
+- `BigGreen` at 373, 454, 494 and 496: now `Green`.
+- 1163: a critter's codepoint no longer "finds its still" through a match. Each kind names its `EmojiStills.EmojiStill` directly.
+- Near 2480: the prose says `PosedBird.scenery_picture` calls `Camera.project`. The still is now drawn on its feet by `StillShapes.standing_anchor` and `standing_still_shapes`, for the cat, the bird and the billboards alike.
