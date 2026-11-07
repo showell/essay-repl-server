@@ -115,5 +115,11 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
   - Restated expects go, and the tuned constants go private.
   - `rail_quads_in_view`, `run_up_points` and `rail_run_on` (batch the widget and the book).
   - The cat built like the bird (in the encounter lane).
-  - Where the tests live waits on Steve (notes/tests-beside-code.md).
+  - Tests: see the tests lane below.
 - **Tools, later:** a family mode for type_walk (shared types once, members' blocks side by side, private signatures too); the `families` lint can't see per-noun families.
+
+## After World: the tests lane (Steve's rule, notes/tests-beside-code.md)
+
+- Every module's test-only imports go: TreeSighting (Across, Along, Angle, Distance, World), TowerSighting (Steps, World), TruckSighting (Angle, World), Pipeline (World, Along, Across, Angle, from the Pipeline lane), and SceneShapes (PosedBird, for the perch expects). Their tests move to CrossModuleExpects, with one test road there in place of five copies.
+- Prune with a critical eye: any test that restates, duplicates, or would never fail usefully goes. Keep the boundaries, tie orders and the near sides of crashes.
+- Lanes from here on follow the rule: no import only a test uses.

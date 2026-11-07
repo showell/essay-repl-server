@@ -27,3 +27,14 @@ I'd take **(a)**. An import that only a test uses costs nothing at run time, and
 - **The truck takes its route position whole,** and works out its own lead, so Scene stops doing truck arithmetic.
 - **Three docs say why their module breaks the family.** Tower and Truck have no size test, and the rails don't go through Pipeline. Towers and the truck stay drawn whatever their size, so no pixels move.
 - The restated constants' expects go, `rails_in_view` becomes `rail_quads_in_view`, `run_up` gets one spelling, and the cat's crossing is built like the bird's.
+
+## Steve's answer (2026-11-07)
+
+"I actually like CrossModuleExpects. I kinda like how Roc puts tests in the same modules, but cluttering up imports is ugly. We can also look at tests with a pretty critical eye. It's actually kinda shocking how infrequently we've needed tests to catch things. It's the beauty of Roc. So if a cross-module test feels redundant or unlikely to ever fail in a useful way, just nuke it."
+
+**The rule:**
+- A test that needs nothing its module doesn't already import sits beside the code.
+- A test that needs more goes in CrossModuleExpects.
+- A test unlikely ever to fail usefully goes.
+
+The smells guide says so now.
