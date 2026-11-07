@@ -119,6 +119,10 @@ For Steve (with the read-heavy nominal question): 7. the invariants Segment, Tou
 
 The type walk prints `# Imported for tests only: ...` per module (shale master, walk-test-imports). Across Safari's 94 files, 22 modules have at least one: PosedBird (9), Billboard and PosedCat (5+), and Pipeline (Across, Along, Angle, Route, World, from its post fixtures). Each is a finding under Steve's rule. **Queued:** lanes by family, after the deploy (overlaps the route review's item 1). Pending, roc-apps docs/type-review.md: add the "Imported for tests only" bullet after the "Imported but not in any printed type" bullet (wait until publish.shale is off master). walk_uses.shale (1059 lines) and type_walk.shale (1025) are past ~1000 lines; a split is for later.
 
+## Prod deploy done (2026-11-07, b420a452)
+
+Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrummy.com: 513 files, each staging's. Found on the way: `site/publish.sh` records a Cobblestone checkout (`cobblestone-u66rel`) that no longer exists, so its PROVENANCE line came out blank after two git errors. Fix: a canvas app's provenance skips Cobblestone, and a missing checkout fails loudly for the apps that need it.
+
 ## Small follow-ups (2026-11-07)
 
 - FrameWidgetApp builds the camera itself, copying `frame_view_at`: one home (a FrameView camera maker).
