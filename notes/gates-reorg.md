@@ -42,6 +42,16 @@ CME splits by topic, all 240 expects accounted for:
   - git won't follow one file split into seven, so any lane branched before the split has to redo its CME edits by hand. That's why the split waits until no lane holds CME.
   - Some docs and briefs name CME by path.
 
+## The spike (2026-11-07): it works
+
+A package root with package dependencies runs fine as a `roc test` root (branch expects-spike, 340c3b53, not merged). The 7 moved road expects ran exactly once overall. A failure reads `── ✗ fail ── gates/expects/RoadExpects.roc:71:1`, which run.shale and fast.shale already understand. The time is mostly running the expects, so the split costs about what CME costs today. What the full split must also do:
+1. **run.shale's `SAFARI_SOURCES`** must add `:(glob)canvas_apps/safari/gates/expects/*.roc` (a git glob's `*` doesn't descend), and `EXPECT_ROOTS` plus fast.shale's root (line ~144 and its print line) must point at `gates/expects/main.roc`.
+2. **Each part** declares `XExpects :: [].{}` and keeps its expects at the top level.
+3. **The shared helpers** move into Fixtures and every call gets the `Fixtures.` prefix.
+4. **Two traps at this Roc pin.** Unused imports never warn, so lints.shale's unused_imports must cover gates/expects. A module left off `package [...]` runs silently with 0 expects, and only run.shale's source-vs-passed check catches that.
+5. **The parts together must still reach every game module whose expects only CME reached,** or those expects drop out. run.shale's "not passed from any root" check catches it.
+6. **Briefs and docs that name CME** need the new path (type-review.md's "listed in game.roc before gates/CrossModuleExpects.roc can import it", among others).
+
 ## Steve's answer (2026-11-07)
 
 "LGTM. We can scale back the agents during the CME split." So the folder is `gates/proof/`, FrameBench is deleted, and Fixtures may be a namespace. The CME split runs with no other lane open.
