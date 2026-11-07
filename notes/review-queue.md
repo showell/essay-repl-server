@@ -121,7 +121,9 @@ The type walk prints `# Imported for tests only: ...` per module (shale master, 
 
 ## Prod deploy done (2026-11-07, b420a452)
 
-Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrummy.com: 513 files, each staging's. Found on the way: `site/publish.sh` records a Cobblestone checkout (`cobblestone-u66rel`) that no longer exists, so its PROVENANCE line came out blank after two git errors. Fix: a canvas app's provenance skips Cobblestone, and a missing checkout fails loudly for the apps that need it.
+Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrummy.com: 513 files, each staging's. Found on the way: `site/publish.sh` records a Cobblestone checkout (`cobblestone-u66rel`) that no longer exists, so its PROVENANCE line came out blank after two git errors. Fix: a canvas app's provenance skips Cobblestone, and a missing checkout fails loudly for the apps that need it. **Done** (publish-provenance, merged). Left for later:
+- gpu, games, machine and framebuffer name their Cobblestone checkout four ways (`KERNELS_ROOT`, `GAMES_ROOT`, `CHECKOUT`, `quires.tsv`), all defaulting to the missing `cobblestone-u66rel`. Their builds would fail today. The real fix is for the build to record its checkout in BUILT. This matters only when those apps are next published.
+- `site/deploy.sh:31`'s uncommitted-changes check passes silently if git itself fails. A small fix.
 
 ## Small follow-ups (2026-11-07)
 
