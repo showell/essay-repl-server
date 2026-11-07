@@ -54,3 +54,7 @@ The brake fades as `e^(-n/20)`, so `brake_decay` is 20 steps. *Guess: eye, unles
 A perched bird sits exactly where its tree stands, so the two are the same depth from the camera, and the tie order paints the bird first. The tree's crown then covers the bird's feet. While landing, the bird is a little nearer, so it paints over the tree, then it drops behind the moment it perches. *Recommend: a perched bird sorts in front of its tree, as a named rule: "a critter perched on a tree is drawn over it". Today's look is a coincidence of the tie order. This moves the perched bird's pixels, so it's an eye test.*
 
 A word per group is enough.
+
+## Steve's answer (2026-11-07)
+
+Agreed to every recommendation. "All the tuning numbers are just a fact of life in the app, and there's no perfect solution... we want to avoid silly things like the bird not actually being perched on top of the tree due to coincidences, but to use the truck as an example, all those dimensions are things that we got right with eye tests, so they're not likely to change too much."
