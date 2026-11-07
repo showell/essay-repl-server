@@ -4,6 +4,10 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 2fb0f378: one crowd
+
+The scene no longer keeps its things' kinds: everything becomes a picture at a depth, joined in one place (SceneShapes is gone). Every held frame and the page kept their hashes. Glance at what overlaps: a perched bird over its tree near the start, cats and billboards in front of and behind trees, and the truck passing behind the guard rails. The step widget's segment bars now come from the route itself.
+
 ## 2026-11-07, master 42ba94d0: the widgets ask the game
 
 The ride is unchanged (every hash held). The widgets now ask World, Spot, TreeShapes and Tour instead of working things out by hand. If you open the cat, gaze, bird or tree widget, it should look and behave as before.

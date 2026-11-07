@@ -153,3 +153,9 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - Billboard's still field is `emoji`, and so is `Billboard.Species`'.
 - About 1826: "Finding the next turn shows a list pattern... Recursion walks the list, carrying where the current segment starts." `Truck.next_bend` is now a `find_first` over `Route.segments_with_ends`; no list pattern is left. The include was repointed to `Route.segments_with_ends`.
 - About 1830: "It's called through a smaller function, which supplies the 0 so nobody else has to." `next_bend_on` is gone.
+
+## From the Scene lane (SceneShapes folded into Scene; the scene holds renderings)
+
+- :175 "`SceneShapes` renders each one through `Pipeline.rendering_of`", :707 "So `SceneShapes` counts them", :2095 "`SceneShapes` is what carries a sighting's answer to the drawing", :1311 "neither `Tower` nor `SceneShapes` imports `Clock`" (Scene imports Clock).
+- The module list (:123) and diagrams (:103, :662, :666, :1277-1279, :1862-1866, :2082-2084) still name SceneShapes.
+- Includes repointed: `Scene.tree_renderings`, `Scene.nearer_tree_count`.

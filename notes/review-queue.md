@@ -79,6 +79,8 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
 - The three earths (infinite-horizon mountains, a setting sun, curved-earth trees) are "honest enough for our purposes".
 - A tick's order: "Hand of god makes the cat move, then the driver reacts. So cat before driver." The sequence starts far enough out that off-by-ones don't show (sent to the Scene lane's reaction move).
 - "The rider has peripheral vision and sees the cat and pigs": the rider is not limited to the camera's view.
+- The rider knows the road like a local; with straight segments that's equivalent to seeing the turn (the corner creatures are another cue).
+- "Rides are deterministic only for simplicity purposes": determinism is a convenience, not a principle.
 
 ## Next free slot
 
