@@ -76,6 +76,9 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
 
 - Scene: one crowd of things, and no tag once it isn't actionable (folded into the Scene lane).
 - The backdrop stays a layer (a flipbook: objects against a backdrop). Its line is "never gets closer": sky, sun and mountains (an infinite horizon), against curved-earth trees. Not strongly held; (b) on the skyline stands unless that changes.
+- The three earths (infinite-horizon mountains, a setting sun, curved-earth trees) are "honest enough for our purposes".
+- A tick's order: "Hand of god makes the cat move, then the driver reacts. So cat before driver." The sequence starts far enough out that off-by-ones don't show (sent to the Scene lane's reaction move).
+- "The rider has peripheral vision and sees the cat and pigs": the rider is not limited to the camera's view.
 
 ## Next free slot
 
