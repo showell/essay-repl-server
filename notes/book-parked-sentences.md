@@ -51,3 +51,7 @@
 - 2023: "`CrossingSighting` and `PosedCat` never import each other" is false.
 - 2052: `CrossingSighting` is listed as new in the bird chapter; the cat chapter introduced it.
 - Dot diagrams around 97-104, 1844-1846, 2008-2018 and 2060-2065 still name CatSighting, CatShapes, BirdSighting and BirdShapes. book_names doesn't read diagrams.
+
+## The opaque point type
+
+A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and `Picture.Setting` carries `foot`. False in Nature types and the tree chapters: the `Pipeline.Sighted` and `Picture.Setting` rows and the Sighted box's label; "hands the sighting's `right` and `forward`"; the `TreeAhead` row; "The tree's `right` and `forward` go on to `tree_picture`"; "`{ ..tip, height: Distance.zero }`", now `tip.at_height(Distance.zero)`; `tier_shape`'s guard, now gone; the ring and `base_height`, now in `cone_ring_points`; a spot exactly on the near plane is now in view; `PosedBird`'s feet are `foot.at_height(bird.lift)`; a clipped list is a list of `Geom.AheadPoint`.
