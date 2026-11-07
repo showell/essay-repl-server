@@ -74,3 +74,10 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 ## From the Tower cleanup
 
 - `{{code Tower.rod_shapes}}` now includes `Geom.ahead_line`, the near-plane cut of a line. The prose after it still describes the four-way match, which still holds.
+
+## From the Conifer cleanup
+
+- `TreeShapes.TreeAhead` at tutorial.md:456, in the types table: deleted. `tree_picture` now takes the `Picture.Setting` whole, plus `{ height, foliage_color }`.
+- tutorial.md:498: "the bars take the setting apart ... in the record that function wants" describes the old `scenery_picture`. Every name still exists, so the lint can't see it.
+- `Trees.distance_from_middle` is now `Trees.tree_line_distance` (include repointed).
+- `TreeOutline` is `{ foot : Screen.Point, height : Pixels }`. Any prose naming `base_x`, `base_y`, `height_px` or `crown_top_y` as fields is stale.
