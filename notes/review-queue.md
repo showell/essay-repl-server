@@ -286,3 +286,11 @@ Steve's answers (notes/animation-gaps.md):
 **Brief:** for a widget as the walked module, use `root=<name>_widget` with no clients.
 
 **For Steve:** subagents report that plain `bash` (`cat`, `ls`, `mkdir`) ran without the hook refusing it.
+
+## Merge order now (2026-11-07)
+
+1. rider-pixels (its last master merge is in progress; nothing else merges until it lands).
+2. widgets-once: WidgetExpects.roc plus a `package.roc` per widget, giving 1,516 tests in one run against ~15,000. It lowers the widget budget to 35 s and raises check.shale's APPS to 51, which master already needs because OnRoad added an app.
+3. makers, then camera-road.
+
+Possible upstream finding: Roc accepts `import sub.Foo` in an app with no package `sub`, and `roc test` says "All (0) tests passed". Reduce it to a repro in `findings/` before reporting.
