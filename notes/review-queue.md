@@ -140,3 +140,10 @@ rider-pixels, stills, world-encounter (World lane 2, without the heading), frame
 - `Still.Vertex` stays (decided: a still's own units, and `Point` would twin `Screen.Point`).
 - StillsWidgetApp ~738 says "StillShapes leaves out what it won't draw", which is no longer true.
 - BirdStills' and CatStills' shaded count of 0 can never change, so delete it (Steve's test rule).
+
+## From the rider pixels lane
+
+- **A gate that the ride stays on the road** (decided): a proof tool that rides the whole route and fails if the rider passes the half width, a segment goes backwards, or the rider runs past a segment's end without crossing. Report the widest point. The rider lane checked this by hand, and item 5 came within 0.1 mm of the edge.
+- **The firmest brake (item 8)** is stopped: the rule has no memory, so the rider leaves the braking zone and throttles up, then gets asked for a brake firmer than its own speed (a crash at step 5570). It needs Steve's call (clamp at the exit speed, a braking state, or braking in whole steps); the patch is at `/home/steve/build/rider-pixels-proof/item8-firmest-brake.patch`.
+- run.shale's notes on what each held depth shows (the cat at 1570 and 1590, the truck at 3742 and 6553) may be wrong after the timing moved. Eye check, then fix the notes.
+- The book's rehearsal step (370 → 374) and the gaze table's steps are stale (parked).
