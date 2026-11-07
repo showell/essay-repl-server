@@ -50,3 +50,15 @@ The cost is a piece of state, and one rule for when an encounter starts. The cat
 **The leap's keyframes** (shares 0, 0.4, 0.85, 1 and lifts 0, 0.27, 0.17, 0, "set by eye") are a drawing, like the stills, which were traced by eye too. Under C they become the leap's frames on successive steps. I'd keep them as keyframes, honestly labeled.
 
 **Pixels:** the cat's and bird's frames move under C or A, so you'd eye-test both critters. The rest of the frame holds.
+
+## Steve's answer (2026-11-07)
+
+C, strongly. "The animals don't really react to the rider in my mental model. Of course, we plan their crossings according to the rider, so that the rider actually sees that, but that's like the hand of God haha. The critters always cross at their own speeds. And the rider only changes the camera that we use for the traversal."
+
+The model, then:
+- **A critter's animation runs on its own clock:** one frame a step, from the step it starts. It never looks at the rider again.
+- **The rider changes only the camera** the animation is seen through.
+- **The hand of God picks the start, once.** When the rider comes within an encounter's planning gap, it looks at the rider's speed that once and chooses the start step so the animation ends as the rider arrives. It records that step in the ride's instant (`started_at : Clock`). That keeps "however fast you come, you see it" with no estimate redone each step. If the rider then speeds up or slows down, the critter doesn't care.
+- **Stepping back is exact,** because the start step is part of each saved instant.
+
+The bird's flight becomes so many steps of flapping, and the cat's leap keeps its keyframes, played one per step. Pixels move for both, so each gets an eye test.
