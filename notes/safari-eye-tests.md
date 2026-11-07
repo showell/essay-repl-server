@@ -4,6 +4,14 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master d67bc638
+
+This deploy has the leftovers and Pipeline lanes in it. Every held frame kept its hash. These are the places to glance at:
+
+1. **The truck's brake glow.** Its outer edge color is now built with `ArgbColor.from_rgb`, not by reading an RGB number as an ARGB one. The glow should fade out to nothing at its edge, just as before.
+2. **The radio tower's translucent part** (the one at a quarter alpha) is now made with `Brush.with_alpha`. It should look the same.
+3. **The lean's effect on the lens.** The focal length's lean factor goes through the new `Lean.portion`. A hard lean should zoom just as before.
+
 ## 2026-11-07, master 75db5c6a
 
 **Steve: passes.**
