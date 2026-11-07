@@ -42,6 +42,10 @@ CME splits by topic, all 240 expects accounted for:
   - git won't follow one file split into seven, so any lane branched before the split has to redo its CME edits by hand. That's why the split waits until no lane holds CME.
   - Some docs and briefs name CME by path.
 
+## Steve's answer (2026-11-07)
+
+"LGTM. We can scale back the agents during the CME split." So the folder is `gates/proof/`, FrameBench is deleted, and Fixtures may be a namespace. The CME split runs with no other lane open.
+
 ## Your three calls
 
 1. **The folder's name:** `gates/pixels/` (your word) or `gates/proof/`? StepBack and OnRoad check the ride, not pixels, and `part=proof` already runs them. *My lean:* `gates/proof/`.
