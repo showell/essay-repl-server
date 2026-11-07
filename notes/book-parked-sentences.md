@@ -159,3 +159,9 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :175 "`SceneShapes` renders each one through `Pipeline.rendering_of`", :707 "So `SceneShapes` counts them", :2095 "`SceneShapes` is what carries a sighting's answer to the drawing", :1311 "neither `Tower` nor `SceneShapes` imports `Clock`" (Scene imports Clock).
 - The module list (:123) and diagrams (:103, :662, :666, :1277-1279, :1862-1866, :2082-2084) still name SceneShapes.
 - Includes repointed: `Scene.tree_renderings`, `Scene.nearer_tree_count`.
+
+## From the ground lane (GroundPatch split out; Ground is the earth's curve)
+
+- :332 "A `Ground.Patch` is a patch of ground … So `Ground.patch_shape` answers a `Try`": both live in `GroundPatch` now (include repointed).
+- :959 "That's what `Ground` paints": GroundPatch paints.
+- Lines 912-975 were already stale: `BendView`, `bend_patches`, `on_map`. `BendInView.inner_edge` is gone too.
