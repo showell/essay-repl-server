@@ -32,6 +32,7 @@ This is the orchestrator's state for the type review, so it survives a compactio
    - `Camera.height_on_screen`, so the size test stops projecting inline. It must keep the same order of operations.
    - Into the World lane: `Geom.Placed(kind) : { road_point, lift, kind }`, so the road point travels whole from placed to sighted, as it does in Spot.
 9. **Small leftovers:**
+   - `BillboardSighting.min_critter_px` (2 px) and Pipeline's `smallest_scenery_height_on_screen` (2 px) are one rule: the smallest thing worth drawing (decided). Give it one public home in Pipeline, and drop the gate's expect that holds it to 2.0. Merge after world-split, whose fixtures Pipeline's new tests use (`World.route_segment(0)`, which world-split deletes).
    - `Attention.portion : Attention, Fraction -> Attention` scales attention, but `portion` on the other units now divides (`d.portion(whole)`). Rename Attention's to `scaled_by` (decided).
    - Lens.roc:58 divides two `Angle.Lean`s by hand: give Lean a `portion` too.
    - roc-style.md:88 cites `Fraction.from_ratio`, which is now private, as its example of a conversion name. Pick a public one.
@@ -78,3 +79,8 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
 ## After the route split
 
 - **One camera record** `{ heading, vantage, cam_focal }`, replacing `Lens.CameraAim` and `RoadAhead.CameraView` (Steve: "something we should definitely do").
+
+## After World and FrameView
+
+- **Scene erases its kinds** (notes/scene-kinds.md, decided): the fields hold `Rendered`, and `scene_in_view` sights and renders. SceneShapes folds in or shrinks.
+- **GroundSighting** (the ground review): its expects move home from CrossModuleExpects, with three members going private; `BendView.inner_edge`; `pond_patches` takes the SegmentInView whole and matches `bend_life`; `chunks_along` becomes `chunk_count`. After the earth work, Ground becomes `GroundPatch`.

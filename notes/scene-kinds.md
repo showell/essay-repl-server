@@ -57,3 +57,27 @@ Making the kinds opaque doesn't help either. The members that pull in the intern
 Is (A)'s payload-free `SceneSource` all right, given the parallel hierarchy it resembles? If yes, it runs after the World split and the FrameView lane, which touch the same code.
 
 The agent also suggests a new entry for the smells guide: "A collection keeps its kinds past their last use. Erase the kind where the last step that needs it runs." I'll add it whichever way you decide.
+
+## Steve's answer, and the decision (2026-11-07)
+
+Steve: "I kinda lean toward B if it avoids the parallel hierarchy. I don't care how much it costs to change if it's better. You decide."
+
+**Decided: B, with the kinds erased inside it.** Scene keeps one named field per source, so there's no separate list of kinds and no enum. Each field holds what that source rendered, not the kind's type:
+
+```roc
+Scene :: {
+    trees : List(Rendered), birds : List(Rendered), towers : List(Rendered),
+    billboards : List(Rendered), cats : List(Rendered),
+    truck : Try(Rendered, [..why there's no truck..]), rails : List(Rendered),
+}.{
+    scene_in_view : CameraView, RideFacts -> Scene     # sights and renders; it has the view
+    scene_renderings : Scene -> List(Rendered)         # joined in tie order, then depth-sorted
+}
+```
+
+- **No parallel hierarchy.** The fields are the only list of sources. The frame widget maps its layers to fields, as it does today, and the gate counts each field against its sighting.
+- **The smell goes.** The kind is erased in `scene_in_view`, the last step that needs it, so walking Scene shows Rendered and RideFacts and no kind's internals.
+- **The tie order** is the order `scene_renderings` joins the fields: trees before birds, the perch rule's one home.
+- **SceneShapes** folds into Scene or shrinks to the join.
+
+This runs after the World split and the FrameView lane. The smells guide gets the new entry: "A collection keeps its kinds past their last use."
