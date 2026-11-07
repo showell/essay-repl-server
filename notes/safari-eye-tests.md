@@ -14,7 +14,7 @@ The newest entry is at the top. Each one says what should look different, and wh
 4. **The rider still eases off while a cat crosses,** now for exactly the crossing's 38 steps.
 5. **The ride ends at step 6746** (it was 6779). The sunset's climax still falls on the long road west, and full night still comes before the end; both tests passed unchanged. The widest point is 1.988 m of the road's 2 m half-width.
 
-Also in this deploy, with no visible change: the rider cleanup's precursors, Ground renamed EarthCurve, and GroundPatch split out.
+Also in this deploy, with no visible change: Ground renamed EarthCurve, GroundPatch split out, and the style guide's opaque-by-default rule.
 
 ## 2026-11-07, master 2fb0f378: one crowd
 
