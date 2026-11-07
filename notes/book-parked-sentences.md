@@ -167,6 +167,13 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - Lines 912-975 were already stale: `BendView`, `bend_patches`, `on_map`. `BendInView.inner_edge` is gone too.
 - Ground is now `EarthCurve` (the earth's curve, one of the "honest cheats"): :253, the 923 diagram (`GroundSighting -> Ground`), :959 and :2535 still say `Ground`.
 
+## From the sky-frame and Scene-reaction lanes
+
+- `Sky.dusk_at` is `Sky.darkness_at` (:848, :1403, :1407, :1441); :893 the rock darkens "with `dusk`", now `darkness`; `Sky.sunset_warmth` is `horizon_warmth_at` (:1425, :1431, the :1365-1370 dot graph, already stale with `Sun.height_px`); `Sun.height` is `height_at`; `Lens.cam_focal` is `focal_for`.
+- :1879 RideInstant puts the lights together: `LitTruck.at` does. :1383 Tour hands the clock to Sun and Sky (already stale).
+- FrameView now holds `backdrop` and `ride_shapes`; Screen has `drawn_left`/`drawn_right`/`margin_rect`, with no `width_with_margins`.
+- `EncounterPoses` is new (the animals' poses from the ride's plan, with no camera); EncounterSighting is camera work only; Scene's truck is `trucks`, a list of zero or one. The parked names-every-module check will want EncounterPoses and EncounterSighting.
+
 ## From the rider-review lane
 
 - ~2341: the search "compares the end of the coast with the target"; it's the road's middle now. ~2345: "Its caller gives the search its bounds"; `search_tries` sets them. ~2353: "all of `LeanSearch` is 105 lines".
