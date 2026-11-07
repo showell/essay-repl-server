@@ -59,3 +59,11 @@ I'd take **yes**, since an eye test is cheap now. It would be its own commit.
 3. Then the worked-out heading, with an eye test, if you say so.
 
 A word per question is enough.
+
+## Steve's answers (2026-11-07)
+
+1. **`RiderCamera`:** "yup, excellent name! Even though Camera is fairly unique in the app, I think RiderCamera just immediately orients you."
+2. **The vantage leaves `RoadView`:** "100%".
+3. **The heading is worked out from the route:** "yup" (an eye test for the sky).
+
+Three lanes, in order, after FrameView merges: the camera itself (pixels hold), then the vantage out of RoadView (pixels hold), then the worked-out heading (the sky may move in its low bits).
