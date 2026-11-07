@@ -94,6 +94,12 @@ Repros on roc-apps branch `roc-findings` (worktree lanes/roc-findings, keep it):
 - An opaque `Focal` type: no. "Leave the crash as the guard."
 - Debugging widgets: no strong opinion.
 
+## The nominal-type survey (2026-11-07; details in /tmp/claude-1000/nominal-survey/)
+
+33 nominal types in safari and lib: 7 keep (Conifer, SegmentPlace, PigHerd, Keys.Key, Mouse.Button, Input.Snapshot and Mouse.Snapshot, the last two by their roc-ray docs), 23 make opaque, 3 unsure (LitTruck, RiderState, Motorcycle).
+- **opaque-cheap lane (queued; after scenery-tests, Scene and sky-frame land, since they're in these files):** Beacon (`of_segment`), CowHerd/BigPigHerd/TwoRowPigHerd (checked makers; folds into scenery-types), GroundPatch, Post, PosedBird/PosedCat (`of(pose)`), Rendered (`of(depth, picture)`), Animation.Timeline, Tower, Still, Billboard (CME uses `adult_billboard`), BendInView (`before()`), CatCrossing (`along()`).
+- **For Steve, when questions resume:** the read-heavy records Segment, RideInstant, Tour, FrameView, RiderCamera, Scene, Truck, RiderEyes, plus RiderState/Motorcycle (a state machine whose transitions live in Rider). Does "a plain record read field by field everywhere, with no invariant" count as a reason for nominal? If not, it's dozens of getters.
+
 ## Queued from the scenery review (2026-11-07)
 
 - **scenery-types lane, after scenery-tests lands** (both edit CME): BigPigHerd reshaped so the standout is always in the front row (`columns_before_standout`, `columns_after_standout`, `rows_behind_front`), CowHerd `rows` becomes `cows_per_column` with a crash at World's one constructor; `RailQuad` corners named `{ low_start, low_end, high_end, high_start }` (list built only at `Camera.clipped_polygon`; bends_widget:187 reads it), Pond's far shore `{ first, middle, last }`, the pond outline type named; `Conifer.small_height = 4.896 m` "chosen by eye", `TreeShapes.tree_parts` private; "critter" becomes billboard (`sight_billboard`, `bend_billboards`, Billboard's doc); inline `RailSighting.rails_at` (its reason is the parked book; log it).
