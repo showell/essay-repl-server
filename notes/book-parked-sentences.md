@@ -81,3 +81,10 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - tutorial.md:498: "the bars take the setting apart ... in the record that function wants" describes the old `scenery_picture`. Every name still exists, so the lint can't see it.
 - `Trees.distance_from_middle` is now `Trees.tree_line_distance` (include repointed).
 - `TreeOutline` is `{ foot : Screen.Point, height : Pixels }`. Any prose naming `base_x`, `base_y`, `height_px` or `crown_top_y` as fields is stale.
+
+## From the billboard cleanup (Species, CowHerd, segment descriptions)
+
+- `Cows` at tutorial.md:1176 and in the diagram at 202, 207 and 208: the module is now `CowHerd`, with the route's herd in World.
+- `inward` at 1134: Wildlife picks left or right of the middle instead of a float sign.
+- "Both herds are worked out once, when the world is built" is no longer true: `World.segment_cows` and `segment_pigs` place them when asked, and the segment holds only `bull` and `pig_herd`.
+- Each kind's look is a `Billboard.Species` (`codepoint`, `adult_height`); young ones are `Billboard.young_billboard`, half height.
