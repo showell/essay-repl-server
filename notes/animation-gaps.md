@@ -34,3 +34,10 @@ I'd **keep it**, since it preserves behavior, and give it the story as its reaso
 - The start step's rounding gets one home, with ceil or floor chosen and tested on both sides.
 - The test-only imports in PosedBird (9 of 13), PosedCat and Cat go, along with tests that restate constants or test StillShapes.
 - Cat and BirdFlight stay as they are, not methods on the encounter.
+
+## Steve's answers (2026-11-07)
+
+1. **(a), one slot reset at each segment.** "A list keyed by segment would be a clear violation of our smells rules."
+2. **The flap keeps today's look at cruising speed.** "yup, good call." Plus an end-to-end test, like the sunset and night tests: **the rider can't overtake the bird.**
+3. **Keep the throttle hold** as a story rule.
+4. **Every bird flies.** "Do any birds actually stay put? If so, that's from a miscommunication. All our birds should fly. They're kinda hard to notice if they don't fly." `StaysPut` goes, and a bird's habit is just its flight. Any bird that sits today will fly, so pixels move.

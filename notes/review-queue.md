@@ -230,3 +230,13 @@ Decided: `Past(Steps)`; Placed instead of `Animation.Location`; Habit `[FliesTo(
 - **Zig:** no road-seam fix in its history. The Zig native renderer supersamples, which may be what Steve remembers.
 - **Scratch tools:** `/tmp/claude-1000/road-seams/scan/` holds `SeamScan.roc`, `conflate.mjs` (the AA emulator) and `depths.mjs`.
 - **Lesson:** a lane cut from an unpushed master can carry a merge that later gets taken off. Cut lanes from `origin/master`.
+
+## Animation lane: ready once the rider merge lands (it shares Rider; it also touches RideInstant, after the camera lane)
+
+Steve's answers (notes/animation-gaps.md):
+- One slot, `encounter_start : [Unplanned, StartsAt(Clock)]`, reset at each segment.
+- The flap keeps today's look at cruising speed.
+- A new end-to-end test in CrossModuleExpects: the rider never overtakes the bird.
+- The throttle hold stays, as a story rule.
+- Every bird flies: `StaysPut` goes, and `Habit` is the flight.
+- The rest is as decided in option C and the animation review.
