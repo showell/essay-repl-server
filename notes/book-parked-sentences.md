@@ -165,3 +165,8 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :332 "A `Ground.Patch` is a patch of ground … So `Ground.patch_shape` answers a `Try`": both live in `GroundPatch` now (include repointed).
 - :959 "That's what `Ground` paints": GroundPatch paints.
 - Lines 912-975 were already stale: `BendView`, `bend_patches`, `on_map`. `BendInView.inner_edge` is gone too.
+- Ground is now `EarthCurve` (the earth's curve, one of the "honest cheats"): :253, the 923 diagram (`GroundSighting -> Ground`), :959 and :2535 still say `Ground`.
+
+## From the animation lane (option C: animals on their own clock)
+
+- Roughly 1929-2291 and 2808/2845: `Approach` feeding `Cat.instant_at`, `stage_over_gap`/`stage_over_step_span`, "38 beats tied to no clock", the bird reacting to how close the rider is, a bird that `Sits`, the hanging bird, the feedback loop "why `stage_over_step_span` has to stay the cat's rule", "adding the distance to the segment to get the gap". Every bird flies now, and the start is planned once per segment.

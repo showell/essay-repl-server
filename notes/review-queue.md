@@ -86,6 +86,8 @@ Repros on roc-apps branch `roc-findings` (worktree lanes/roc-findings, keep it):
 - The rider knows the road like a local; with straight segments that's equivalent to seeing the turn (the corner creatures are another cue).
 - "Rides are deterministic only for simplicity purposes": determinism is a convenience, not a principle. Also: "there's some comfort in the familiarity, like a film you rewatch with popcorn."
 - The truck: "mostly hand of god, but to the rider it SHOULD feel like the truck driver sees him and is teasing him." Decided: "name the tease in code, physics underneath". **Queued lane (after rider-review, which touches Truck):** find the rule hidden in the truck's lead and pace, and give it a name that says the tease, with the physics beneath it. Pixels hold. Steve, refining: "the truck is governed by the fact that we want the rider to close in on the truck throughout the route in a non-linear fashion, so that it's more interesting. I wouldn't sweat this one too much." So the named rule is "the rider closes in over the whole route, non-linearly", and the lane is LOW priority.
+- The sunset's place on the long road west: "a test is the right home". (A character's behavior gets a name in code; a timing promise gets a test.)
+- A director for the hand of god: "almost more like a screenwriter has scripted the whole route. I haven't seen any code that begs this question yet." No action until code asks for it.
 - Debugging widgets: no strong opinion. Useful for debugging and eye feel (a bird flapping between two trees and nothing else), but rarely worth saving in the repo; widgets are quick to build. So a throwaway widget for a lane's question is fine, and it doesn't need to land.
 
 ## Next free slot
