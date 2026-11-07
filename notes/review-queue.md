@@ -173,3 +173,27 @@ Small: `canvas_apps/safari/README.md` (lines 61 and 94) lists the proof tools wi
 - It waits on the sunset test (Steve's rule: the sunset's climax falls on the long westward segment, measured on master, with a margin).
 - **The cats aren't a blocker** (Steve: "it's not super important which step they're on... the cats should work out from the logic that puts them relative to the rider"). On the new timing, step 1570 has no cat (it's out of view from 1547 to 1606). The frame widget's counts fix is on branch `frame-counts`.
 - When the merge goes in, re-pick the held depths and the frame widget's step so each shows its scene again (the cat frozen, mid-leap, the truck's glow, the truck braking). Where cheap, define a step by its event ("the first step the cat is in the lane") rather than a number.
+
+## Second passes (decided)
+
+- **Tower, Beacon and TowerSighting** (merge into the sightings lane):
+  - `beacon_disc` gives one shape, and `beacon_shape` a Try.
+  - `SunkTower` stores `metre_on_screen`, and `rod_width_at` goes.
+  - 16 restated expects go.
+  - The beacon widget calls `scenery_picture` on a straight road, and `corner_offset` goes private (decided: one home).
+  - TowerSighting's seven helpers go private.
+  - `tower_if_ahead` takes a `road_point` and a built Tower.
+  - `base_corner_on_road` takes the center whole.
+  - `Beacon := U32` with `brightness_at : Beacon, Clock -> Fraction` (decided: the key is the beacon's identity), and `beacon_stagger` goes private.
+  - Shape names: `leg_shapes`, `ring_shapes`/`ring_shapes_at`, `brace_shapes`/`face_brace_shapes`, `end_tower`/`mid_tower`.
+- **The backdrop** (a small lane):
+  - Backdrop's test-only imports go, along with its two expects.
+  - Lens's Trig expect goes.
+  - Mountains' `seen_bearing` and its six expects go, with the other restating expects in Mountains and Sun.
+  - `Sky.dusk_at_set` goes private.
+  - `FrameView.sun` becomes `sun_sighting`.
+  - `Lens.scale_for` becomes the one home for the lens's scale.
+  - Lens's five private helpers go with the camera lane.
+  - For the camera lane to weigh: hold the focal as a Fraction of the resting focal, which rules out Sun's crash.
+  - Later, maybe Steve: the skyline as part of `BackdropShapes`.
+- **RoadAhead.rider_point_at** takes `{ place, along, across }`, not a RoadPoint (seen twice; with the camera's vantage lane).
