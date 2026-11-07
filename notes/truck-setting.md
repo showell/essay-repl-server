@@ -39,3 +39,7 @@ Pixels hold either way.
 - The beam's middle is `at_lamp(headlight_height)`, so `midpoint` goes.
 - `ArgbColor.from_rgb(color, { alpha })` replaces reading an RGB number as an ARGB one. The sun glow is its second user, and it waits for the lib lane.
 - The tests that restate constants go.
+
+## Steve's answer (2026-11-07)
+
+Agreed: (a), like the tower. `Picture.Setting({ road, box })`, with the box worked out once at sighting.
