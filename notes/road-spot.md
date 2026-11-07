@@ -65,3 +65,10 @@ If C feels like too much of the pipeline for one finding, B is the safe half-ste
 The cat review found the height version of this. `PosedCat := { pose, lift }` and `PosedBird := { pose, lift }` hold how high off the ground the critter is, which is part of where it is. `Animation.placed_instant` splits the animation's `Spot { along, across, lift }`: along and across go to `Geom.Placed`, and lift goes into the kind, because `Placed` and `Sighted` sit flat on the ground. The rule "a kind holds how it looks, never where it is" bends there.
 
 C opens the clean fix. The spot already carries the foot, so it can carry a height above the ground too. Then `PosedCat` and `PosedBird` are pure pose, and `placed_instant` stops splitting a spot. The other choice is to call a leap's height part of the pose and say so in the doc. That costs nothing, but the smell stays, under a name.
+
+## As built (2026-11-07)
+
+- `Spot` is an opaque type in its own module, Spot.roc, beside a new SegmentPlace.roc. A segment's place had to move out of RoadAhead, because RoadAhead depends on World, World on the kinds, and the kinds on `Setting`.
+- `Sighted` and `Setting` carry the spot. The tower's and truck's context is only the road. Lift lives in `Placed` and the spot, every kind draws from `spot.lift()`, and PosedCat and PosedBird are pure pose.
+- The old two homes never disagreed, in production or in the tests.
+- **One gap:** `Spot.at` is public, because the kinds' own tests can't reach Pipeline without an import cycle. "Only a sighting builds a spot" is a convention in the doc, not something the types enforce. Production builds every spot through `Pipeline.sighting_of`.

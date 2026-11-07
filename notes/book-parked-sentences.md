@@ -96,3 +96,12 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - The diagrams near 1919, 2091 and 2138 still draw `CatStills -> Cat` and `BirdStills -> BirdFlight`; those edges are now wrong (the checker doesn't see edges).
 - 1935: `cat_in_view` no longer adds the gap itself; `CrossingSighting.crossing_in_view` does, for the cat and the bird.
 - `Geom.ground_curve_radius` at 2512: the earth's curve is in Ground now (`Ground.ground_curve_radius`, `Ground.ground_drop`).
+
+## From the spot lane
+
+- tutorial.md:380-381 describe `Sighted` and `Setting` by their old fields; both now carry a `spot`.
+- tutorial.md:390, a diagram, lists "place, along, across, right, forward, kind".
+- tutorial.md:639: a tower now reads its place and road point from the spot, and its context is only the road.
+- `RoadAhead.Position` at 2442: now `SegmentPlace.Position`, in a module of its own below World.
+- `Animation.Spot` is now `Animation.Location`; "spot" means only the sighting's `Spot`.
+- The glossary has a Spot row, and its Sighting and Placed rows were updated (the one prose change made on purpose).
