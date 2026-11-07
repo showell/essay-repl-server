@@ -6,7 +6,9 @@ This is the orchestrator's state for the type review, so it survives a compactio
 
 | Lane | Branch | What |
 |---|---|---|
-| truck review | (read-only) | TruckBody and TruckLights, depth 2 first |
+| scene-shapes | roc-apps `scene-shapes` | lane 6 below |
+| truck | roc-apps `truck` | strip_corners, the setting like the tower's (Steve, notes/truck-setting.md), TruckFace gone, private helpers and `Screen.distance`, the beam's middle, restated tests |
+| units | roc-apps `units` | lane 3 below |
 | lib-tidy | roc-apps `lib-tidy` | delete `lib/Color`, `Brush.translucent`, an opaque `Brush.Rgba` if it unifies, Pieces as its own type, a ConvexCut module, records for float runs, bracket makers, range crashes, the glow's middle offset, rename `lib/View`, plain headers |
 | tuning | roc-apps `tuning` | lane 4 below: the "chosen by eye" docs, `small_height` from the tree's parts, one Scatter function, the perched critter drawn over its tree (its own commit; pixels move). `brake_decay` stays with the rider. |
 
