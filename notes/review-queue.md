@@ -1,16 +1,15 @@
 # The review queue
 
-This is the orchestrator's state for the type review, so it survives a compaction. The workflow is in roc-apps `docs/review-workflow.md`. Every item here is decided. None needs Steve until the eye-test note.
+This is the orchestrator's state for the type review, so it survives a compaction. The workflow is in roc-apps `docs/review-workflow.md`. Open questions for Steve: notes/frame-record.md. Eye tests: notes/safari-eye-tests.md.
 
 ## Running now (2026-11-07)
 
 | Lane | Branch | What |
 |---|---|---|
-| scene-shapes | roc-apps `scene-shapes` | lane 6 below |
-| truck | roc-apps `truck` | strip_corners, the setting like the tower's (Steve, notes/truck-setting.md), TruckFace gone, private helpers and `Screen.distance`, the beam's middle, restated tests |
-| units | roc-apps `units` | lane 3 below |
-| trees | roc-apps `trees` | the cones measured from the foot (lift was always 0), `height_down_crown` written once, restated tests out, private helpers, `crown_top_y` the short way (it may move a last bit), Detail's tree thresholds into TreeShapes with `trunk_finish_of` and Detail folded into Pipeline, Conifer's doc. Rejected: renaming Green back to BigGreen, which Steve decided. |
-| tuning | roc-apps `tuning` | lane 4 below: the "chosen by eye" docs, `small_height` from the tree's parts, one Scatter function, the perched critter drawn over its tree (its own commit; pixels move). `brake_decay` stays with the rider. |
+| world-split | roc-apps `world-split` | World lane 1 of 2: World and Segment split, `Route`, derived segment fields, the pig state, names, and `Placed` carrying a whole road point |
+| pipeline | roc-apps `pipeline` | lane 8 below, without Placed |
+| leftovers | roc-apps `leftovers` | `ArgbColor.from_rgb`, `with_alpha` in Tower and snake, squashed_shapes' record, lib headers, the README's Disc row, `Attention.scaled_by`, `Lean.portion`, roc-style's examples, `starting_speed`, private helpers |
+| commas-whole | shale `commas-whole` (mounts `lanes/commas-whole.mounts`) | roc_commas.shale works out every file before writing any |
 
 ## Next lanes, in order (each waits on the lanes it shares modules with)
 
@@ -27,7 +26,15 @@ This is the orchestrator's state for the type review, so it survives a compactio
    - The module doc says "orders", and the context doc names no list of kinds.
    - `nearer_tree_count.to_u16_wrap()`, which wraps silently.
 7. **The frame's top** (after SceneShapes, and before World if Steve answers notes/frame-record.md in time): the frame-building moves out of RideInstant into its own module; the truck's lead is worked out once; private helpers; Tour's comment; the restated expects; `billboards_in_view`.
-8. **Small leftovers:**
+8. **Pipeline** (after trees, which moves `min_scenery_px` into it):
+   - `SizeTest : { focal_length, smallest_height_on_screen }`, since BillboardSighting fills the focal length with `resting_focal`, not the camera's.
+   - Pipeline's own expects, through a private test kind: the near plane, the size threshold, and the rendering's depth.
+   - `Camera.height_on_screen`, so the size test stops projecting inline. It must keep the same order of operations.
+   - Into the World lane: `Geom.Placed(kind) : { road_point, lift, kind }`, so the road point travels whole from placed to sighted, as it does in Spot.
+9. **Small leftovers:**
+   - `Attention.portion : Attention, Fraction -> Attention` scales attention, but `portion` on the other units now divides (`d.portion(whole)`). Rename Attention's to `scaled_by` (decided).
+   - Lens.roc:58 divides two `Angle.Lean`s by hand: give Lean a `portion` too.
+   - roc-style.md:88 cites `Fraction.from_ratio`, which is now private, as its example of a conversion name. Pick a public one.
    - RailSighting's `runup_points` and `run_out_points` are public for nobody.
    - `VehicleLimits.base_speed` should be `starting_speed` (Truck and CrossModuleExpects use it).
    - `Gaze.look_swivel_rate` and `Motorcycle.turn_per_lean` are public but used only in their own files.

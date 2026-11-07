@@ -126,3 +126,14 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 
 - Near tutorial.md:2739, "builds a camera out of nested tags and puts it at the front" is loose now: `SafariApp.lean_space` builds a `Shapes.Space`, and `Shapes.in_space` wraps the frame's shapes in it. The include is repointed.
 - `lib/View` is `lib/Eye`, and `lib/Color` is gone (RgbColor and ArgbColor hold colors). `Camera.view` is `Camera.space`.
+
+## From the SceneShapes lane
+
+- tutorial.md:713 says the tree count "wraps around past 65,535" (`to_u16_wrap`). It now crashes by name instead.
+- `ThingLists` and `things_in_tie_order` are gone: `SceneShapes.scene_renderings` gives the things far to near, with the tie order written once. The rail's rendering is `GuardRail.quad_rendering`.
+- TreeSighting's and TruckSighting's expects live in their own modules now.
+
+## From the units lane
+
+- tutorial.md:1291 says `Clock.minus` turns two clocks into Steps and that Clock has no `plus`. Now `Clock.steps_since` does that, and `plus` and `minus` take Steps. Line 1301's `clock.minus(Clock.start)` is `clock.steps_since(Clock.start)`.
+- `complement` (518) is `Fraction.less`, and `ratio_to` (1435) is `portion`, on Distance, Pixels, Turn and Speed.
