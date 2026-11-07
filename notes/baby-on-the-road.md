@@ -22,3 +22,7 @@ I lean to **(b)**, since "in the middle of the road" sounds like the intent, and
 - `Billboard.half_width` names the fact that a still is square. Wildlife and CowHerd each used half the height for it.
 - Pond hands GroundSighting whole outlines, water first, rather than four constants to pair up. The bank's inner edge is the water's far shore, named once.
 - Wildlife's helpers go private, and Trees' insets and the gold tree's ×4 are documented as chosen by eye.
+
+## Steve's answer (2026-11-07)
+
+**(a): the babies stay**, and the doc says where they actually are. "I don't remember my original intent, but dead ahead would probably feel unnatural."

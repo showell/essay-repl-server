@@ -102,5 +102,4 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
   - `Pond.pond_outlines`, water first, and `far_shore` named once.
   - Wildlife's private helpers.
   - Trees' "chosen by eye" docs.
-  - The baby's place waits on Steve (notes/baby-on-the-road.md).
-- **type_walk:** with `clients=`, a module no client imports makes the walk fail ("none of the 27 client files imports ..."). That check should fire only when the root and the clients are written differently, not when no widget happens to import the module.
+  - The baby stays where it is (Steve): its doc says it stands straight on past the bend, ahead of the rider on the approach, off the next road.

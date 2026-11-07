@@ -4,6 +4,10 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 7447a4ef
+
+This deploy has the widget-kit lane in it: the widgets' shared code, and `Brush.flat` across the apps. The ride itself is unchanged, and every held frame kept its hash. Nothing in the ride needs a look. If you open a widget page later, its readouts (numbers with a minus sign, such as the sky widget's sun height below the horizon) should read as before.
+
 ## 2026-11-07, master db1777b9
 
 **Steve: passes.**
