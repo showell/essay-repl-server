@@ -6,6 +6,8 @@ The newest entry is at the top. Each one says what should look different, and wh
 
 ## 2026-11-07, master 75db5c6a
 
+**Steve: passes.**
+
 This deploy has the truck, SceneShapes, units and trees lanes in it. Every held frame kept its hash, so nothing should change. These are the places to glance at:
 
 1. **The truck.** Its faces, lights and brake lamp were rebuilt from one strip helper, and the headlight beam's center is now computed directly. Look at it up close: the body's faces, the brake lamp's glow when it slows, and the headlight beams at dusk.
