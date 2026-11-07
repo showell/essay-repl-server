@@ -132,3 +132,11 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
 ## Running (2026-11-07, evening)
 
 rider-pixels, stills, world-encounter (World lane 2, without the heading), frame-view (lane 7 plus the backdrop step, the truck's lead and `billboards_in_view`). The camera waits on Steve (notes/camera-record.md).
+
+## After World lane 2 (the stills' tail)
+
+- `EmojiStill.codepoint` goes (Steve). Its tests are in World/Segment.
+- Fields and constants that hold a `Still` but are named `polygons` (`EmojiStill.polygons`, `standing_still_shapes`' and `PoseStill`'s `polygons`, the `*_polygons` constants) become `still` (decided), so nothing reads `x.polygons.polygons()`.
+- `Still.Vertex` stays (decided: a still's own units, and `Point` would twin `Screen.Point`).
+- StillsWidgetApp ~738 says "StillShapes leaves out what it won't draw", which is no longer true.
+- BirdStills' and CatStills' shaded count of 0 can never change, so delete it (Steve's test rule).

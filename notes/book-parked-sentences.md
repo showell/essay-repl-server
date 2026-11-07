@@ -137,3 +137,10 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 
 - tutorial.md:1291 says `Clock.minus` turns two clocks into Steps and that Clock has no `plus`. Now `Clock.steps_since` does that, and `plus` and `minus` take Steps. Line 1301's `clock.minus(Clock.start)` is `clock.steps_since(Clock.start)`.
 - `complement` (518) is `Fraction.less`, and `ratio_to` (1435) is `portion`, on Distance, Pixels, Turn and Speed.
+
+## From the World split, stills, widget-kit and polygon lanes
+
+- `World.segments`, `World.plans` and `World.SegmentIndex` (189, 1499, 2441, 2498, 2815): the route is `World.route : Route`, the plans are `World.segment_plans` (with `bending_plans` and `last_plan`), and the index is `Route.SegmentIndex`. The segment is `Segment` in its own module, and its ending is `[Bends({ turn, bend_life }), RouteEnds]` (1518's `Continues`). `MidTower` (1028) is `Segment.has_mid_tower`.
+- `Stills` and `StillPolygon` (1069, 1111, diagrams 2139-2140): `Still := List(Still.Polygon)`, with `Still.Vertex` and a gradient tag.
+- tutorial.md:316: "The triangle takes two arguments: a color, and a record of three corners" has the order backwards now: the corners come first.
+- `Detail` (177, 590): its tree thresholds are TreeShapes' own, and the smallest height on screen is Pipeline's.
