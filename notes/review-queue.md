@@ -129,6 +129,10 @@ Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrum
 
 Master's gate stopped at run.shale:198 (`clear_full_caches`). `du -sm` on the shared CACHES folder failed ("cannot access ..."), because another gate in a lane worktree was clearing it, and `tonumber` then read du's error text as a number. Two problems: the gate trusts du's output without checking its exit, and every worktree's gate shares one cache folder, which one run can clear under another (a build could break the same way). Fix: check du's exit and fail by name; and either key the cache per checkout, or clear only under a lock, or never clear while another gate holds it. A small lane, after the current ones.
 
+## Latent: braking can ask for a negative speed (2026-11-07)
+
+Found by the rider-step lane: `RiderState.next` from 299.9 m on the last segment at 0.5 m a step crashes in `Speed.accelerated_by`, because the throttle's brake (`VehicleLimits.braking_to`, which aims at rest over the distance left) gives an acceleration larger than the speed. The real ride never reaches that state (it arrives slowly), but the rule allows it. Fix with the RoutePlace lane or on its own: braking never takes the speed below its target in one step (state it as a rule, with a test of both sides), and say how the stop at the route's end then ends. It may move the ride's last few steps; check OnRoad's finish.
+
 ## name_hunt's preposition convention is fragile (2026-11-07)
 
 Twice today, removing names in one module flipped `preposition_split` somewhere unrelated. Deleting TowerSighting's `brightness_at` (a test helper) dropped the `_at` convention under 3 stems and flagged three pairs. Removing HexColor's `red_of`/`green_of`/`blue_of` dropped the `_of` convention and flagged CME's `road_of`/`road_from`, now renamed `crafted_road`/`world_road_at`. A rule whose verdict on file A depends on names in unrelated file B is a judge that moves on its own. Look at cookbook/roc/name_hunt.shale's CONVENTION_STEMS: count per module, exclude test helpers, or drop the convention exemption and fix the names it then flags. A shale cookbook lane.
