@@ -307,3 +307,16 @@ Possible upstream finding: Roc accepts `import sub.Foo` in an app with no packag
 
 - The skyline's docs (Steve: (b)): Backdrop's doc says the backdrop is the sky, the sun and the grass, and Mountains' says the skyline is the farthest of the ride's shapes, painted first among them.
 - The browser and lib still disagree in two corners (lib-follow): Glow and Radial with no ring return the outer color directly in the JS while Brush.shade mixes to it, and the JS `twoStops` clamps the end offset to 1. Make the JS follow Brush.shade.
+
+## From camera lane 2 (follow-ups)
+
+- `SegmentPlace.JustBehind` can still be written for a rider on the first segment, and then `RoadAhead.bend_behind` crashes on `AtRouteStart`. Make that state unwritable.
+- The sightings' helpers aren't uniform: some take a flat `vantage`, others a `camera`. Pick one.
+- `{ road, vantage }` travels together through `Pipeline.sighting_of`, the rendering contexts and `rider_point_at`, so give it a name.
+- RailSighting and GroundSighting each have the same `seen_before` closure.
+- Two parameters are named `seen` (BillboardSighting, RailSighting).
+- **Tools:**
+  - roc_commas works on whole folders; add a `files=` option.
+  - Shale's `substitute` silently does nothing when it finds nothing; consider a strict form.
+  - fast.shale sometimes says "no green on record" right after a green run.
+- **Roc oddity:** a method call on a value built as a plain record literal (where a nominal type is expected) fails "missing method". With the earlier one (a nominal value destructured from a record parameter losing its methods), that makes two candidate findings to reduce.
