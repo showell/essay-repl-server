@@ -153,3 +153,11 @@ rider-pixels, stills, world-encounter (World lane 2, without the heading), frame
 1. `RiderCamera := { segment_index, vantage, heading, cam_focal, roll }` with `of : RiderState, Route -> RiderCamera`, replacing ViewYaw and `Lens.CameraAim`. Consumers read open records. Pixels hold.
 2. The vantage leaves `RoadView`: RoadView is pure road, `CameraView` dies, and the sightings take the camera and the road. Pixels hold.
 3. `heading` is worked out from the route, and `Motorcycle.heading` goes. The sky may move in its low bits, so it gets an eye test.
+
+## Bugs (lower priority than the type audit; Steve, 2026-11-07)
+
+- **White seams in the road pavement,** seen very occasionally. The same bug was in the Zig version (angry-gopher `games/driving`), and it was fixed there. No commit message names it; start with `wasm/render.zig` and `wasm/geom.zig`'s road patches, and look at how the patches meet: overlap, shared edges, or antialiasing between adjacent polygons. Find a frame that shows a seam first, then port the Zig fix's idea.
+
+## Eye tests
+
+Steve is pausing eye tests for a while, since they've all passed. Keep deploying after green gates and adding entries; he'll catch up in a batch.
