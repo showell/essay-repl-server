@@ -37,3 +37,15 @@ The private helpers leave the public blocks too, and `base_speed` becomes `start
 13. **The bike turns in place.** `yaw += 0.1 × lean` on every step, even at speed 0, so a stopped bike that leans pivots, and no rule caps the lean. Either the turn per step depends on speed, or the type gains a maximum lean. *Recommend: turn with speed. That's physics, and it's the Motion chapter's first lesson.*
 
 Mark each with a word or a number.
+
+## Steve's answers (2026-11-07)
+
+Agreed to every recommendation. Each one that moves pixels gets a careful eye test.
+
+**A Motorcycle module.** Steve: "It's always just felt wrong that we don't have one, and it seems to fit some of the spirit of splitting rider state. The rider is on the Motorcycle, which keeps state for throttling and lean. RiderState then can have RiderEyes or similar for gaze." The shape for the split, item 11:
+
+- `Motorcycle` owns the motion: where it is, its speed, lean and heading, and the controls it takes (`Bike.Controls` from item 2 becomes `Motorcycle.Controls`). Today's small `Bike` module, which holds the motion step, grows into it.
+- `RiderEyes` holds the gaze and the look depth.
+- `RiderState` is the rider on the motorcycle: `{ motorcycle, eyes }`. Throttle and LeanSearch read the motorcycle, and Gaze reads the eyes.
+
+This lands with the rider lane, after the spot lane merges.
