@@ -4,6 +4,14 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master fd32d1a5
+
+This deploy has the first World lane in it: World split into the route plan and `Segment`, a `Route` type, and placed things carrying a whole road point. That reaches nearly every module, but every held frame kept its hash. Watch the whole ride once at normal speed:
+
+1. **The route's end.** The last segment no longer carries a fake 0° turn or a forced quiet stretch. The ride should still end and restart as before.
+2. **The herds.** Their layout moved home to the herd modules, and the pig state was reshaped. The pigs, the standout pig and the cows should stand where they did.
+3. **Anything placed beside the road,** such as trees, billboards, the pond's ducks and the animals at the bends. Every placed thing now carries its point whole, so check that nothing has jumped.
+
 ## 2026-11-07, master 7447a4ef
 
 This deploy has the widget-kit lane in it: the widgets' shared code, and `Brush.flat` across the apps. The ride itself is unchanged, and every held frame kept its hash. Nothing in the ride needs a look. If you open a widget page later, its readouts (numbers with a minus sign, such as the sky widget's sun height below the horizon) should read as before.

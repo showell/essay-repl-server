@@ -128,3 +128,7 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
 
 - **`shale --help` prints the mounts table, including the `keys:` line.** Agents run it to read about the language, so the secrets folder's path lands in their transcripts. Make `--help` describe the language without listing mount paths, or mask `keys:` (a separate `--mounts` could show the rest). Until then, never tell an agent to run `shale --help`.
 - Agents' pain points (family-mode lane): a `use`d library can't call another library's functions; functions see only `const`s, not top-level locals; map keys must be strings; `find` takes at most 3 arguments; `wc` is refused as a text tool; there's no `now_ms`.
+
+## Running (2026-11-07, evening)
+
+rider-pixels, stills, world-encounter (World lane 2, without the heading), frame-view (lane 7 plus the backdrop step, the truck's lead and `billboards_in_view`). The camera waits on Steve (notes/camera-record.md).
