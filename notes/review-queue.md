@@ -72,6 +72,11 @@ Merged since the queue was written: lib-tidy (no lib/Color, ConvexCut, records f
 
 Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checking. Small leftover: EmojiStills' `still_facts` uses I64 counts.
 
+## Steve's Q&A leanings (2026-11-07, learning, not action)
+
+- Scene: one crowd of things, and no tag once it isn't actionable (folded into the Scene lane).
+- The backdrop stays a layer (a flipbook: objects against a backdrop). Its line is "never gets closer": sky, sun and mountains (an infinite horizon), against curved-earth trees. Not strongly held; (b) on the skyline stands unless that changes.
+
 ## Next free slot
 
 - **The kinds' closure** (Steve: "That actually feels like a code smell. Have a cold agent see if there's an alternative"). Every walk of anything that holds the scene drags in each kind's internals: stills, emoji stills, poses, Tower's corners. Have a read-only agent find out why, and whether there's a better shape.

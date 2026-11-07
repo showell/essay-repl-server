@@ -4,6 +4,10 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 180cef9c: names and boundaries
+
+This deploy has four lanes in it: the grass's shapes moved home to Grass, the stills' names, the sightings' follow-ups, and the Brush doc plus the ring fix. Every held frame and the page kept their hashes, so the ride shouldn't change at all. A quick look is enough: the grass and the skyline where they meet, and the cows and pigs on their billboards. The ring fix shows only in the camera app, not in Safari.
+
 ## 2026-11-07, master 8731a0de: the pond's last seam
 
 This deploy has the sightings and polish lanes in it. Every held frame kept its hash, and so did the page. The one thing you should see:
