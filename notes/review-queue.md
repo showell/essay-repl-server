@@ -40,7 +40,9 @@ This is the orchestrator's state for the type review, so it survives a compactio
      - `Brush.Rgba` stays structural: an opaque one fails the platform's type, and a nominal record guards nothing at this pin.
    - `roc_commas.shale` over the whole safari folder runs out of steps and leaves files half-rewritten. It must fail before writing anything, or write each file whole.
 
-## The eye-test note (Steve tests carefully, one note with before and after renders)
+## Eye tests
+
+Steve (2026-11-07): deploy Safari often. After each green gate, master is built into the dev channel, and an entry goes at the top of notes/safari-eye-tests.md. Pixel lanes are tested as each one merges, not batched. Items still waiting for a lane:
 
 - every pixel item in lanes 2 and 5 above
 - the perched bird drawn over its tree (merged with tuning; no held frame moved, so choose a frame that shows a perched bird up close)
