@@ -72,6 +72,10 @@ Merged since the queue was written: lib-tidy (no lib/Color, ConvexCut, records f
 
 Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checking. Small leftover: EmojiStills' `still_facts` uses I64 counts.
 
+## Roc findings, held (2026-11-07)
+
+Repros on roc-apps branch `roc-findings` (worktree lanes/roc-findings, keep it): a misspelled package alias passes when the module is never named; a record literal's nominal methods depend on statement order (destructuring alone is fine). Steve: "Let's wait till we see these again." Report upstream only if they bite again.
+
 ## Steve's Q&A leanings (2026-11-07, learning, not action)
 
 - Scene: one crowd of things, and no tag once it isn't actionable (folded into the Scene lane).
