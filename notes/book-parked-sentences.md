@@ -55,3 +55,11 @@
 ## The opaque point type
 
 A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and `Picture.Setting` carries `foot`. False in Nature types and the tree chapters: the `Pipeline.Sighted` and `Picture.Setting` rows and the Sighted box's label; "hands the sighting's `right` and `forward`"; the `TreeAhead` row; "The tree's `right` and `forward` go on to `tree_picture`"; "`{ ..tip, height: Distance.zero }`", now `tip.at_height(Distance.zero)`; `tier_shape`'s guard, now gone; the ring and `base_height`, now in `cone_ring_points`; a spot exactly on the near plane is now in view; `PosedBird`'s feet are `foot.at_height(bird.lift)`; a clipped list is a list of `Geom.AheadPoint`.
+
+## From the Pigs split (Pig, PigHerd, the route's herds in World)
+
+- tutorial.md:1161, "Modules: `Pigs`": the module is gone, and it's now `Pig` and `PigHerd`, with the route's herds in World.
+- tutorial.md:203 and 210, the diagram edges `World -> Pigs` and `Pigs -> Scenery`.
+- The prose after `{{code Pig.pig_billboard}}` (formerly `Pigs.pig`) still says "two places, an emoji, a height and a way to face", but the billboard holds no places.
+- The paragraph after `{{code PigHerd.herd_pigs}}` describes a three-branch match on the rider's interest, which never matched that code.
+- `PigInterest` is now `World.PigInterest`, and `PigPresence` is `World.PigPresence`.
