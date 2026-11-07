@@ -27,3 +27,7 @@ One thing to know first: a few agent tasks have leaned on plain tools Shale refu
 ## The question
 
 **Should cold agents be held to the Shale-only gate too (remove the subagent exemption)? Yes or no.**
+
+## Steve's answer (2026-11-07)
+
+**Yes.** "I thought we already had that in place." The exemption is removed (shale 97fd4c8, with Shale's suite passing), installed with `zig build`, and checked: a subagent's plain `ls` is now refused with the gate's message, and its Shale launch runs. The agents' brief names the `# want:` escape.
