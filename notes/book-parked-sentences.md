@@ -144,3 +144,10 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - `Stills` and `StillPolygon` (1069, 1111, diagrams 2139-2140): `Still := List(Still.Polygon)`, with `Still.Vertex` and a gradient tag.
 - tutorial.md:316: "The triangle takes two arguments: a color, and a record of three corners" has the order backwards now: the corners come first.
 - `Detail` (177, 590): its tree thresholds are TreeShapes' own, and the smallest height on screen is Pipeline's.
+
+## From the boundary, stills, follow-ups and widget-game lanes
+
+- About 728-730: "Modules: `Backdrop`" and "`Backdrop` paints what's behind the ride". Backdrop is gone; Sky, Sun and Grass own their shapes, and `Grass.grass_top_y` and `grass_shape` moved out of Screen.
+- About 2337: the loop has "`$low` and `$high` closing in on each other". It now uses `$bounds` (`LeanSearch.search_tries`).
+- About 469: the `TreeShapes.tree_outline` row now takes a `Spot`.
+- Billboard's still field is `emoji`.
