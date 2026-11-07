@@ -180,6 +180,12 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :1130 `Wildlife.bend_critters` is now `bend_billboards`. The glossary (:2860, :2863) defines a billboard as "A critter that…"; Billboard.roc now says "an animal that stands in one place and always faces the camera".
 - :2043 "`Timeline` is nominal … unlike an opaque type anyone can build one", :2058 "opens the nominal type", and :2199 "wraps a record in the nominal type" are false: Timeline is opaque, built with `Timeline.of`. :433 "the rails make their `Rendered` by hand": now `Rendered.of`. Still, GroundPatch, Beacon and BendInView are opaque too.
 
+## From the whole-history, one-frame and one-size lanes
+
+- Tour now keeps the whole ride (no cap, no halving; a restart clears it). :2590 "it also trims the list of past instants. An `if` chain does the trimming…" and :2629 "at depths either side of the history's cap" are false.
+- `Animation.Timeline(frame, pose)` holds the choreography list plus a `frame_instant` function, and builds only the frame asked for. :1929 "A timeline is a record of what the cat does at each point", :1982 "all it does is build a record…", :2027 and :2049 "A timeline is data", and :2043 "`Timeline(pose, lift)` takes two type parameters" are false.
+- `Pipeline.tall_sighting_of` is folded into `scenery_sighting_of`, and billboards are size-tested through the camera's lens: :393 and the 660-661 diagram, :429, :699 and :701.
+
 ## Steve, 2026-11-07: rewinding isn't free
 
 Wherever the book suggests stepping back is free, say what it costs. Tour keeps up to 2048 past `RideInstant`s (a few hundred KB; at least 1024 kept, dropped half at a time), stepping back pops one, and each frame is redrawn from its instant, never stored. A restart clears the history. "Cheap, because a frame is its state redrawn" is the honest claim.
