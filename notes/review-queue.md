@@ -167,3 +167,9 @@ Steve is pausing eye tests for a while, since they've all passed. Keep deploying
 `gates/OnRoad.roc` rides the whole route in `part=proof` and fails if the rider passes the half width, a segment goes backwards, or the rider runs past a segment's end. On master the widest point is **1.99963 m of 2 m, at step 6736 on segment 18**: a 0.37 mm margin. That's a near miss in today's physics, not a gate problem. The rider pixels lane's last check put its widest at 1.9738 m. Watch it after that lane merges. If the margin stays thin, it's a question for the Motion chapter: the lean search, or a named road margin the rider aims inside.
 
 Small: `canvas_apps/safari/README.md` (lines 61 and 94) lists the proof tools without OnRoad.
+
+## The rider merge is held (branch `rider-held`, 2026-11-07)
+
+- It waits on the sunset test (Steve's rule: the sunset's climax falls on the long westward segment, measured on master, with a margin).
+- **The cats aren't a blocker** (Steve: "it's not super important which step they're on... the cats should work out from the logic that puts them relative to the rider"). On the new timing, step 1570 has no cat (it's out of view from 1547 to 1606). The frame widget's counts fix is on branch `frame-counts`.
+- When the merge goes in, re-pick the held depths and the frame widget's step so each shows its scene again (the cat frozen, mid-leap, the truck's glow, the truck braking). Where cheap, define a step by its event ("the first step the cat is in the lane") rather than a number.
