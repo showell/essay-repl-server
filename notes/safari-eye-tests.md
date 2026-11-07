@@ -4,6 +4,22 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master (after 82fa2abd): a new bird on the third segment
+
+**New code you should see.** Steve asked for a flying bird on the third segment, the one with the pigs. Where to look:
+
+| step | what happens |
+|---|---|
+| ~100 | the bird may already show, perched far ahead (held frame 100 moved because of it) |
+| 636 | you enter the third segment |
+| **807** | **the bird takes off**, with you about 70 m into the segment |
+| 843 | it lands on a tree on the far side |
+| 885 | the look at the pigs begins |
+
+The flight is short, 36 steps, just before you slow for the pigs. Nothing else should change: the ride still ends at step 6746, and the sunset and night tests passed unchanged. The bird asks nothing of the rider, so speed and gaze are as before.
+
+Also in this deploy, with nothing to see: FarHeight (heights at the resting lens have a unit of their own), the tower's exaggerated sinking moved into EarthCurve, and lib's cleanup. The camera app's rings changed earlier, but it isn't on dev.
+
 ## 2026-11-07, master 81d5d8d5: the sky, the frame, the truck, the scene
 
 The ride is unchanged (every held value matched). It has three lanes in it: the sky and frame cleanup (dusk is now "darkness", and the backdrop is named in the frame), the truck's tease named in code (`Truck.tease_position`), and the animals posed with no camera (EncounterPoses). The one visible change is in the sky widget, whose readouts say `Sky.darkness_at`, `Sun.height_at` and `Sky.horizon_warmth_at`. The new bird on the third segment comes in the next deploy.
