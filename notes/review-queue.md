@@ -320,3 +320,10 @@ Possible upstream finding: Roc accepts `import sub.Foo` in an app with no packag
   - Shale's `substitute` silently does nothing when it finds nothing; consider a strict form.
   - fast.shale sometimes says "no green on record" right after a green run.
 - **Roc oddity:** a method call on a value built as a plain record literal (where a nominal type is expected) fails "missing method". With the earlier one (a nominal value destructured from a record parameter losing its methods), that makes two candidate findings to reduce.
+
+## From the stills' tail (small, decided)
+
+- The stills widget still says `polygons` for a Still in `stays_in`'s field and in the parameters of `standing_at` and `large_anchor`. Rename them `still`.
+- Billboard's own `still` field becomes `emoji`, so nothing reads `billboard.still.still()`.
+- StillsWidgetApp :745 (drawn shapes equal polygons) can't fail usefully, so delete it.
+- **The brief:** a Shale script over the still data files needs a `-- budget: steps=100000000` header; the default (5M) runs out partway through.
