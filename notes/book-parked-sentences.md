@@ -180,6 +180,13 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :1130 `Wildlife.bend_critters` is now `bend_billboards`. The glossary (:2860, :2863) defines a billboard as "A critter that…"; Billboard.roc now says "an animal that stands in one place and always faces the camera".
 - :2043 "`Timeline` is nominal … unlike an opaque type anyone can build one", :2058 "opens the nominal type", and :2199 "wraps a record in the nominal type" are false: Timeline is opaque, built with `Timeline.of`. :433 "the rails make their `Rendered` by hand": now `Rendered.of`. Still, GroundPatch, Beacon and BendInView are opaque too.
 
+## From the segment-world, dead-lint and widget-tidy lanes
+
+- :222 "`[WithBull, NoBull]` is written right in the field's type … with no declaration": it's `CowHerd.Bull` now. `Segment.Ending`, `Segment.Pigs` and `Segment.PlannedEncounter` are named too; `Segment.segment_ending` is the total accessor.
+- :2221 `{{code Segment.fifth_left_tree}}` still expands, but shows a private helper.
+- :949 "`Geom.line_crossing` finds where the two cross": deleted (it had no caller), with `Geom.Line`.
+- "all of `LeanSearch` is 105 lines" (already false; 134 now). `LeanSearch.aimed_across` names the road's middle.
+
 ## From the rider-review lane
 
 - ~2341: the search "compares the end of the coast with the target"; it's the road's middle now. ~2345: "Its caller gives the search its bounds"; `search_tries` sets them. ~2353: "all of `LeanSearch` is 105 lines".
