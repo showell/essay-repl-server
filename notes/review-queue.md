@@ -9,7 +9,7 @@ This is the orchestrator's state for the type review, so it survives a compactio
 | scene-shapes | roc-apps `scene-shapes` | lane 6 below |
 | truck | roc-apps `truck` | strip_corners, the setting like the tower's (Steve, notes/truck-setting.md), TruckFace gone, private helpers and `Screen.distance`, the beam's middle, restated tests |
 | units | roc-apps `units` | lane 3 below |
-| lib-tidy | roc-apps `lib-tidy` | delete `lib/Color`, `Brush.translucent`, an opaque `Brush.Rgba` if it unifies, Pieces as its own type, a ConvexCut module, records for float runs, bracket makers, range crashes, the glow's middle offset, rename `lib/View`, plain headers |
+| top review | (read-only) | Tour, RideInstant and Scene |
 | tuning | roc-apps `tuning` | lane 4 below: the "chosen by eye" docs, `small_height` from the tree's parts, one Scatter function, the perched critter drawn over its tree (its own commit; pixels move). `brake_decay` stays with the rider. |
 
 ## Next lanes, in order (each waits on the lanes it shares modules with)
@@ -31,6 +31,13 @@ This is the orchestrator's state for the type review, so it survives a compactio
    - `VehicleLimits.base_speed` should be `starting_speed` (Truck and CrossModuleExpects use it).
    - `Gaze.look_swivel_rate` and `Motorcycle.turn_per_lean` are public but used only in their own files.
    - Rider looks up the segment twice a step; `cross_if_on_road` could return the one it ends on (put this in the rider pixel lane).
+   - lib, second pass:
+     - `ArgbColor.from_rgb(color, { alpha })`, used by the truck's `glow_edge` and the sun glow's alpha.
+     - `Tower.roc:493`'s `{ ..Brush.opaque(..), a: 0.25 }` and snake's `{ ..hint_color, a }` should use `Brush.with_alpha`.
+     - `Shapes.squashed_shapes` takes `List, F64, F64`; give it a record.
+     - The Font, Camera, ArgbColor and RgbColor headers need plain sentences.
+     - The README's Disc row is stale.
+     - `Brush.Rgba` stays structural: an opaque one fails the platform's type, and a nominal record guards nothing at this pin.
    - `roc_commas.shale` over the whole safari folder runs out of steps and leaves files half-rewritten. It must fail before writing anything, or write each file whole.
 
 ## The eye-test note (Steve tests carefully, one note with before and after renders)
@@ -50,6 +57,6 @@ This is the orchestrator's state for the type review, so it survives a compactio
 - **Motion chapter:** derive `turn_speeds`, the brake fade and `turn_per_lean`; the turn with speed (no pivot at rest).
 - **Book:** every chapter is rewritten later. False sentences are logged in notes/book-parked-sentences.md.
 
-Merged since the queue was written: rider (Motorcycle, RiderEyes, Gawking, one Limit, LeanChange; pixels held); kinds-names (LitTruck, Green, EmojiStill, standing_still); type_walk's `clients=` (walk lib with `root=lib clients=*` from canvas_apps).
+Merged since the queue was written: lib-tidy (no lib/Color, ConvexCut, records for float runs, range crashes, lib/Eye); tuning (the perch rule, Scatter); rider (Motorcycle, RiderEyes, Gawking, one Limit, LeanChange; pixels held); kinds-names (LitTruck, Green, EmojiStill, standing_still); type_walk's `clients=` (walk lib with `root=lib clients=*` from canvas_apps).
 
 Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checking. Small leftover: EmojiStills' `still_facts` uses I64 counts.

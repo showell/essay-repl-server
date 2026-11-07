@@ -121,3 +121,8 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - `bend_brake`, `crossing_limit` and `pig_limit` (1640, 1648, 1757, diagrams 1621 and 1701): `pig_limit` is gone (`Gawking.gawk_brake`), and the crossing gives `CrossingReaction.crossing_throttle`. `CrossingReaction.reaction_to` (2281) is split into `crossing_throttle` and `crossing_attention`.
 - `Throttle.shoulder_brake_at` (2541) is private; Throttle's only public function is `acceleration`.
 - A lean minus a lean is now a `LeanChange` (`Lean.change_from`), not a Lean.
+
+## From the lib lane
+
+- Near tutorial.md:2739, "builds a camera out of nested tags and puts it at the front" is loose now: `SafariApp.lean_space` builds a `Shapes.Space`, and `Shapes.in_space` wraps the frame's shapes in it. The include is repointed.
+- `lib/View` is `lib/Eye`, and `lib/Color` is gone (RgbColor and ArgbColor hold colors). `Camera.view` is `Camera.space`.
