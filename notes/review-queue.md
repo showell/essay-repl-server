@@ -337,3 +337,9 @@ Possible upstream finding: Roc accepts `import sub.Foo` in an app with no packag
 - **Steve's call when the lane runs:** tests beside their code that import only a unit type or a lib module (Along, Across, Brush, Camera, Steps, Trig…) just to build an input. Keep them (the import is a unit wrapper) or move them (the rule says never)? One yes/no then.
 - The survey lists three expects that each ride the whole route (1117, 1214, 1236); one shared ride-trace fixture could serve them.
 - Fixed line numbers will drift with the lanes merging before it; re-survey briefly at start.
+
+## Held frames by event (Steve, 2026-11-07, twenty questions)
+
+- Every held frame is named by the event it shows, not a step number, so physics changes can't silently empty it. The proof tools take named events, worked out from the ride (for example "the ride starts", "the first step the cat is frozen", "the cat at its leap's height", "the truck braking far", "the truck braking near", "the first step after the restart").
+- Each held frame says what it's there to catch. A frame with nothing to look for goes ("we can be somewhat ruthless with tests"). One mid-ride frame is fine if it's named.
+- Smells guide, structure: how to judge a split. No rule, only judgment. Mostly it's whether the code changes for its own reasons (the sky's colors are tuned apart from the sun); a distinct noun helps too. Tiny modules tend to grow.
