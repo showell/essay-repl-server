@@ -167,6 +167,13 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - Lines 912-975 were already stale: `BendView`, `bend_patches`, `on_map`. `BendInView.inner_edge` is gone too.
 - Ground is now `EarthCurve` (the earth's curve, one of the "honest cheats"): :253, the 923 diagram (`GroundSighting -> Ground`), :959 and :2535 still say `Ground`.
 
+## From the rider-review lane
+
+- ~2341: the search "compares the end of the coast with the target"; it's the road's middle now. ~2345: "Its caller gives the search its bounds"; `search_tries` sets them. ~2353: "all of `LeanSearch` is 105 lines".
+- ~1705: "Nothing joins them… neither asks about the other": `desired_gaze` now matches `Gawking.gawked_pig`.
+- ~1640: the line of physics used by "this one, `Gaze` …, and `Truck`": the bend and the truck go through `VehicleLimits.braking_to`.
+- ~1584, ~1588: `{ ..s, lean }` and `s.yaw.plus(...)` are `motorcycle` now. The gaze "eases back" is "turns back" (`TurningBack`).
+
 ## From the animation lane (option C: animals on their own clock)
 
 - Roughly 1929-2291 and 2808/2845: `Approach` feeding `Cat.instant_at`, `stage_over_gap`/`stage_over_step_span`, "38 beats tied to no clock", the bird reacting to how close the rider is, a bird that `Sits`, the hanging bird, the feedback loop "why `stage_over_step_span` has to stay the cat's rule", "adding the distance to the segment to get the gap". Every bird flies now, and the start is planned once per segment.
