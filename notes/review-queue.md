@@ -129,6 +129,18 @@ Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrum
 
 Master's gate stopped at run.shale:198 (`clear_full_caches`). `du -sm` on the shared CACHES folder failed ("cannot access ..."), because another gate in a lane worktree was clearing it, and `tonumber` then read du's error text as a number. Two problems: the gate trusts du's output without checking its exit, and every worktree's gate shares one cache folder, which one run can clear under another (a build could break the same way). Fix: check du's exit and fail by name; and either key the cache per checkout, or clear only under a lock, or never clear while another gate holds it. A small lane, after the current ones.
 
+## Truck-drawing lane (queued after rider-follow, which touches Truck's tests)
+
+From the truck-drawing review; all decided by me (walk at /tmp/claude-1000/truck-review/walk.txt):
+1. Truck points in the truck's own frame, measured from the trailer's centre; `truck_box` becomes a constant; the drawing context is `{ road, vantage }`. Eye test if a pixel rounds differently.
+2. `RoutePlace.at_distance : Route, Distance -> Try(RoutePlace, [PastRouteEnd])` beside `distance_along`. TruckSighting's hand-walk (`truck_from`, `TruckPlace`) goes; `Truck.next_bend` uses it if it reads better.
+3. The cab's profile in one home: `hood_height` and `trailer_height` move into TruckShape, plus an expect that the headlight's span lies on the nose face.
+4. `TruckLights.brake_light_shapes` and `headlight_beam_shapes` (the field `brake_lights` stays the `[On, Off]`).
+5. Delete the restating tests (TruckShape :159-177, TruckBody :236-244, TruckLights :250, :252-253, CME :2807-2827) and their helpers.
+6. `TruckShape.trailer_length` goes private; `point` becomes `raised_point_on_truck`.
+7. Docs: `TruckPoint.height` is above the road; "draws" goes; TruckLights' ARGB note and beam constants in prose go.
+8. `Truck.Pace := [Slowing, NotSlowing]` named once; `LitTruck.at : Truck.Pace, Clock -> LitTruck`; `truck_in_view` takes `facts.truck` whole.
+
 ## After RoutePlace (2026-11-07; Motorcycle holds `RoutePlace`, RiderState is `{ motorcycle, eyes }`)
 
 Queued, in rough order:
