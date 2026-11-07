@@ -150,4 +150,6 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - About 728-730: "Modules: `Backdrop`" and "`Backdrop` paints what's behind the ride". Backdrop is gone; Sky, Sun and Grass own their shapes, and `Grass.grass_top_y` and `grass_shape` moved out of Screen.
 - About 2337: the loop has "`$low` and `$high` closing in on each other". It now uses `$bounds` (`LeanSearch.search_tries`).
 - About 469: the `TreeShapes.tree_outline` row now takes a `Spot`.
-- Billboard's still field is `emoji`.
+- Billboard's still field is `emoji`, and so is `Billboard.Species`'.
+- About 1826: "Finding the next turn shows a list pattern... Recursion walks the list, carrying where the current segment starts." `Truck.next_bend` is now a `find_first` over `Route.segments_with_ends`; no list pattern is left. The include was repointed to `Route.segments_with_ends`.
+- About 1830: "It's called through a smaller function, which supplies the 0 so nobody else has to." `next_bend_on` is gone.
