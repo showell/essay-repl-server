@@ -103,3 +103,17 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
   - Wildlife's private helpers.
   - Trees' "chosen by eye" docs.
   - The baby stays where it is (Steve): its doc says it stands straight on past the bend, ahead of the rider on the approach, off the next road.
+
+## After World (the sightings review)
+
+- **Sightings:**
+  - `Pipeline.scenery_sighting_of`, with `scenery_test` private, folding into the `min_critter_px` merge.
+  - `segment_<nouns>` helpers, private unless a test needs them.
+  - `Beacon.brightness_at`, with the opposite-blink rule in Beacon and `tower_if_ahead` gone.
+  - Docs on why Tower, Truck and Rail break the family (no size test for towers or the truck: decided).
+  - The truck takes its route position whole (with the frame's top).
+  - Restated expects go, and the tuned constants go private.
+  - `rail_quads_in_view`, `run_up_points` and `rail_run_on` (batch the widget and the book).
+  - The cat built like the bird (in the encounter lane).
+  - Where the tests live waits on Steve (notes/tests-beside-code.md).
+- **Tools, later:** a family mode for type_walk (shared types once, members' blocks side by side, private signatures too); the `families` lint can't see per-noun families.
