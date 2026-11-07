@@ -88,3 +88,11 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - `inward` at 1134: Wildlife picks left or right of the middle instead of a float sign.
 - "Both herds are worked out once, when the world is built" is no longer true: `World.segment_cows` and `segment_pigs` place them when asked, and the segment holds only `bull` and `pig_herd`.
 - Each kind's look is a `Billboard.Species` (`codepoint`, `adult_height`); young ones are `Billboard.young_billboard`, half height.
+
+## From the cat and bird cleanup, and the Geom cleanup
+
+- `BirdFlight.BirdPose` at tutorial.md:2197: now `PosedBird.BirdPose`. `Cat.CatPose` is now `PosedCat.CatPose`; each kind owns its pose and its pose-to-still match.
+- `Sits` at 2215: the bird's habit is `{ perch, leaves_for : [FliesTo(tree), StaysPut] }`.
+- The diagrams near 1919, 2091 and 2138 still draw `CatStills -> Cat` and `BirdStills -> BirdFlight`; those edges are now wrong (the checker doesn't see edges).
+- 1935: `cat_in_view` no longer adds the gap itself; `CrossingSighting.crossing_in_view` does, for the cat and the bird.
+- `Geom.ground_curve_radius` at 2512: the earth's curve is in Ground now (`Ground.ground_curve_radius`, `Ground.ground_drop`).
