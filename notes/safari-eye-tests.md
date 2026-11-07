@@ -4,6 +4,18 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master e126238f: the animals play on their own clock
+
+**This one changes the ride.** It has the animation decisions (option C) in it. Watch a whole ride at normal speed, especially the cats and birds:
+
+1. **Every bird flies.** There are no stay-put birds now. Each bird takes off from its perch and flies to its tree, a flap every 4 steps and 36 steps to a flight.
+2. **No bird is overtaken.** A bird takes off early enough that it stays ahead of you the whole way (a new test holds this). Watch the first bird, around step 100, and the others.
+3. **The cats cross at an even pace,** a frame a step, 38 steps a crossing. Before, the pace was tied to how close you were. The first cat is around step 1508.
+4. **The rider still eases off while a cat crosses,** now for exactly the crossing's 38 steps.
+5. **The ride ends at step 6746** (it was 6779). The sunset's climax still falls on the long road west, and full night still comes before the end; both tests passed unchanged. The widest point is 1.988 m of the road's 2 m half-width.
+
+Also in this deploy, with no visible change: the rider cleanup's precursors, Ground renamed EarthCurve, and GroundPatch split out.
+
 ## 2026-11-07, master 2fb0f378: one crowd
 
 The scene no longer keeps its things' kinds: everything becomes a picture at a depth, joined in one place (SceneShapes is gone). Every held frame and the page kept their hashes. Glance at what overlaps: a perched bird over its tree near the start, cats and billboards in front of and behind trees, and the truck passing behind the guard rails. The step widget's segment bars now come from the route itself.
