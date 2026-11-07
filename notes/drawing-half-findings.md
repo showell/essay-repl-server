@@ -6,7 +6,25 @@ Scope: Chain, Geom, Camera, Lens, RideFocal, ViewYaw, CanvasRoll, Backdrop, Moun
 
 DESIGN means a call for you. MECHANICAL means an agent can just do it. Several fixes change floats and so move the proof hashes, and each of those says so.
 
-## Possible real bugs
+## Rendered: both bugs are real
+
+An agent rendered findings 3 and 4 on the real ride, using frames that reproduce the proof hash, and I looked at the first image myself. Neither frame is forced.
+
+**The sun clip.** The sun is in view on 3,617 steps, and 1,560 of those are rolled. On 56 steps over 100 pixels change by 32 levels or more when the order is swapped, about two seconds of the ride: 2324-2331, 3019-3023, 3587-3612, 5549-5563, 6160-6171. A hard diagonal runs down from the top left, the glow stops dead on it, and it slices the sun's disc too, which the finding didn't predict. Left is as painted, middle is sky, sun, grass, right is the difference.
+
+![The sun clip at step 3590](safari-sun-clip-3590.png)
+
+The same line at dusk, step 5555:
+
+![Step 5555](safari-sun-clip-5555-frame.png)
+
+**The far road.** Real but faint. Dropping every patch past 490 m changes a median of 85 pixels a frame, and 732 at worst, at step 700. At 1x it's a faint dotted line you'd only find by looking. Top is as painted, middle is with the far road dropped, bottom is the difference.
+
+![The far road at step 700, at 3x](safari-far-road-700.png)
+
+**Not explained yet.** A thin dark line runs across the grass in rolled frames, visible in both the left and middle panels of the first image, so it isn't the far road. The swap changes part of it. Nobody has found what it is.
+
+## The findings behind those
 
 These three look like wrong pictures, not just wrong code.
 
