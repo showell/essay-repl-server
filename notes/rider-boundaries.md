@@ -37,7 +37,13 @@ The call chain is then: RiderState (bookkeeping) → Rider (decides) → Motorcy
 
 Once Rider is only the mind and RiderState is the thing that rides, the names are backwards. The thing should be **`Rider`**, with `Rider.initial` and `Rider.next`, and the mind module should be something like **`RiderMind`** (or `Riding`). That rename reaches about 30 files and the parked book, so it's optional and separate from the restructuring.
 
-## Not proposed (yet)
+## Steve's answer (2026-11-07)
+
+"Do your suggestions first. It seems kinda crazy that motorcycle doesn't already hold a RoutePlace. We never actually draw a motorcycle. So the Motorcycle type's job is to keep track of where it is, how fast it's moving, etc."
+
+Plan: lane 1 does the proposal above (Motorcycle owns its geometry, `RiderState.next`, Rider shrinks to the mind). Lane 2 then gives Motorcycle a `RoutePlace`, so it holds where it is on the route. The rename (Rider and RiderMind) waits until after lane 2.
+
+## Not proposed (yet) (superseded: Steve wants RoutePlace)
 
 The bigger fix for the split location would be one `RoutePlace { segment_index, along, across }` that a motorcycle holds, so its coordinates carry their segment. I think that goes too far: the physics is cleaner in a frame that doesn't know about the route, and with `next` owning the crossing, the split stays contained in one function.
 
