@@ -9,7 +9,6 @@ This is the orchestrator's state for the type review, so it survives a compactio
 | rider | roc-apps `rider` | Motorcycle and RiderEyes, a Gawking module, CrossingReaction split into throttle and attention, one `Limit` shape, `Angle.LeanChange`, private helpers, `starting_speed`, RideFocal's argument order. Pixels hold. |
 | lib-tidy | roc-apps `lib-tidy` | delete `lib/Color`, `Brush.translucent`, an opaque `Brush.Rgba` if it unifies, Pieces as its own type, a ConvexCut module, records for float runs, bracket makers, range crashes, the glow's middle offset, rename `lib/View`, plain headers |
 | tuning | roc-apps `tuning` | lane 4 below: the "chosen by eye" docs, `small_height` from the tree's parts, one Scatter function, the perched critter drawn over its tree (its own commit; pixels move). `brake_decay` stays with the rider. |
-| walk-clients | shale `walk-clients` (mounts file `~/showell_repos/lanes/walk-clients.mounts`) | type_walk's `clients=` setting, so a package's use counts see its apps |
 
 ## Next lanes, in order (each waits on the lanes it shares modules with)
 
@@ -36,4 +35,6 @@ This is the orchestrator's state for the type review, so it survives a compactio
 - **Motion chapter:** derive `turn_speeds`, the brake fade and `turn_per_lean`; the turn with speed (no pivot at rest).
 - **Book:** every chapter is rewritten later. False sentences are logged in notes/book-parked-sentences.md.
 
-Merged since the queue was written: kinds-names (LitTruck, Green, EmojiStill, standing_still). Small leftover: EmojiStills' `still_facts` uses I64 counts.
+Merged since the queue was written: kinds-names (LitTruck, Green, EmojiStill, standing_still); type_walk's `clients=` (walk lib with `root=lib clients=*` from canvas_apps).
+
+Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checking. Small leftover: EmojiStills' `still_facts` uses I64 counts.
