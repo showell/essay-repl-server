@@ -12,7 +12,7 @@ The ride is unchanged from e126238f (every held value matched). It's the rider-p
 
 **This one changes the ride.** It has the animation decisions (option C) in it. Watch a whole ride at normal speed, especially the cats and birds:
 
-1. **Every bird flies.** There are no stay-put birds now. Each bird takes off from its perch and flies to its tree, a flap every 4 steps and 36 steps to a flight.
+1. **The birds' pace.** No bird was removed: all three route birds already flew, and the stay-put fallback they never used is gone, so a bird with no tree to fly to now crashes, with a gate check. What changed is the timing: a flight runs on its own clock from takeoff, a flap every 4 steps and 36 steps to a flight, instead of being keyed to how close you are. Expect about the same flight, perhaps a slightly different pace or takeoff moment.
 2. **No bird is overtaken.** A bird takes off early enough that it stays ahead of you the whole way (a new test holds this). Watch the first bird, around step 100, and the others.
 3. **The cats cross at an even pace,** a frame a step, 38 steps a crossing. Before, the pace was tied to how close you were. The first cat is around step 1508.
 4. **The rider still eases off while a cat crosses,** now for exactly the crossing's 38 steps.
