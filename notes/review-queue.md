@@ -197,3 +197,22 @@ Small: `canvas_apps/safari/README.md` (lines 61 and 94) lists the proof tools wi
   - For the camera lane to weigh: hold the focal as a Fraction of the resting focal, which rules out Sun's crash.
   - Later, maybe Steve: the skyline as part of `BackdropShapes`.
 - **RoadAhead.rider_point_at** takes `{ place, along, across }`, not a RoadPoint (seen twice; with the camera's vantage lane).
+
+## The road substrate review (decided; mostly into camera lane 2)
+
+- **Into lane 2:**
+  - The bend behind has one home, the route: `SegmentPlace := [Ahead(Position), JustBehind]`, with `rider_point_at` looking it up. `place_behind` goes, and the hand-built "behind" tests are rebuilt on real roads.
+  - `BendView.outer_corner : BendView -> { end_before, apex, start_after }` on the road, so RailSighting and GroundSighting each carry it into view once.
+  - RoadView becomes opaque, with `ahead_of(route, rider_index)` as its maker. Tests wanting a shorter reach use a short route.
+  - `rider_point_ahead` goes private.
+  - `rider_point_at` takes a `RoadPoint`.
+  - `place_after` becomes `position_after`.
+- **Standalone:**
+  - RoadAhead's and BendView's test-only World/Route imports go, their tests move to CrossModuleExpects, and the fixture tests and restated constants are deleted.
+  - `of_in_view`, and `has_bend_in_view` folded into `bend_after`.
+  - `outer_edge : BendView -> Across`, with the queued `inner_edge` in the same shape.
+  - SegmentPlace keeps `is_within_first` and `is_last_in`, and `is_past_end_of` goes.
+  - `segment_behind` goes private.
+  - Names: `indices_ahead` becomes `segments_ahead_of`, and `BendView` becomes `BendInView`.
+
+## The lib third pass (running as `lib-third`)
