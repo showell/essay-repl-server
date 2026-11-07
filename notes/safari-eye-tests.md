@@ -4,6 +4,14 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 6c0029c7: the pond, and the camera built once
+
+This deploy has the makers lane, lib's third pass, the widget gate and `RiderCamera` in it. Every held frame kept its hash (no held frame shows the pond, so the pond was checked by hashing frames 5000 to 5400 against master). The one thing you should see:
+
+1. **No line between the pond's water and its bank.** The bank is now drawn under the water, with no shared edge, so the browser no longer antialiases a seam between them. The pond is in view around steps 5000 to 5400.
+
+The rest (the pond mirroring on a left turn, `Billboard.half_width`, the baby's doc, lib's crash checks) changes nothing on screen.
+
 ## 2026-11-07, master 50306f59: the new rider physics
 
 **Steve: passes** (and with it the entries below that weren't marked: 63f60b48 with the road seams, 8db6237b with the stills, fd32d1a5 with the World split, 7447a4ef with the widget kit).
