@@ -25,6 +25,13 @@ Reviews today left these for you. None is urgent; the lanes work around each one
 8. **Does "no import only a test uses" bind widgets?** Widgets have no CrossModuleExpects of their own. Stills imports Font only to test that each name fits its cell, which is a real layout check. *My lean:* the rule binds widgets too, and their real checks move into gates/WidgetExpects.roc.
 9. **The gaze widget's table** (speeds, gazes, the phase boundaries, gawk-then-brake). It tests Rider, Gaze and Gawking rather than the widget, and the parked book quotes its numbers. *My lean:* move it to the game's tests and keep the numbers there.
 
+## From the pipeline-core review (added 2026-11-07, while you were away)
+
+11. **Where the herds' front distance lives.** `Geom.herd_front_distance` is used only by CowHerd and PigHerd. Either World, which sets each herd's layout, gives both herds the value (the same distance from the road is a route-wide rule), or each herd owns its own copy. *My lean:* World gives it.
+12. **The pinhole's x rule has two homes.** `Camera.project` maps a near point's slope to a screen x, and `Lens.x_for_turn`/`turn_at_x` do the same for a far direction (`tan(turn)`). One private `x_for_slope` in Camera would hold both, with Lens keeping only focal lengths (and `y_for_height`, per FarHeight). Against: "near points in Camera, far directions in Lens" reads well today. *My lean:* move them into Camera.
+13. **`cam_focal` becomes `focal_length`?** It's an abbreviation in about 40 signatures (Picture.Setting, RiderCamera, Pipeline…). Large churn; a real clarity gain. *My lean:* yes, after the rider lanes land.
+14. **The point names.** `RiderPoint`, `RaisedPoint`, `LevelPoint`, `AheadPoint` are a 2×2 grid ({ground, raised} × {anywhere, past the near plane}) that the names hide. A rename to `RiderPointAhead` and `RaisedPointAhead` would show it. The book teaches `RiderPoint`. *My lean:* yes; the book's rewrite will follow the code anyway.
+
 ## Widgets that look like debugging tools
 
 10. The review sorted these as inspectors rather than book pictures: **step** (Tour's history as readouts), **stills** (every still in a grid, with counts), **route** (a map with `Str.inspect` readouts), **bends** (three bends with sighting counts), **sky** (the Sun's and Sky's curves as charts), **rehearsal** (LeanSearch's 12 tries; also a book picture). These look like book pictures: beacon, cat, bird, tree, shapes, frame, gaze. You said debugging widgets are "rarely worth saving". *My lean:* keep them all until the book unparks, then decide chapter by chapter.
