@@ -180,6 +180,10 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :1130 `Wildlife.bend_critters` is now `bend_billboards`. The glossary (:2860, :2863) defines a billboard as "A critter that…"; Billboard.roc now says "an animal that stands in one place and always faces the camera".
 - :2043 "`Timeline` is nominal … unlike an opaque type anyone can build one", :2058 "opens the nominal type", and :2199 "wraps a record in the nominal type" are false: Timeline is opaque, built with `Timeline.of`. :433 "the rails make their `Rendered` by hand": now `Rendered.of`. Still, GroundPatch, Beacon and BendInView are opaque too.
 
+## Steve, 2026-11-07: rewinding isn't free
+
+Wherever the book suggests stepping back is free, say what it costs. Tour keeps up to 2048 past `RideInstant`s (a few hundred KB; at least 1024 kept, dropped half at a time), stepping back pops one, and each frame is redrawn from its instant, never stored. A restart clears the history. "Cheap, because a frame is its state redrawn" is the honest claim.
+
 ## From the color-shade lane
 
 - HexColor is now `ColorShade` (`shade_color`, `color_between`), and the channel readers are lib's `RgbColor.red`/`green`/`blue`/`from_channels` (which checks each channel). :844 "`HexColor.Rgb` is a plain record alias…" (already false), :860 "`pack` … is a leaf: it calls nothing of Safari Ride's own" (the include is now `from_channels`), :873 "Modules: `Mountains`, `HexColor`", :1340 the `HexColor.Rgb` table row.
