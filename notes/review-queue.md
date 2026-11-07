@@ -92,3 +92,15 @@ Housekeeping: clear `~/.cache/roc` (14 GB on 2026-11-07) when no lane is checkin
 ## After World and FrameView
 
 - **SafariApp** (the shell review): `Tour.segment_index`, or `to_next_segment` in Tour, with a crash in place of `step_guard`; `playing : [Playing, Paused]` with a named "steps a press while playing"; `tour_stepped`; private helpers; "the next segment" in the doc. The backdrop-in-a-space step that SafariApp and ScrubWidget each write goes with FrameView: one framed-shapes maker, `ride_shapes_in` gone, and the zoom as `canvas_width / Screen.width`.
+
+## After World (the makers review)
+
+- **Wildlife, Pond and Billboard:**
+  - Wildlife asks BendView for the outside (an outer side in BendView, matched once for across and facing).
+  - Pond takes the bend and mirrors on a left turn.
+  - `Billboard.half_width` (a still is square).
+  - `Pond.pond_outlines`, water first, and `far_shore` named once.
+  - Wildlife's private helpers.
+  - Trees' "chosen by eye" docs.
+  - The baby's place waits on Steve (notes/baby-on-the-road.md).
+- **type_walk:** with `clients=`, a module no client imports makes the walk fail ("none of the 27 client files imports ..."). That check should fire only when the root and the clients are written differently, not when no widget happens to import the module.
