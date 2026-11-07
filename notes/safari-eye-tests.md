@@ -6,6 +6,8 @@ The newest entry is at the top. Each one says what should look different, and wh
 
 ## 2026-11-07, master 625e84b1: one size rule for far things
 
+**Steve: passes.**
+
 **This one changes what you see.** Far billboard animals are now size-tested through the camera's own lens, like the trees, so the ones that were 1 to 2 px specks no longer draw. Where to look:
 
 | steps | what changes |
@@ -18,9 +20,13 @@ Near animals are unchanged, and so is the ride: it still finishes at step 6746. 
 
 ## 2026-11-07, master a0f5e7f4: types made honest (nothing to see)
 
+**Steve: passes.**
+
 The ride is unchanged (every held value matched). This deploy has the post-prod lanes: the route and Tour cleanup (`Tour.at_step` no longer loops forever past the finish), the scenery's types (pig and cow herds that can't hold an impossible herd, rail corners named), six types made opaque, the widgets' cleanup, and the dead-code lint now counting widgets as real callers. No eye test needed beyond a glance.
 
 ## 2026-11-07, master (after 82fa2abd): a new bird on the third segment
+
+**Steve: passes.**
 
 **New code you should see.** Steve asked for a flying bird on the third segment, the one with the pigs. Where to look:
 
@@ -37,6 +43,8 @@ The flight is short, 36 steps, just before you slow for the pigs. Nothing else s
 Also in this deploy, with nothing to see: FarHeight (heights at the resting lens have a unit of their own), the tower's exaggerated sinking moved into EarthCurve, and lib's cleanup. The camera app's rings changed earlier, but it isn't on dev.
 
 ## 2026-11-07, master 81d5d8d5: the sky, the frame, the truck, the scene
+
+**Steve: passes.**
 
 The ride is unchanged (every held value matched). It has three lanes in it: the sky and frame cleanup (dusk is now "darkness", and the backdrop is named in the frame), the truck's tease named in code (`Truck.tease_position`), and the animals posed with no camera (EncounterPoses). The one visible change is in the sky widget, whose readouts say `Sky.darkness_at`, `Sun.height_at` and `Sky.horizon_warmth_at`. The new bird on the third segment comes in the next deploy.
 
