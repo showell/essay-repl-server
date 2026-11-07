@@ -480,27 +480,20 @@ These become one "boundary moves" lane.
 - On a gradient with a ring, the canvas paints the outer stop's color exactly at its far end, where `Brush.shade` mixes to it at fraction 1: the same last-bit question in one more corner. Make the JS follow Brush there too.
 - **The brief:** `run` of `node`, `wc`, or an untracked scratch binary needs `want =`; `RasterFrame held <depths...>` hashes any steps; `l[#l + 1] = x` appends to a list (`append` errors).
 
-## STATE AT COMPACTION (2026-11-07, late)
+## STATE AT SESSION END (2026-11-07, night)
 
-**Master (roc-apps):**
-- Local master has the polish merge (409c22e3) and a Pond fix commit (`BendView.outer_side` became `BendInView.outer_side`). It is not pushed.
-- **Next step:** run the full gate (`run.shale`). If green, push, then deploy (`build.sh safari`) and add an eye-test entry for the pond seam, around steps 4911-4968.
-- origin/master is at 0e45fab2 (the sightings lane).
+**Masters.** roc-apps master is pushed, every lane merged and gated green, ride unchanged since the one-size rule (finish 6746). Prod (roc.lynrummy.com) has Safari with the third-segment bird plus camera's ring fix (deployed earlier tonight). Shale master is pushed (loud `substitute`, the walk's test-only imports and shorthand fix, boundaries' clients/tests, name_hunt's per-file convention), and the new shale binary is installed. roc-markdown has one rename (run_at is now indexed_run).
 
-**Five agents died together** on a login timeout (Steve re-logged). Their worktrees hold partial, possibly uncommitted work:
-- `lanes/animation` (option C; the brief is in this session's transcript; notes/animation.md and notes/animation-gaps.md);
-- `lanes/boundary-moves` (the boundary-hints top ten);
-- `lanes/follow-ups` (Geom outer side, JustBehind at the route's start, the sightings' camera shape, the `{road, vantage}` name, `seen_before`, the `seen` names);
-- `lanes/widget-game` (`Tour.at_step`, Coast and LeanSearch paths, World lookups, `Spot.straight_ahead`, TreeShapes reaches);
-- `lanes/brush-corners` (Brush's header doc, the ring corner in the JS).
+**Dev** serves the frame-timing build (`?timing=1` logs the first 120 frames' step/wasm/decode/paint ms), release. Branch `frame-timing` (lanes/frame-timing) is not merged: merge it with a full gate (part=page runs the runner against a stand-in canvas), then redeploy master to dev.
 
-To resume: SendMessage to each agent to continue ("you were stopped by a login timeout; check your worktree's state and finish"). Or check `git status` in each worktree and re-brief from the queue items above.
+**In flight:** `frame-speed` (lanes/frame-speed, cut from `frame-profile`) cuts the frame's wasm cost with no pixel moving: tree rings and hull, one shape list, bends' cos/sin once, skyline bearings. When it reports: merge `frame-profile` (FramePartsBench) and `frame-speed`, full gate, deploy, and ask Steve to rerun `?timing=1` in Firefox (it was 11 slow of the first 30 frames cold; wasm 12.7 ms cold, 7.4 warm per drawn frame).
 
-**Rules Steve set today, beyond the queue:**
-- **Eye tests:** after each green gate, deploy to the dev channel and add an entry to notes/safari-eye-tests.md. Steve tests in batches.
-- **Agents:** five at once, held to the Shale-only gate (subagents are no longer exempt).
-- **Anything Steve must act on** goes to the essay surface or a single plain yes/no, never buried in a status update. No console question widget.
-- **Twenty questions** with Steve is one question at a time, and is for learning, not action items.
-- **Tests:** imports are only prod code (a strong leaning, not yet absolute); tests use tiny crafted routes; prune tests that will never fail usefully; the book's checks are a loud skip.
-- **Held frames** are to be named by event, and each says what it catches.
-- **The gates reorganization** (gates/expects split, plan above) comes near the end.
+**Next, in order:**
+1. The gates reorganization (notes/gates-reorg.md: `gates/proof/`, the CME split into gates/expects/ with one package root; the spike works). Run the split with NO other lane open (Steve). FrameBench stays.
+2. The truck-drawing lane (queued above).
+3. After RoutePlace: `Geom.Bend` as its own module; the braking-below-zero latent bug; World's test-only Trig import; TreeShapes' test-only Brush import (check after geom-tidy).
+4. Steve's open calls 11-14 (notes/open-calls.md: herd front distance, the pinhole's x rule, `cam_focal` to `focal_length`, the point names), and the Rider/RiderMind rename question (ask him).
+5. Housekeeping: the old ~/build/roc-apps/safari-gate-caches (2.5 GB) can go now that every lane uses the per-checkout caches; lanes/ has expects-spike (keep until the split lands), roc-findings (held, Steve), frame-timing, frame-profile, frame-speed.
+
+**Rules Steve set today** (beyond the queue): agent reports wait behind his thread (memory: queue agent reports); five agents unless he says otherwise, scaled back for the CME split; types are opaque by default, and nominal needs a reason; widgets are real clients; no import only a test uses, widgets included; the step widget is a debug tool; whole ride history kept; timelines build one frame.
+
