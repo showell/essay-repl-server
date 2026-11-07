@@ -1,5 +1,7 @@
 # Open calls for Steve
 
+**Steve, 2026-11-07:** "I agree with your leans except on Rider/RiderState/Motorcycle." So items 1 and 3-10 go as my leans say. Item 2 is reopened in notes/rider-boundaries.md.
+
 Reviews today left these for you. None is urgent; the lanes work around each one. Answer any you like, in any order: a word each is enough. My lean is given after each.
 
 ## Types
