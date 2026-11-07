@@ -21,3 +21,11 @@ Each image stacks the frame before, the frame after, and the difference in magen
 The other half of this branch is invisible by design. A road point now has one frame, measured from the middle of the road, and the road's width lives once, in `Geom`. No hash moved for that half.
 
 Seven proof hashes moved for the horizon, and the page hash too. Step 3000 also carries the sun fix, so it has a hash of its own.
+
+## The mountains' edge, branch `land-edge`
+
+The thin dark line along the horizon in rolled frames came from the ranges: their crest at height zero sat exactly on the base line, so a range out of sight still left a sliver of rock. The ranges now close at the grass's top line, a pixel above the horizon, and the land overlaps their foot by that pixel, the same rule the grass already uses against the roll. No new constant. Step 3590 at 8x, before on top, after below:
+
+![The rolled horizon at step 3590, 8x](mountain-edge-3590-crop.png)
+
+No RasterFrame hash moved; the page hash did, and an unrolled frame is identical.
