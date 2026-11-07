@@ -6,6 +6,8 @@ The newest entry is at the top. Each one says what should look different, and wh
 
 ## 2026-11-07, master 6d2245ef
 
+**Steve: passes.**
+
 This deploy has the rider, tuning and lib lanes in it. Every held frame kept its hash, so almost nothing should change. These are the places no check sees:
 
 1. **The perched bird over its tree.** A bird is perched near the route's start. Its feet should sit on the crown, drawn over the tree, not tucked behind it. Before, they tied in depth, and the tie order happened to paint the tree over the bird's feet.
