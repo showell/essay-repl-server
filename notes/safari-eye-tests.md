@@ -6,6 +6,8 @@ The newest entry is at the top. Each one says what should look different, and wh
 
 ## 2026-11-07, master 6c0029c7: the pond, and the camera built once
 
+**Steve: passes.**
+
 This deploy has the makers lane, lib's third pass, the widget gate and `RiderCamera` in it. Every held frame kept its hash (no held frame shows the pond, so the pond was checked by hashing frames 5000 to 5400 against master). The one thing you should see:
 
 1. **No line between the pond's water and its bank.** The bank is now drawn under the water, with no shared edge, so the browser no longer antialiases a seam between them. The pond is in view around steps 5000 to 5400.
