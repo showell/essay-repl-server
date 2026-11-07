@@ -365,3 +365,5 @@ These become one "boundary moves" lane.
 
 - **The book rewrite's pictures:** a high bar for real widgets, a low bar for simple pictures drawn from the code. A chapter about a world thing (a mountain) shows it rendered. Don't force it: trig needs no picture. The flip side: a chapter not worth a picture probably belongs in the math section near the end.
 - **Imports are only prod code:** a strong leaning, not yet a ruling. A lib import only a test uses (Ground's `lib.Brush`): move it. Unit types: undecided. The case to look at is `Cat.roc`, which imports Along and Across only to build a test crossing, a sign the test builds another module's input.
+
+- **Test data (Steve):** tiny crafted routes, not `World.route`, so a test shows exactly what it tests and survives route changes ("quite plausible that we will change the real road layout"). Tests use carefully crafted data, a real edge case or a deliberately normal case. The gates reorganization's shared fixtures follow this.
