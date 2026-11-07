@@ -4,6 +4,14 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 63f60b48
+
+This deploy has several lanes in it: World's second half, FrameView, the backdrop cleanup, the sunset and night tests, `RiderCamera`, and **the road seams**. Every held frame kept its hash. The one change you should see:
+
+1. **No white seams across the road.** Each segment's road and each bend's paving is now one polygon, so the browser no longer antialiases a line between chunks. Watch the road near and far, and on bends. The pond's water and bank can still show a faint line where they meet; a lane is fixing that.
+
+Everything else (the encounter renames, the camera built once a frame, the sky and sun unchanged in their math) should look exactly as before.
+
 ## 2026-11-07, master 8db6237b
 
 This deploy has the stills lane in it. The still data was rewritten by script: thousands of negative numbers and every color, plus the gradients and fills reshaped. Every held frame kept its hash. Glance at the critters:
