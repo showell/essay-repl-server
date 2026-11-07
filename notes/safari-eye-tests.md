@@ -4,6 +4,10 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 718f7e0a: the motorcycle knows where it is
+
+The ride is unchanged: every held value matched, and the ride finishes at 6746 as before. This deploy has the rider's restructure: RiderState steps itself, Rider is only the mind, and the motorcycle now holds its place on the route (`RoutePlace`). A whole ride at normal speed is the right check, since this is the most fundamental type: anything wrong would show as the rider leaving the road or jumping at a bend.
+
 ## 2026-11-07, master (after 625e84b1): rewind to the start
 
 One thing to try. **Hold the left arrow from late in the ride:** it should now step back all the way to step 0, not stop 1,024 to 2,048 steps back. A restart still clears the history. The animation timelines now build only the frame they draw, which changes nothing on screen.
