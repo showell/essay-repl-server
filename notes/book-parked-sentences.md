@@ -174,6 +174,12 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - FrameView now holds `backdrop` and `ride_shapes`; Screen has `drawn_left`/`drawn_right`/`margin_rect`, with no `width_with_margins`.
 - `EncounterPoses` is new (the animals' poses from the ride's plan, with no camera); EncounterSighting is camera work only; Scene's truck is `trucks`, a list of zero or one. The parked names-every-module check will want EncounterPoses and EncounterSighting.
 
+## From the route-tour, scenery-types and opaque-cheap lanes
+
+- "A fixture is a value": "it also trims the list of past instants. An `if` chain does the trimming…". `step_forward` is now a two-arm match on `[Continued, Restarted]`, and the trimming is in `past_instants_after`. The quoted `next_or_restart` returns those tags too.
+- :1130 `Wildlife.bend_critters` is now `bend_billboards`. The glossary (:2860, :2863) defines a billboard as "A critter that…"; Billboard.roc now says "an animal that stands in one place and always faces the camera".
+- :2043 "`Timeline` is nominal … unlike an opaque type anyone can build one", :2058 "opens the nominal type", and :2199 "wraps a record in the nominal type" are false: Timeline is opaque, built with `Timeline.of`. :433 "the rails make their `Rendered` by hand": now `Rendered.of`. Still, GroundPatch, Beacon and BendInView are opaque too.
+
 ## From the rider-review lane
 
 - ~2341: the search "compares the end of the coast with the target"; it's the road's middle now. ~2345: "Its caller gives the search its bounds"; `search_tries` sets them. ~2353: "all of `LeanSearch` is 105 lines".
