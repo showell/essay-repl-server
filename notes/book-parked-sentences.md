@@ -180,6 +180,11 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :1130 `Wildlife.bend_critters` is now `bend_billboards`. The glossary (:2860, :2863) defines a billboard as "A critter that…"; Billboard.roc now says "an animal that stands in one place and always faces the camera".
 - :2043 "`Timeline` is nominal … unlike an opaque type anyone can build one", :2058 "opens the nominal type", and :2199 "wraps a record in the nominal type" are false: Timeline is opaque, built with `Timeline.of`. :433 "the rails make their `Rendered` by hand": now `Rendered.of`. Still, GroundPatch, Beacon and BendInView are opaque too.
 
+## From the rider-step and route-place lanes
+
+- The rider's step is `RiderState.next` and `is_finished` (not `Rider.rider_state_at_next_step`, at 1483, 1584, 1657, 1709 and the 2809 table); the mind is `Rider.controls` (not `Rider.decide`, at 1584, 2295, the 2319 dot label and 2349).
+- The motorcycle holds a `RoutePlace { segment_index, along, across }`; RiderState is `{ motorcycle, eyes }`. 1499 lists `segment_index`, `along` and `across` as rider fields. 1514 "Count the opaque types…" no longer describes RiderState. 1526 and 2813: the crossing is `Motorcycle.cross_bend_if_on_road`. 1530 "record update does most of the writing in this module": `stopped_at` is Motorcycle's.
+
 ## From the whole-history, one-frame and one-size lanes
 
 - Tour now keeps the whole ride (no cap, no halving; a restart clears it). :2590 "it also trims the list of past instants. An `if` chain does the trimming…" and :2629 "at depths either side of the history's cap" are false.

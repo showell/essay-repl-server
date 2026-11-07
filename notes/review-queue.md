@@ -129,6 +129,18 @@ Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrum
 
 Master's gate stopped at run.shale:198 (`clear_full_caches`). `du -sm` on the shared CACHES folder failed ("cannot access ..."), because another gate in a lane worktree was clearing it, and `tonumber` then read du's error text as a number. Two problems: the gate trusts du's output without checking its exit, and every worktree's gate shares one cache folder, which one run can clear under another (a build could break the same way). Fix: check du's exit and fail by name; and either key the cache per checkout, or clear only under a lock, or never clear while another gate holds it. A small lane, after the current ones.
 
+## After RoutePlace (2026-11-07; Motorcycle holds `RoutePlace`, RiderState is `{ motorcycle, eyes }`)
+
+Queued, in rough order:
+- RiderCamera keeps its own `segment_index` plus `vantage { along, across }`: it could hold a RoutePlace too.
+- Gawking, Gaze and Throttle take `(motorcycle, segment)` side by side though the motorcycle knows its segment; with the route in hand they could look it up.
+- `RideInstant.distance_of_rider` is now a one-line wrapper with two callers.
+- Rider, Throttle and Truck test-only imports (blocked before on the restructure; unblocked now).
+- The gaze widget's table moves to the game's tests (open-calls #9, approved).
+- `Geom.Bend` becomes a module of its own (pipeline-core review #2; was waiting on this lane).
+- The rename: the thing (RiderState) becomes `Rider`, and the mind (Rider) becomes `RiderMind`? Ask Steve now that the types have settled.
+- The braking-below-zero latent bug (below).
+
 ## Latent: braking can ask for a negative speed (2026-11-07)
 
 Found by the rider-step lane: `RiderState.next` from 299.9 m on the last segment at 0.5 m a step crashes in `Speed.accelerated_by`, because the throttle's brake (`VehicleLimits.braking_to`, which aims at rest over the distance left) gives an acceleration larger than the speed. The real ride never reaches that state (it arrives slowly), but the rule allows it. Fix with the RoutePlace lane or on its own: braking never takes the speed below its target in one step (state it as a rule, with a test of both sides), and say how the stop at the route's end then ends. It may move the ride's last few steps; check OnRoad's finish.
