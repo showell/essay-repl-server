@@ -140,6 +140,7 @@ Queued, in rough order:
 - `Geom.Bend` becomes a module of its own (pipeline-core review #2; was waiting on this lane).
 - The rename: the thing (RiderState) becomes `Rider`, and the mind (Rider) becomes `RiderMind`? Ask Steve now that the types have settled.
 - The braking-below-zero latent bug (below).
+- Test-only imports left in all of Safari (walk fixed for shorthand fields): Throttle and Truck (in rider-follow), TreeShapes' Brush (expects ~:475-497) and World's Trig (expect ~:463-465). These last two are a tiny lane.
 
 ## Latent: braking can ask for a negative speed (2026-11-07)
 
