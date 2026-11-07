@@ -27,3 +27,8 @@ I'd drop it, since a field nothing reads is the smell, but you designed `EmojiSt
 - **The walk now counts the widgets.** Without it, the review would have made two functions private that the stills widget uses. Every review now walks with the widgets as clients.
 
 Pixels hold throughout. This lane runs after the Polygon lane, which converts the same gradient stops.
+
+## Steve's answers (2026-11-07)
+
+- **The tracer:** "Look in angry-gopher for zig-based safari." The bakers are `games/driving/bake_emoji.ts` and `bake_cat.ts`, and they write Zig (`wasm/emoji_frames.zig`, `wasm/cat_frames.zig`), never the Roc files. The Roc stills were converted once (September) and have been edited by hand many times since, so nothing regenerates them. The rewrite to negatives and hex goes ahead.
+- **The code point:** dropped from `EmojiStill`. The tests compare against the constant, and each emoji keeps its code point in a comment.
