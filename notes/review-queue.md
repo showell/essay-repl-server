@@ -216,3 +216,9 @@ Small: `canvas_apps/safari/README.md` (lines 61 and 94) lists the proof tools wi
   - Names: `indices_ahead` becomes `segments_ahead_of`, and `BendView` becomes `BendInView`.
 
 ## The lib third pass (running as `lib-third`)
+
+## Animation (review back; three calls with Steve, notes/animation-gaps.md)
+
+Decided: `Past(Steps)`; Placed instead of `Animation.Location`; Habit `[FliesTo(Flight), StaysPut(tree)]`; one home for the start's rounding (`Animation.start_for`), tested on both sides; EncounterSighting's gap callback goes; test-only imports and restating tests in PosedBird, PosedCat and Cat go; `bird_height`, `segment_cat` and `flight_arc` go private; the docs describing the estimate get rewritten; Cat and BirdFlight stay namespaces.
+
+**Tool:** type_walk refuses `Scene.roc` and `gates/CrossModuleExpects.roc` (roc-ast reports parse problems, probably `var $x` with `while`), so their callers drop out of the use counts. Fix roc-ast's syntax, or have the walk report the refused files loudly.
