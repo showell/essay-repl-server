@@ -367,3 +367,9 @@ These become one "boundary moves" lane.
 - **Imports are only prod code:** a strong leaning, not yet a ruling. A lib import only a test uses (Ground's `lib.Brush`): move it. Unit types: undecided. The case to look at is `Cat.roc`, which imports Along and Across only to build a test crossing, a sign the test builds another module's input.
 
 - **Test data (Steve):** tiny crafted routes, not `World.route`, so a test shows exactly what it tests and survives route changes ("quite plausible that we will change the real road layout"). Tests use carefully crafted data, a real edge case or a deliberately normal case. The gates reorganization's shared fixtures follow this.
+
+## From the polish lane
+
+- lib's `Brush.roc` header says "an offset outside [0, 1] is clamped as shapes_canvas.js clamps it". That's backwards now: the JS follows Brush. Fix the doc.
+- On a gradient with a ring, the canvas paints the outer stop's color exactly at its far end, where `Brush.shade` mixes to it at fraction 1: the same last-bit question in one more corner. Make the JS follow Brush there too.
+- **The brief:** `run` of `node`, `wc`, or an untracked scratch binary needs `want =`; `RasterFrame held <depths...>` hashes any steps; `l[#l + 1] = x` appends to a list (`append` errors).
