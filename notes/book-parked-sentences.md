@@ -37,3 +37,9 @@
 - 718: "`before` and `after` say where the two segments lie". There is no `after` field; `BendView.place_after(bend)` answers it.
 - 2312: "`Ground`, `GuardRail` and `TruckShape` call it the same way...". Only `Camera.clipped_polygon` calls it.
 - The sky chapter now quotes HexColor, and the Mountains chapter still lists it as new.
+
+## Location out of kinds
+
+- "Those two lives are two records, and each says where the tree stands in a different way", with its table row saying `Sighted` is `right` and `forward`. `Pipeline.Sighted` also holds the road place.
+- The table under "This is what `CatSighting` answers" lists `right`, `forward`, `pose` and `lift`. The record also has `place`, `along` and `across`.
+- `Sighted` moved from `Geom` to `Pipeline`, and `sighting_of` split in two: `tall_sighting_of` adds the size test.
