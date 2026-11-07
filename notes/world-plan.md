@@ -71,3 +71,11 @@ Keep "crossing" for the cat's path and act, and give the slot a word for what it
 - **`big_herd_count` and `pig_novelty_count` are both 2.** Is that one rule ("the first herds are new, so they're big and catch the eye") or two choices that happen to agree?
 - **`mid_tower_min_length` (1000 m)** lets only segment 6 (1200 m) through. Is it a rule of the world, or a way to pick that segment?
 - **Both herds' standout pigs land at +2 m**, only because -6 + 2 × 4 = 2. If the standout's place is what matters to Gaze, the herds should be laid out from it.
+
+## Steve's answers (2026-11-07)
+
+- **`Route`:** yes, in the same lane as the split.
+- **The slot's word:** `encounter`. CrossingSighting and CrossingReaction become EncounterSighting and EncounterReaction; "crossing" stays for the cat's path and act.
+- **The two 2s:** a coincidence, so `big_herd_count` and `pig_novelty_count` stay separate.
+- **`mid_tower_min_length`:** a rule. It stays, even though only segment 6 passes it.
+- **The standout pigs at +2 m:** leave them, since there are arguments either way.
