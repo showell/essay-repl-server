@@ -4,6 +4,10 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master a0f5e7f4: types made honest (nothing to see)
+
+The ride is unchanged (every held value matched). This deploy has the post-prod lanes: the route and Tour cleanup (`Tour.at_step` no longer loops forever past the finish), the scenery's types (pig and cow herds that can't hold an impossible herd, rail corners named), six types made opaque, the widgets' cleanup, and the dead-code lint now counting widgets as real callers. No eye test needed beyond a glance.
+
 ## 2026-11-07, master (after 82fa2abd): a new bird on the third segment
 
 **New code you should see.** Steve asked for a flying bird on the third segment, the one with the pigs. Where to look:
