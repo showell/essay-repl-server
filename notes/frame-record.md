@@ -39,3 +39,11 @@ I'd make **2 the default** (`WALK_MAX_DEPTH`), with `max_depth=3` still there to
 - Tour's "never empty" comment is wrong, since the history list starts empty. The comment gets fixed.
 - RideInstant's expects that restate starting constants, and the hand-made copy of `next`, go.
 - `BillboardSighting.billboards_in_view` joins its family's naming.
+
+## Steve's answers (2026-11-07)
+
+- **The name:** `FrameView`. "We already use compound words for module names. Single names work for things like Motorcycle. For more abstract things, we usually need two parts."
+- **The roll:** part of the view. "It's plausible that a deep roll would actually impact what you view." So `FrameView` holds the shapes, the sun, the sky colors and the roll, and painting a frame takes one call.
+- **One camera record:** later, but "something we should definitely do". It's queued after the route split.
+- **The kinds' closure in every scene walk:** "That actually feels like a code smell." A cold agent will look for an alternative.
+- **Depth:** 2 becomes the default. "It forces us to scrutinize the types without cheating... agents are prone to using level-3 things as justifications for bad code."

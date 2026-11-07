@@ -4,6 +4,14 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-07, master 75db5c6a
+
+This deploy has the truck, SceneShapes, units and trees lanes in it. Every held frame kept its hash, so nothing should change. These are the places to glance at:
+
+1. **The truck.** Its faces, lights and brake lamp were rebuilt from one strip helper, and the headlight beam's center is now computed directly. Look at it up close: the body's faces, the brake lamp's glow when it slows, and the headlight beams at dusk.
+2. **The trees.** The cones are measured from the tree's foot now, and the crown's top is computed the short way. Near trees' shaded cones and crowns should look the same.
+3. **Billboards and rails** are ordered by the rewritten frame code. The guard rails and the billboards should sit in front of and behind things just as before.
+
 ## 2026-11-07, master 6d2245ef
 
 **Steve: passes.**
