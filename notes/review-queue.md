@@ -100,6 +100,21 @@ Repros on roc-apps branch `roc-findings` (worktree lanes/roc-findings, keep it):
 - **opaque-cheap lane (queued; after scenery-tests, Scene and sky-frame land, since they're in these files):** Beacon (`of_segment`), CowHerd/BigPigHerd/TwoRowPigHerd (checked makers; folds into scenery-types), GroundPatch, Post, PosedBird/PosedCat (`of(pose)`), Rendered (`of(depth, picture)`), Animation.Timeline, Tower, Still, Billboard (CME uses `adult_billboard`), BendInView (`before()`), CatCrossing (`along()`).
 - **For Steve, when questions resume:** the read-heavy records Segment, RideInstant, Tour, FrameView, RiderCamera, Scene, Truck, RiderEyes, plus RiderState/Motorcycle (a state machine whose transitions live in Rider). Does "a plain record read field by field everywhere, with no invariant" count as a reason for nominal? If not, it's dozens of getters.
 
+## The route-family review (2026-11-07; walk at /tmp/claude-1000/review-route/walk.txt). Queued after the prod deploy.
+
+Clear, for one or two lanes, split by file:
+1. World is imported by 11 game modules only for their tests, which pin the real route ("segment 18 ends"). Tests build tiny segments (`Segment.from_choices`) or move to CME; then World's test-only members go (`first_bird_segment`, `is_distracting`, `has_cat`). Split per lane, since Tower, TreeSighting and the encounters are elsewhere.
+2. `Segment.segment_ending : Segment -> [Bends({ bend, bend_life }), RouteEnds]`, a total accessor; BillboardSighting and GroundSighting match it once; `bend_out_of` stays only for callers that rely on the route's shape. `BendInView.of_in_view` is the unchecked twin of `bend_after`.
+3. `Tour.at_step` loops forever past the ride's end. `RideInstant.next_or_restart` answers `[Continued, Restarted]`; `step_forward` clears its history on Restarted; `at_step` crashes with a reason. One home for the restart decision.
+4. Name the repeated unions once: `Segment.Ending`, `Segment.Pigs`, the planned encounter, `CowHerd.Bull`.
+5. Private: World's `big_herd_count`, `pig_novelty_count`, `big_pig_herd`, `two_row_pig_herd`, `cow_herd`, `herd_count_before`; Segment's `mid_tower_min_length`, `pig_distance_before_end`, `cow_herd_along`, `cat_along`, `fifth_left_tree` (its tests move beside Segment); `RoadAhead.most_segments_ahead`; `Clock.previous` (tests use `minus(Steps.one_step)`).
+6. Delete tests that restate the route's data (World:482-514 counts, :418-432, CME:122-130, Segment:189, Clock:65-74 and :87-88, Steps:42-47 and :62-69); keep the boundary ones and the real-rule data checks (every cat by a real tree, every bird can fly). Crash text: "World.crossing_at: the segment has a cat".
+9. `RoadAhead.rider_segment` becomes `rider_segment_index`.
+10. `Tour.steps_kept_back : Steps`; the step widget derives its range from it.
+11. `RideInstant.rider_distance : Route, RideInstant -> Distance` (RideInstant and the step widget both build it); RideInstant gets a `##` module doc first.
+
+For Steve (with the read-heavy nominal question): 7. the invariants Segment, Tour and RideInstant can break as nominal records today (a segment's crossing by its trees, trees planted for its length, only the last segment `RouteEnds`, broken already by the bends widget's 60 m cut and `{ ..seg, ending }` in tests; Tour's route and its one-step history, broken by FrameWidgetApp:90). 8. `RoadAhead.SegmentInView` stores `index` and `segment`, which can disagree; opaque means churn across about 30 readers. 2b. A Route of `{ bending_segments, last_segment }` would remove the remaining crashes.
+
 ## Small follow-ups (2026-11-07)
 
 - FrameWidgetApp builds the camera itself, copying `frame_view_at`: one home (a FrameView camera maker).
