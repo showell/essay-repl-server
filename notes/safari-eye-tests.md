@@ -6,6 +6,8 @@ The newest entry is at the top. Each one says what should look different, and wh
 
 ## 2026-11-07, master 50306f59: the new rider physics
 
+**Steve: passes** (and with it the entries below that weren't marked: 63f60b48 with the road seams, 8db6237b with the stills, fd32d1a5 with the World split, 7447a4ef with the widget kit).
+
 **This is the one where the ride changes.** It has your seven physics decisions in it, and the held frames moved on purpose. Watch a whole ride once, at normal speed:
 
 1. **The weave is gone.** The rider aims at the road's middle instead of a target that moved with it (`lean_target` deleted). The line through bends should look steadier.
