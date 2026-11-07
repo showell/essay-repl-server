@@ -495,5 +495,5 @@ These become one "boundary moves" lane.
 4. Steve's open calls 11-14 (notes/open-calls.md: herd front distance, the pinhole's x rule, `cam_focal` to `focal_length`, the point names), and the Rider/RiderMind rename question (ask him).
 5. Housekeeping: the old ~/build/roc-apps/safari-gate-caches (2.5 GB) can go now that every lane uses the per-checkout caches; lanes/ has expects-spike (keep until the split lands), roc-findings (held, Steve), frame-timing, frame-profile, frame-speed.
 
-**Rules Steve set today** (beyond the queue): agent reports wait behind his thread (memory: queue agent reports); five agents unless he says otherwise, scaled back for the CME split; types are opaque by default, and nominal needs a reason; widgets are real clients; no import only a test uses, widgets included; the step widget is a debug tool; whole ride history kept; timelines build one frame.
+**Rules Steve set today** (beyond the queue): agent reports wait behind his thread (memory: queue agent reports); five agents unless he says otherwise, scaled back for the CME split; types are opaque by default, and nominal needs a reason; widgets are real clients; no import only a test uses, widgets included; whole ride history kept; timelines build one frame.
 
