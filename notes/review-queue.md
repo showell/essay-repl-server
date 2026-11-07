@@ -161,3 +161,9 @@ rider-pixels, stills, world-encounter (World lane 2, without the heading), frame
 ## Eye tests
 
 Steve is pausing eye tests for a while, since they've all passed. Keep deploying after green gates and adding entries; he'll catch up in a batch.
+
+## The on-road gate (merged, 2026-11-07)
+
+`gates/OnRoad.roc` rides the whole route in `part=proof` and fails if the rider passes the half width, a segment goes backwards, or the rider runs past a segment's end. On master the widest point is **1.99963 m of 2 m, at step 6736 on segment 18**: a 0.37 mm margin. That's a near miss in today's physics, not a gate problem. The rider pixels lane's last check put its widest at 1.9738 m. Watch it after that lane merges. If the margin stays thin, it's a question for the Motion chapter: the lean search, or a named road margin the rider aims inside.
+
+Small: `canvas_apps/safari/README.md` (lines 61 and 94) lists the proof tools without OnRoad.
