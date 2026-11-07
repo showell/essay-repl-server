@@ -180,6 +180,11 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :1130 `Wildlife.bend_critters` is now `bend_billboards`. The glossary (:2860, :2863) defines a billboard as "A critter that…"; Billboard.roc now says "an animal that stands in one place and always faces the camera".
 - :2043 "`Timeline` is nominal … unlike an opaque type anyone can build one", :2058 "opens the nominal type", and :2199 "wraps a record in the nominal type" are false: Timeline is opaque, built with `Timeline.of`. :433 "the rails make their `Rendered` by hand": now `Rendered.of`. Still, GroundPatch, Beacon and BendInView are opaque too.
 
+## From the geom-tidy lane
+
+- ~:478-479 and :506 "`tree_outline` calls it twice…" and the `tree_outline -> Camera.project` graph edge: it's `Camera.upright_on_screen` now. ~:2478 "`PosedBird.scenery_picture` calls it with a record built on the spot for the bird's feet": the include is `Camera.upright_on_screen`; `StillShapes.Anchor` says `foot`. ~:600 names `Geom.near_plane`, now private. `Spot.straight_ahead` is gone.
+- tutorial/fails/rider_point_as_road_point.roc names `Geom.to_rider_point` (now private in RoadAhead): the example fails with "does not exist" rather than the error it's meant to show.
+
 ## From the rider-step and route-place lanes
 
 - The rider's step is `RiderState.next` and `is_finished` (not `Rider.rider_state_at_next_step`, at 1483, 1584, 1657, 1709 and the 2809 table); the mind is `Rider.controls` (not `Rider.decide`, at 1584, 2295, the 2319 dot label and 2349).
