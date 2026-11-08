@@ -265,3 +265,7 @@ Wherever the book suggests stepping back is free, say what it costs. Tour keeps 
 - The rider's gaze, about 1769-1771: the gaze returns "a twentieth of its angle each step" and snaps home "within 0.02 degrees". The code turns back by a fixed 0.2 degrees a step, and the last step lands it straight ahead. (`eyes_at_next_step` now lives in RiderEyes.)
 - The road, about 949: `point_before`, `point_after` and `Geom.line_crossing` no longer exist in that code; the bend's outer corner comes from `BendInView.outer_corner_in_view`.
 - A pig, about 1161: "Modules: `Pigs`" names no module; the pig's species is PigHerd's private `pig_species` (Pig.roc is gone).
+
+## From the headlight-sensor lane (2026-11-08)
+
+The truck chapter's headlights section (about 1880-1921) needs a rewrite: the headlights come on at 41.2% of dusk (`LitTruck.at(pace, darkness)`, `FrameView` passes `Sky.darkness_at`), not "once the sun has gone behind the mountains"; the diagram routes them through `Mountains`; "step 4,039" was already wrong (the onset is step 3,555); the table's "Off at step 3,742" was already wrong; `RideInstant` no longer "puts it together". The brake lights still read the truck's pace.
