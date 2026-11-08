@@ -180,6 +180,10 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :1130 `Wildlife.bend_critters` is now `bend_billboards`. The glossary (:2860, :2863) defines a billboard as "A critter that…"; Billboard.roc now says "an animal that stands in one place and always faces the camera".
 - :2043 "`Timeline` is nominal … unlike an opaque type anyone can build one", :2058 "opens the nominal type", and :2199 "wraps a record in the nominal type" are false: Timeline is opaque, built with `Timeline.of`. :433 "the rails make their `Rendered` by hand": now `Rendered.of`. Still, GroundPatch, Beacon and BendInView are opaque too.
 
+## From the truck-draw lane
+
+- ~1842 "`TruckSighting` calls the distance to the truck `lead`": there's no `lead`; TruckSighting places the truck with `RoutePlace.at_distance`. Truck points are in the truck's own frame; `TruckLights.brake_light_shapes`/`headlight_beam_shapes`; `Truck.Pace`; `LitTruck.at` takes a Pace. Already stale: ~1826, ~1840, ~1879, ~1887.
+
 ## From the geom-tidy lane
 
 - ~:478-479 and :506 "`tree_outline` calls it twice…" and the `tree_outline -> Camera.project` graph edge: it's `Camera.upright_on_screen` now. ~:2478 "`PosedBird.scenery_picture` calls it with a record built on the spot for the bird's feet": the include is `Camera.upright_on_screen`; `StillShapes.Anchor` says `foot`. ~:600 names `Geom.near_plane`, now private. `Spot.straight_ahead` is gone.
