@@ -1,5 +1,7 @@
 # The truck, from first principles
 
+**Steve, 2026-11-08:** not `TruckChase`. "Chase" describes the rider as much as the truck. He offered `TruckJourney`, `TruckItinerary` or `TruckPath`, preferring an evocative name in the spirit of Crossing and Flight over a uniform `Path` suffix. The truck and the sun are animations too, but ones that last the whole ride, so don't force them into the cat and bird's structure. Mostly settle the names, with restraint, and watch for small moves such as a field here or there. **Chosen: `TruckJourney`.** It's the truck's own travel over the whole ride, and it's evocative, like Crossing and Flight.
+
 *2026-11-08. A design note, so we can talk it through. Nothing is built yet. TruckChase is agreed.*
 
 ## What a truck is
