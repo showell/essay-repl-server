@@ -276,3 +276,9 @@ The truck chapter's headlights section (about 1880-1921) needs a rewrite: the he
 
 - The bird's perch, about 2311: the function is now `BirdFlight.fifth_left_tree`, a `Try(_, [NoPerch])`, so it no longer has a tag union "written in place" for `crossing`. Lines 2315-2317 describe the old nested match in `Segment.from_choices`; Segment now calls `BirdFlight.segment_flight` and keeps one crash. The prose near 2307 (`habit_from`, `Sits`) was already stale.
 - The cat: `CatCrossing` now stores its tree's point (`tree()`), and `end_across` is a constant, the same for every cat.
+
+## From the sky and tree lanes (2026-11-08)
+
+- Mountains is now `Skyline`: about 872 ("Modules: `Mountains`"), 888 (`Mountains.mountain_shapes` is `Skyline.skyline_shapes`), and the diagrams at about 102 and 813.
+- The sun's height comes from the new `SunPath`, about 1432 ("how `Sun.sighting` places a sun"). About 1400-1430 already named `Sun.height_px`, `Sun.place` and `Sun.sighting`, none of which exist. About 784: `turn_from_view` and `visible_turn_limit` are gone; the quarter-turn check is in `Lens.far_point`.
+- The trees: about 412 and 460 give the context as `{ nearer_tree_count : U16 }`, which is now `TreeShapes.Detail` with a U64. About 457's table names `TreeShapes.TreeOutline`, which is now `Camera.Upright`. About 595: `TierInputs` is built by `tier_inputs_of`. The quoted error under `{{fails conifer_without_context}}` now prints `Picture.Setting(TreeShapes.Detail)`.
