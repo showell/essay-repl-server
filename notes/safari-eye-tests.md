@@ -4,6 +4,20 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-08, master 116576ab: the sun on a real arc (release build)
+
+**This one changes what you see.** The sun now moves as if the sky turns: it rides an arc about a tilted axis (latitude 45°, the winter solstice, 1,000 steps an hour), so it lingers high, swings west, and sinks faster near the horizon instead of crawling. Its start moved too: a little higher (21° instead of about 18°) and further round, bearing -170° instead of -127°. The sunset's climax still falls on the long road west, and full night still comes before the end.
+
+| step | what to watch | sun's height, old → new |
+|---|---|---|
+| 2400 | on the long road west, the sun coming down | 8.05° → 9.75° |
+| **2613** | **the climax:** the sun's lower edge meets the range (it was 2537) | 6.98° → 8.20° |
+| 3300 | the stretch near the horizon, now quicker | 3.50° → 2.75° |
+| 3555 | the sun hides behind the range and the headlights come on (they came on at 4039) | 2.19° → 0.57° |
+| 4048 | fully set (was 4735) | -0.33° → -3.85° |
+
+At the climax the sun sits a little further left of the road than before. **Night now comes about 1,000 steps earlier** (full night at 4453 instead of 5487). That follows from keeping the climax on the long road while the sun sinks faster after it, so tell me if the dark stretch feels too long.
+
 ## 2026-11-08, master 5e92fc96: faster frames (release build)
 
 The ride should look exactly as before: every held frame, the page's shot and the finish (step 6746) are unchanged. What changed is how fast a frame is computed: about 40% less work per frame natively (tree cones, one shape list, the bends' trig, the skyline's columns). **The start of the ride should stutter less.** Watch the first few seconds after the loading screen in Firefox. The timing log is at http://143.244.172.148:9210/safari/?timing=1 if you'd like the numbers.
