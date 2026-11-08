@@ -1,5 +1,7 @@
 # Open calls, round 4
 
+**Answered (Steve, 2026-11-08):** all three go as my leans say.
+
 One call. My lean is at the end.
 
 1. **Publishing roc-types for the 11-07 nightly.** You asked to move the Roc pins today. roc-markdown moved to nightly-2026-11-07-ad3a5d2 with no source changes; its whole verify passed and it's on main. roc-chat moved too, and every check passed but one: the `methods` hunt needs **roc-types**, the type-walking tool, built for the same nightly. There's one for 10-30 and one for 11-03, but none for 11-07. roc-apps will hit the same wall when its pin moves.
