@@ -253,3 +253,4 @@ Wherever the book suggests stepping back is free, say what it costs. Tour keeps 
 ## From the beacons rewrite (2026-11-08)
 
 - Radio towers, about 1028: "`MidTower` is a tag on the segment". A mid tower comes from a length test, `Segment.has_mid_tower` (longer than 1000 m); only the seventh segment qualifies.
+- The ride instant: "Those three fields are the whole of what Safari Ride keeps", but `RideInstant` now has four (`encounter_start` too).
