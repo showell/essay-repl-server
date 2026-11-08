@@ -180,6 +180,10 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :1130 `Wildlife.bend_critters` is now `bend_billboards`. The glossary (:2860, :2863) defines a billboard as "A critter that…"; Billboard.roc now says "an animal that stands in one place and always faces the camera".
 - :2043 "`Timeline` is nominal … unlike an opaque type anyone can build one", :2058 "opens the nominal type", and :2199 "wraps a record in the nominal type" are false: Timeline is opaque, built with `Timeline.of`. :433 "the rails make their `Rendered` by hand": now `Rendered.of`. Still, GroundPatch, Beacon and BendInView are opaque too.
 
+## From the shell-tidy lane
+
+- ~:1241 "the model, which is the `Tour` and a pause flag": it's `motion : [Playing, Paused]`. ~:2720 "moving four steps or one … is one helper with a function in a record field" and ~:2724 "`Tour.step_forward` and `Tour.step_back` are plain values to pass here": it's `Tour.steps_forward`/`steps_back`. Tour is opaque (`instant()`, `route()`, `past_instant_count()`); `Tour.at_next_segment` replaces SafariApp's `next_segment`.
+
 ## From the truck-draw lane
 
 - ~1842 "`TruckSighting` calls the distance to the truck `lead`": there's no `lead`; TruckSighting places the truck with `RoutePlace.at_distance`. Truck points are in the truck's own frame; `TruckLights.brake_light_shapes`/`headlight_beam_shapes`; `Truck.Pace`; `LitTruck.at` takes a Pace. Already stale: ~1826, ~1840, ~1879, ~1887.
