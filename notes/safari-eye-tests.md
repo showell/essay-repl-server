@@ -6,6 +6,8 @@ The newest entry is at the top. Each one says what should look different, and wh
 
 ## 2026-11-08, master 116576ab: the sun on a real arc (release build)
 
+**Steve: the sun looks good.**
+
 **This one changes what you see.** The sun now moves as if the sky turns: it rides an arc about a tilted axis (latitude 45°, the winter solstice, 1,000 steps an hour), so it lingers high, swings west, and sinks faster near the horizon instead of crawling. Its start moved too: a little higher (21° instead of about 18°) and further round, bearing -170° instead of -127°. The sunset's climax still falls on the long road west, and full night still comes before the end.
 
 | step | what to watch | sun's height, old → new |
