@@ -1,12 +1,16 @@
 # Proofread: The truck, its motion, and its lights
 
-*For Steve's read, 2026-11-08. Three chapters as the book builds them, code filled in; the widget blocks show as fences here. The first now only draws a truck whose place and heading are known; the second is its motion; the third its lights. Comments welcome inline.*
+*For Steve's read, 2026-11-08. Three chapters as the book builds them, code filled in, with today's final names: `Truck` is the truck as drawn, `TruckJourney` its motion. The widget blocks show as fences here; the first is a static picture of a blue truck from three angles. Comments welcome inline.*
 
 ---
 
 ## The truck
 
 All through the ride, the rider follows a truck up the road. How the truck moves comes in the next chapter, and its lights in the one after. This chapter draws it: a plain truck, standing at a place on the road that's already known, and facing along the road.
+
+```widget truck
+A truck from behind, from behind and to one side, and from the side.
+```
 
 New in this chapter:
 
@@ -18,13 +22,13 @@ digraph truck_drawing {
   node [shape=box, fontname="Helvetica"];
   TruckBody [style=bold];
   Scene -> TruckSighting;
-  TruckSighting -> LitTruck;
-  LitTruck -> TruckBody;
+  TruckSighting -> Truck;
+  Truck -> TruckBody;
   TruckBody -> TruckShape;
 }
 ```
 
-`TruckSighting` finds the truck on the road ahead. What it finds is a `LitTruck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
+`TruckSighting` finds the truck on the road ahead. What it finds is a `Truck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
 
 ### Three maps
 
@@ -139,7 +143,7 @@ The closest the rider gets is 50 metres, at step 6,374. After that the rider slo
 
 New in this chapter:
 
-- Modules: `Truck`
+- Modules: `TruckJourney`
 
 ### A tease, carried out by physics
 
@@ -151,19 +155,19 @@ Everything else is plain physics. The truck speeds up while it's short of that m
 
 The truck's state is three fields:
 
-```roc Truck.roc, in Truck
+```roc TruckJourney.roc, in TruckJourney
 ## How far along the route the truck is, how fast it is going, and whether
 ## its last step slowed it. Nominal, not opaque: other modules read its fields.
-Truck := {
+TruckJourney := {
 	route_position : Distance,
 	speed : Speed,
-	pace : Truck.Pace,
+	pace : TruckJourney.Pace,
 	# ...
 ```
 
 `route_position` is a `Distance` along the whole route, the same measure as the rider's progress, so the two can be compared directly. `Pace` says whether the truck's last step slowed it down:
 
-```roc Truck.roc
+```roc TruckJourney.roc
 ## Whether the truck's last step slowed it.
 Pace := [Slowing, NotSlowing].{
 	is_eq : _
@@ -172,13 +176,13 @@ Pace := [Slowing, NotSlowing].{
 
 A bend ahead of the truck is its own type, and so is the answer to "is there one":
 
-```roc Truck.roc
+```roc TruckJourney.roc
 ## A bend ahead of the truck: how far off it is, and how fast it can be
 ## taken.
 ComingBend : { distance : Distance, turn_speed : Speed }
 ```
 
-```roc Truck.roc
+```roc TruckJourney.roc
 ## The next bend of the route past a point, or none: the route ends first.
 NextBend : [BendAhead(ComingBend), NoBendAhead]
 ```
@@ -187,16 +191,16 @@ NextBend : [BendAhead(ComingBend), NoBendAhead]
 
 ### The functions
 
-The modules around `Truck`
+The modules around `TruckJourney`
 ```dot
 digraph truck_motion {
   node [shape=box, fontname="Helvetica"];
-  Truck [style=bold];
-  RideInstant -> Truck;
-  Truck -> Route;
-  Truck -> VehicleLimits;
-  Truck -> Speed;
-  Truck -> Acceleration;
+  TruckJourney [style=bold];
+  RideInstant -> TruckJourney;
+  TruckJourney -> Route;
+  TruckJourney -> VehicleLimits;
+  TruckJourney -> Speed;
+  TruckJourney -> Acceleration;
 }
 ```
 
@@ -204,20 +208,20 @@ digraph truck_motion {
 
 ```roc RideInstant.roc, in next
 # ...
-truck: Truck.truck_at_next_step(
+truck: TruckJourney.truck_at_next_step(
 	instant.truck,
 	{ rider_distance: to.distance_along(route), route },
 	# ...
 ```
 
-That record is the whole of the chase. `Truck` imports none of the rider's modules, and the rider's modules don't import `Truck`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
+That record is the whole of the chase. `TruckJourney` imports none of the rider's modules, and the rider's modules don't import `TruckJourney`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
 
 The step works out the tease, then looks for the next bend:
 
-```roc Truck.roc
+```roc TruckJourney.roc
 ## The truck one step on: where the rider is along the route, and the
 ## route itself, decide its pace.
-truck_at_next_step : Truck, { rider_distance : Distance, route : Route } -> Truck
+truck_at_next_step : TruckJourney, { rider_distance : Distance, route : Route } -> TruckJourney
 truck_at_next_step = |truck, { rider_distance, route }| {
 	tease = tease_position({ rider_distance, route_length: route.route_length() })
 	match next_bend(route, truck.route_position) {
@@ -234,7 +238,7 @@ truck_at_next_step = |truck, { rider_distance, route }| {
 
 Here's the tease itself. The lead shrinks in step with the rider's progress along the route:
 
-```roc Truck.roc
+```roc TruckJourney.roc
 ## The tease: where the truck aims to be along the route when the rider is
 ## `rider_distance` along it, so that the rider closes in on it over the whole
 ## route. The lead it aims for shrinks from `tease_start_lead` to
@@ -251,7 +255,7 @@ tease_position = |{ rider_distance, route_length }| {
 
 Finding the next bend walks the route's segments with their ends, and takes the first one that ends past the truck:
 
-```roc Truck.roc
+```roc TruckJourney.roc
 ## The next bend of `route` past `route_position`.
 next_bend : Route, Distance -> NextBend
 next_bend = |route, route_position|
@@ -271,10 +275,10 @@ next_bend = |route, route_position|
 
 Then the two ways to take a step. Both sit below the type's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck aims to reach it at 80% of the bend's top speed, to leave a margin, and brakes if it's going faster than that:
 
-```roc Truck.roc
+```roc TruckJourney.roc
 ## The truck one step on, slowing for `bend`, so that it reaches the bend at a
 ## cautious speed.
-braking_truck_at_next_step : Truck, ComingBend -> Truck
+braking_truck_at_next_step : TruckJourney, ComingBend -> TruckJourney
 braking_truck_at_next_step = |truck, bend| {
 	target_speed = bend.turn_speed.scaled_by(turn_caution)
 	acceleration = VehicleLimits.braking_to(
@@ -298,10 +302,10 @@ braking_truck_at_next_step = |truck, bend| {
 
 `VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. A steady brake can land a little under the target, so `target_speed.max(...)` holds the truck there. A brake that would take the speed below zero is a bug, and `braking_to` crashes on one. Otherwise, the truck chases:
 
-```roc Truck.roc
+```roc TruckJourney.roc
 ## The truck one step on with no bend close: it speeds up while it is short of
 ## `tease`, and otherwise holds its speed.
-chasing_truck_at_next_step : Truck, Distance -> Truck
+chasing_truck_at_next_step : TruckJourney, Distance -> TruckJourney
 chasing_truck_at_next_step = |truck, tease| {
 	speed =
 		if truck.route_position < tease {
@@ -325,7 +329,7 @@ The truck drives exactly the same with its lights on or off. The lights are a la
 
 New in this chapter:
 
-- Modules: `LitTruck`, `TruckLights`
+- Modules: `Truck`, `TruckLights`
 
 ### Two lamps, two rules
 
@@ -337,29 +341,29 @@ The brake lights come on while the truck is slowing down. That's a fact about th
 
 Each lamp switches on its own, so each gets its own field:
 
-```roc LitTruck.roc, in LitTruck
+```roc Truck.roc, in Truck
 ## Which of the truck's lights are on.
-LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
+Truck := { headlights : Truck.Lamp, brake_lights : Truck.Lamp }.{
 # ...
 ```
 
 ### The functions
 
-Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands both to `LitTruck`:
+Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands both to `Truck`:
 
 ```roc FrameView.roc, in ride_facts
 # ...
-lit_truck: LitTruck.at(instant.truck.pace, Sky.darkness_at(instant.clock)),
+lit_truck: Truck.at(instant.truck.pace, Sky.darkness_at(instant.clock)),
 # ...
 ```
 
-`LitTruck` applies both rules to what it's handed, in one function:
+`Truck` applies both rules to what it's handed, in one function:
 
-```roc LitTruck.roc
+```roc Truck.roc
 ## The lights a truck going at `pace` has on under a sky of `darkness`: its
 ## headlights once the sky is dark enough, like a light sensor on the lamps,
 ## and its brake lights while its last step slowed it.
-at : Truck.Pace, Fraction -> LitTruck
+at : TruckJourney.Pace, Fraction -> Truck
 at = |pace, darkness| {
 	headlights: if darkness >= headlights_on_darkness {
 		On
@@ -375,7 +379,7 @@ at = |pace, darkness| {
 
 The headlights come on at this darkness:
 
-```roc LitTruck.roc
+```roc Truck.roc
 ## The headlights come on once the sky is 41.2% dark, about when the sun sinks
 ## behind the west range. The value was measured once, on this ride;
 ## gates/expects/RideExpects.roc pins the step.
@@ -387,9 +391,9 @@ On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from th
 
 The drawing does what the lamps say, with each `match` covering both tags. The beams go first, then the body, then the brake lights, so each paints over the one before:
 
-```roc LitTruck.roc
+```roc Truck.roc
 ## The truck's shapes: the beams under the body, the brake lights over it.
-truck_shapes : LitTruck, TruckShape.TruckSetting -> List(Shapes.Shape)
+truck_shapes : Truck, TruckShape.TruckSetting -> List(Shapes.Shape)
 truck_shapes = |lit_truck, setting| {
 	beams =
 		match lit_truck.headlights {
