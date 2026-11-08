@@ -32,6 +32,8 @@ Reviews today left these for you. None is urgent; the lanes work around each one
 13. **`cam_focal` becomes `focal_length`?** It's an abbreviation in about 40 signatures (Picture.Setting, RiderCamera, Pipeline…). Large churn; a real clarity gain. *My lean:* yes, after the rider lanes land.
 14. **The point names.** `RiderPoint`, `RaisedPoint`, `LevelPoint`, `AheadPoint` are a 2×2 grid ({ground, raised} × {anywhere, past the near plane}) that the names hide. A rename to `RiderPointAhead` and `RaisedPointAhead` would show it. The book teaches `RiderPoint`. *My lean:* yes; the book's rewrite will follow the code anyway.
 
+15. **`Scene.RideFacts`** repacks RideInstant: `encounter_timing` already holds the clock beside `clock`, and the truck is repacked as `{ route_position, lit_truck }`. Either Scene stores the sources (`{ encounter_start, truck, clock }`) and works out the rest itself, which gives one home for the clock but makes Scene wider (it takes on Truck and the timing rule), or it stays as it is. *My lean:* Scene takes the sources.
+
 ## Widgets that look like debugging tools
 
 10. The review sorted these as inspectors rather than book pictures: **step** (Tour's history as readouts), **stills** (every still in a grid, with counts), **route** (a map with `Str.inspect` readouts), **bends** (three bends with sighting counts), **sky** (the Sun's and Sky's curves as charts), **rehearsal** (LeanSearch's 12 tries; also a book picture). These look like book pictures: beacon, cat, bird, tree, shapes, frame, gaze. You said debugging widgets are "rarely worth saving". *My lean:* keep them all until the book unparks, then decide chapter by chapter.
