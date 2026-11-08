@@ -269,3 +269,10 @@ Wherever the book suggests stepping back is free, say what it costs. Tour keeps 
 ## From the headlight-sensor lane (2026-11-08)
 
 The truck chapter's headlights section (about 1880-1921) needs a rewrite: the headlights come on at 41.2% of dusk (`LitTruck.at(pace, darkness)`, `FrameView` passes `Sky.darkness_at`), not "once the sun has gone behind the mountains"; the diagram routes them through `Mountains`; "step 4,039" was already wrong (the onset is step 3,555); the table's "Off at step 3,742" was already wrong; `RideInstant` no longer "puts it together". The brake lights still read the truck's pace.
+
+(Done 2026-11-08: the truck chapters were rewritten through four review rounds.)
+
+## From the cat and bird type lanes (2026-11-08)
+
+- The bird's perch, about 2311: the function is now `BirdFlight.fifth_left_tree`, a `Try(_, [NoPerch])`, so it no longer has a tag union "written in place" for `crossing`. Lines 2315-2317 describe the old nested match in `Segment.from_choices`; Segment now calls `BirdFlight.segment_flight` and keeps one crash. The prose near 2307 (`habit_from`, `Sits`) was already stale.
+- The cat: `CatCrossing` now stores its tree's point (`tree()`), and `end_across` is a constant, the same for every cat.
