@@ -520,20 +520,15 @@ These become one "boundary moves" lane.
 - On a gradient with a ring, the canvas paints the outer stop's color exactly at its far end, where `Brush.shade` mixes to it at fraction 1: the same last-bit question in one more corner. Make the JS follow Brush there too.
 - **The brief:** `run` of `node`, `wc`, or an untracked scratch binary needs `want =`; `RasterFrame held <depths...>` hashes any steps; `l[#l + 1] = x` appends to a list (`append` errors).
 
-## STATE AT SESSION END (2026-11-07, night)
+## STATE AT SESSION END (2026-11-08)
 
-**Masters.** roc-apps master is pushed, every lane merged and gated green, ride unchanged since the one-size rule (finish 6746). Prod (roc.lynrummy.com) has Safari with the third-segment bird plus camera's ring fix (deployed earlier tonight). Shale master is pushed (loud `substitute`, the walk's test-only imports and shorthand fix, boundaries' clients/tests, name_hunt's per-file convention), and the new shale binary is installed. roc-markdown has one rename (run_at is now indexed_run).
-
-**Dev** serves the frame-timing build (`?timing=1` logs the first 120 frames' step/wasm/decode/paint ms), release. Branch `frame-timing` (lanes/frame-timing) is not merged: merge it with a full gate (part=page runs the runner against a stand-in canvas), then redeploy master to dev.
-
-**In flight:** `frame-speed` (lanes/frame-speed, cut from `frame-profile`) cuts the frame's wasm cost with no pixel moving: tree rings and hull, one shape list, bends' cos/sin once, skyline bearings. When it reports: merge `frame-profile` (FramePartsBench) and `frame-speed`, full gate, deploy, and ask Steve to rerun `?timing=1` in Firefox (it was 11 slow of the first 30 frames cold; wasm 12.7 ms cold, 7.4 warm per drawn frame).
+**Masters.** roc-apps master is pushed at 056a9c83 (the Geom split), gated green. Every lane from today is merged: frame speed and timing, the gates reorg (gates/proof/, gates/expects/), the sun on a real arc (Steve: looks good), braking fails loudly, the renames (Rider/RiderMind, focal_length, the point names) and Geom split into Geom (road frame) and RiderView (view frame). Dev serves the sun build; the Geom split moved no pixels, so it needs no eye test. Shale master has `cookbook:roc/rename.shale`; docs/type-review.md says renames go through it.
 
 **Next, in order:**
-1. The gates reorganization (notes/gates-reorg.md: `gates/proof/`, the CME split into gates/expects/ with one package root; the spike works). Run the split with NO other lane open (Steve). FrameBench stays.
-2. The truck-drawing lane (queued above).
-3. After RoutePlace: `Geom.Bend` as its own module; the braking-below-zero latent bug; World's test-only Trig import; TreeShapes' test-only Brush import (check after geom-tidy).
-4. Steve's open calls 11-14 (notes/open-calls.md: herd front distance, the pinhole's x rule, `cam_focal` to `focal_length`, the point names), and the Rider/RiderMind rename question (ask him).
-5. Housekeeping: the old ~/build/roc-apps/safari-gate-caches (2.5 GB) can go now that every lane uses the per-checkout caches; lanes/ has expects-spike (keep until the split lands), roc-findings (held, Steve), frame-timing, frame-profile, frame-speed.
+1. rename.shale can't move a name between modules (the Geom split hand-rolled a requalify step). Teach the recipe that.
+2. Open calls 3 #3: the far projection's x and y in one place (Lens, with FarHeight).
+3. Gate stage parallelism; the pinned-Roc lookup's six homes; Shale backlog S1-S4.
+4. Branch `bug-renders` is kept (no worktree).
+5. The book stays parked; book-parked-sentences.md has the Geom split's lines.
 
-**Rules Steve set today** (beyond the queue): agent reports wait behind his thread (memory: queue agent reports); five agents unless he says otherwise, scaled back for the CME split; types are opaque by default, and nominal needs a reason; widgets are real clients; no import only a test uses, widgets included; whole ride history kept; timelines build one frame.
-
+**Rules Steve set** (beyond the queue): agent reports wait behind his thread; up to five agents, each new one about 20 minutes; new calls go in a new note; types are opaque by default; widgets are real clients; no import only a test uses; whole ride history kept; timelines build one frame.

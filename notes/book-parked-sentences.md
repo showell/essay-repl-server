@@ -238,3 +238,14 @@ Wherever the book suggests stepping back is free, say what it costs. Tour keeps 
 ## From the animation lane (option C: animals on their own clock)
 
 - Roughly 1929-2291 and 2808/2845: `Approach` feeding `Cat.instant_at`, `stage_over_gap`/`stage_over_step_span`, "38 beats tied to no clock", the bird reacting to how close the rider is, a bird that `Sits`, the hanging bird, the feedback loop "why `stage_over_step_span` has to stay the cat's rule", "adding the distance to the segment to get the gap". Every bird flies now, and the start is planned once per segment.
+
+## The Geom split (2026-11-08)
+
+`Geom` now holds the road frame only; the rider's view frame (`RiderPointAhead`, `RaisedPointAhead`, the near plane, `FlatPolygon`) moved to `RiderView`.
+
+- 457: the table names `Geom.RaisedPoint`. It is now `RiderView.RaisedPointAhead`.
+- 600: "`Geom` draws that line at its near plane, `Geom.near_plane`". The near plane lives in `RiderView`.
+- 2370: "Modules: `Lens`, and `Geom`, `RoadAhead` and `Camera` in full" needs `RiderView`.
+- 2390: `Geom`'s row says "Road points, rider points, and how to turn one into the other", and its counts are stale. Rider points are `RiderView`'s.
+- 2409-2410, dot graph: `RoadAhead -> Geom` and `Camera -> Geom` need `RiderView` edges.
+- 2418: the family "`Geom`, `RoadAhead`, `Camera` and `Lens`" now includes `RiderView`.
