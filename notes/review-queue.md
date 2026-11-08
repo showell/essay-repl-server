@@ -549,3 +549,6 @@ For Steve: (14) the cookie is still named `__Host-gopher_auth`; renaming signs e
 - Next: `CanvasApp.Tone : { freq, ms }` and `fps` -> `{ hertz, milliseconds }` and `frames_a_second` (WidgetPage already says frames_a_second); touches every app, wasm export names stay.
 - Judgement, later: PlanView/VcrButtons take bare metres where widget_kit has Distance; three private `at` copies (Shapes, ConvexCut, Font); `Trig.wrap`/`degrees_per_radian` have one client (Angle); `Click.Area` and `PlanView` nominal with no reason.
 - For Steve, sometime: matching page colors (VcrButtons' 0x303030 twice, cat's panel color, sky's ink color, accent in PlanView) -- one choice or coincidence?
+- Done 2026-11-08: name_hunt, errors and plain_names cover lib and widget_kit at zero. Left: bare_floats finds 163 bare F64s there (lib 123, widget_kit 40), and safari/bare_floats.txt can't name a lib module. Unit types in lib, or a second table: a design call for Steve, later.
+- Shale: rename.shale missed `{ ..opaque(...) }` record updates in Brush.roc (it read `..opaque` as a field). Worth a plant, beside the multi-line-annotation one.
+- Book: tutorial.md about 322 says `Brush.opaque`, now `Brush.opaque_rgba`.
