@@ -520,19 +520,21 @@ These become one "boundary moves" lane.
 - On a gradient with a ring, the canvas paints the outer stop's color exactly at its far end, where `Brush.shade` mixes to it at fraction 1: the same last-bit question in one more corner. Make the JS follow Brush there too.
 - **The brief:** `run` of `node`, `wc`, or an untracked scratch binary needs `want =`; `RasterFrame held <depths...>` hashes any steps; `l[#l + 1] = x` appends to a list (`append` errors).
 
-## STATE AT SESSION END (2026-11-08)
+## STATE AT SESSION END (2026-11-08, evening; before compaction)
 
-**Masters.** roc-apps master is pushed at 056a9c83 (the Geom split), gated green. Every lane from today is merged: frame speed and timing, the gates reorg (gates/proof/, gates/expects/), the sun on a real arc (Steve: looks good), braking fails loudly, the renames (Rider/RiderMind, focal_length, the point names) and Geom split into Geom (road frame) and RiderView (view frame). Dev serves the sun build; the Geom split moved no pixels, so it needs no eye test. Shale master has `cookbook:roc/rename.shale`; docs/type-review.md says renames go through it.
+**Steve's open items (one at a time):** the essay notes/axes-of-difficulty.md (he asked for it; its closing question is the frames framing). After that: the truck chapters' review rounds, then his read.
 
-**Next, in order:**
-1. rename.shale can't move a name between modules (the Geom split hand-rolled a requalify step). Teach the recipe that.
-2. Open calls 3 #3: the far projection's x and y in one place (Lens, with FarHeight).
-3. Gate stage parallelism; the pinned-Roc lookup's six homes; Shale backlog S1-S4.
-4. Branch `bug-renders` is kept (no worktree).
-6. Done 2026-11-08: the doc check's 16 sibling findings (metal-vmm 190eec1, roc-webbox fc8a674, roc-chat 1177f10); not yet re-run.
-5. The book stays parked; book-parked-sentences.md has the Geom split's lines.
+**roc-apps master** is pushed at eb08c91c and gated; local master has one more commit (the truck chapters' first accuracy round, plus TruckBody's "six faces"), with its full gate running. Today merged: far projection, route sweep, test-only imports, pinned-Roc prelude, scene-tidy, motion-tidy/names/homes, lens-names, rail/herd/tower tidies, widget-crash (widgets build to wasm in the gate), beacon-blinks (the beacon owns its blink and disc), beacon-offset (a beacon is its head start; half a period computed), lib-tidy, lib-hunts, herd-tests, headlight-sensor (41.2% of dusk, onset step 3,555), tone-names, book-tools (byte-identical), book-scripts, scenery-reasons.
 
-**Rules Steve set** (beyond the queue): agent reports wait behind his thread; up to five agents, each new one about 20 minutes; new calls go in a new note; types are opaque by default; widgets are real clients; no import only a test uses; whole ride history kept; timelines build one frame.
+**Running lanes:** widgets-a and widgets-b (the widget review's clear wins, split by file); after they merge, widen the lints to *_widget/*.roc (name_hunt, errors, plain_names, vocabulary, nest_depth, parens, stack at zero). Roc track: roc-types for 11-07 (lanes/shale-roc-types-1107), approved; then roc-chat (lanes/rocchat-1107, parked on roc-types) and roc-apps and dog-park/roc-webbox pin moves.
+
+**Roc compiler fix:** found and fixed on showell/roc (branch widget-method-segv-fix, 0219368016, rebased on upstream main db807292d9); fork draft PR https://github.com/showell/roc/pull/2, CI Manager run 42502143184 (tidy fails on upstream main too; BSD builds passed; minici and shards were running). Steve approved filing upstream once it's green; the PR text is in the lane's report (summarized in notes/open-calls-4.md #3). Never touch roc-lang/roc except that one PR when green.
+
+**Book:** unparked. The beacons chapter is done for now (Steve: "pretty good shape"). The truck is two chapters, "The truck" and "The truck's lights"; accuracy round 1 is in; round 2, then promote/demote, clarity, shape/tone, then Steve. Open for Steve: the truck drives on past the route's end after the rider stops (lead grows from 50 m at step 6,374 to 301 m; the truck isn't drawn once past the end). Is that intended?
+
+**Dog Park:** v9 is live and tagged (image dogpark-5d8a122bbe0e); gates clean; builds find their own pinned Roc. Next on that track: its pin move to 11-07 with roc-webbox.
+
+**Housekeeping left:** ~/.cache/roc is 23 GB: wipe when no lane runs roc. Disk 77 GB free.
 
 ## roc-chat review (2026-11-08, main 1177f10), queued behind Dog Park
 
