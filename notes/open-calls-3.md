@@ -1,5 +1,7 @@
 # Open calls, round 3
 
+**Answered (Steve, 2026-11-08):** #1, #2 and #4 go as my leans say (split Geom in the rename lane; clipping joins the view-frame module; keep the mind and rename RiderState to Rider and Rider to RiderMind). #3, in his words: "let's make the sun go down the sky as if there's actual rotation, which may take some minor trig up front to calibrate the sun hitting the mountains. This lets us unify the math and be slightly more realistic (and if I notice it all, it hopefully be in a good way). The sun actually does seem sluggish near the horizon. You can also tweak the sun's original position in the sky."
+
 From a fresh boundary review across all of Safari, run after two days of cleanup. None is urgent. A word each is enough. My lean is after each.
 
 1. **Split Geom?** Geom (619 lines, imported by 36 modules) holds two coordinate frames. One is the road frame: `RoadPoint`, `Placed`, `Vantage`, `Bend`, road edges. The other is the rider's view frame: `RiderPoint`, `RaisedPoint`, `AheadPoint`, `LevelPoint`, the near plane, `Region`, clipping. Its own doc names both. Splitting off the view frame (e.g. `ViewPoint`) gives a smaller hub and a clearer doc, but touches about 36 importers, widgets included. *My lean:* yes, split, folded into the big rename lane, since that lane renames the point types anyway.

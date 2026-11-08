@@ -1,5 +1,7 @@
 # The brake overshoots its target
 
+**Answered (Steve, 2026-11-08):** "for braking I agree with your conservatism." So (b): keep the ride; `braking_to` fails loudly on the impossible case; its doc says the steady brake may land a little under the target.
+
 One call for you, on the ride's physics.
 
 ## What we found
