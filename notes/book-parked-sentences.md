@@ -180,6 +180,11 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :1130 `Wildlife.bend_critters` is now `bend_billboards`. The glossary (:2860, :2863) defines a billboard as "A critter that…"; Billboard.roc now says "an animal that stands in one place and always faces the camera".
 - :2043 "`Timeline` is nominal … unlike an opaque type anyone can build one", :2058 "opens the nominal type", and :2199 "wraps a record in the nominal type" are false: Timeline is opaque, built with `Timeline.of`. :433 "the rails make their `Rendered` by hand": now `Rendered.of`. Still, GroundPatch, Beacon and BendInView are opaque too.
 
+## From the units and boundary-moves-2 lanes
+
+- tutorial.md:1644 `allowed_speed` "holds the speed between rest and the top speed": only to the top speed now (a Speed is never negative).
+- 1512 lists `CanvasRoll` (folded into RiderCamera); 1540 "The last `expect` is a table of pairs…" refers to a listing the page no longer shows; 2737 "`SafariApp.frame_shapes` builds a camera out of nested tags" (`FrameView.lean_space` does) and "The rest is `Tour` answering questions"; ~2484 the lens passage presents `focal_for_lean` and `focal_for` as Lens's (they're RiderCamera's; it already named a nonexistent `RideFocal.ride_focal`); 610 introduces the hull from TreeShapes (it's `ConvexHull`'s).
+
 ## From the small-rules lane
 
 - tutorial.md:769 "`scale` is how large the sun is drawn, because a wider view makes it look smaller": `Sun.Place` holds `cam_focal` now, and `Lens.size_on_screen` draws a resting-lens length. `Lens.x_for_turn`/`turn_at_x` moved to Camera; `Geom.herd_front_distance` is gone (each herd owns its own).
