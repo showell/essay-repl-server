@@ -539,3 +539,6 @@ These become one "boundary moves" lane.
 Clear wins: (1) AgentsRoute's backlog swallows read/decode faults; one `load_conversation!` home, a 500 on failure. (2) Cookie parsing and Set-Cookie text three times (Session, GitHubState, GitHubSignUp): one Cookie module, bytes identical. (3) Site paths as literals ("/agents", "/channels/<name>", "/chat"): one home each in Route. (6) main.roc checks the origin twice; build the origin record once. (7) Page's `text_paragraph`/`button_form` aliases. (8) The "Failed" 500 page five times. (9) `site_path_of` / `Page.site_path` twins. (15) private constants; main.roc header reflow.
 Judgement calls: (4) FileSystem's twin `read_agent_keys!`/`read_agent_invites!` and their silent `BadFact` skip. (5) `start!` returns a bare `Failed` (platform seam). (10) `hash_secret!` into SecretHash. (11) AgentKey/AgentInvite shared facts. (12) Page.roc 1,115 lines: agents page out. (13) unparseable folder names skipped silently. HumanInvitesRoute:219 drops a fault.
 For Steve: (14) the cookie is still named `__Host-gopher_auth`; renaming signs everyone out.
+
+- Shale: `cookbook:roc/rename.shale` missed a multi-line type annotation ending in a comma (`offset : U64,` in Scatter.roc), taking it for a record field. Worth a plant.
+- Dog Park track, after the pinned-Roc lane: re-run DEPLOY.md's release build from main; then Steve deploys.

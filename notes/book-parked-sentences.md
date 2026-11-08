@@ -264,3 +264,4 @@ Wherever the book suggests stepping back is free, say what it costs. Tour keeps 
 - `Rider.rider_state_at_next_step` and `Truck.truck_state_at_next_step` (1523, 1626, 1699, 1751, 2689, 2851) are stale; the names are `Truck.truck_at_next_step` and Rider's `next`.
 - The rider's gaze, about 1769-1771: the gaze returns "a twentieth of its angle each step" and snaps home "within 0.02 degrees". The code turns back by a fixed 0.2 degrees a step, and the last step lands it straight ahead. (`eyes_at_next_step` now lives in RiderEyes.)
 - The road, about 949: `point_before`, `point_after` and `Geom.line_crossing` no longer exist in that code; the bend's outer corner comes from `BendInView.outer_corner_in_view`.
+- A pig, about 1161: "Modules: `Pigs`" names no module; the pig's species is PigHerd's private `pig_species` (Pig.roc is gone).
