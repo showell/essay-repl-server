@@ -1,10 +1,130 @@
-# Proofread: The truck, and The truck's lights
+# Proofread: The truck, its motion, and its lights
 
-*For Steve's read, 2026-11-08. These are the two chapters as the book builds them, code filled in; the widget blocks show as fences here. They've had two accuracy rounds, a promote/demote round, a clarity round and a shape-and-tone round. Comments welcome inline.*
+*For Steve's read, 2026-11-08. Three chapters as the book builds them, code filled in; the widget blocks show as fences here. The first now only draws a truck whose place and heading are known; the second is its motion; the third its lights. Comments welcome inline.*
 
 ---
 
 ## The truck
+
+All through the ride, the rider follows a truck up the road. How the truck moves comes in the next chapter, and its lights in the one after. This chapter draws it: a plain truck, standing at a place on the road that's already known, and facing along the road.
+
+New in this chapter:
+
+- Modules: `TruckSighting`, `TruckShape`, `TruckBody`
+
+The modules that draw the truck
+```dot
+digraph truck_drawing {
+  node [shape=box, fontname="Helvetica"];
+  TruckBody [style=bold];
+  Scene -> TruckSighting;
+  TruckSighting -> LitTruck;
+  LitTruck -> TruckBody;
+  TruckBody -> TruckShape;
+}
+```
+
+`TruckSighting` finds the truck on the road ahead. What it finds is a `LitTruck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
+
+### Three maps
+
+The truck is a real box, with a back, two sides, a roof, a windshield and a nose. Each corner of it goes through three maps on its way to the screen. Its shape is written in the truck's own frame. Its placement carries that frame onto the road at the truck's spot. Its projection is the camera turning the result into a point on the screen.
+
+### Get the types right
+
+A point in the truck's own frame is three distances, measured from the middle of the trailer:
+
+```roc TruckShape.roc
+## A point on the truck, in the truck's own frame: how far ahead of the
+## trailer's center and how far to the right of it, each negative the other
+## way, and how high above the road under the truck.
+TruckPoint : {
+	ahead : Distance,
+	rightward : Distance,
+	height : Distance,
+}
+```
+
+A `TruckSetting` holds what a point is drawn from: the truck's spot on the road, including how far the road under it is lifted, and the camera's vantage.
+
+### The functions
+
+One function does the first two maps. It moves the point along and across the road from the truck's spot, finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it:
+
+```roc TruckShape.roc
+## Where a point on the truck lands in the rider's view, raised as far as
+## the truck is off the ground. The point is carried from the truck's frame
+## onto the road at the truck's spot. The ground curves away from the rider,
+## so the point is lowered by how far the ground has dropped beneath it.
+raised_point_on_truck : TruckShape.TruckSetting, TruckShape.TruckPoint -> RiderView.RaisedPoint
+raised_point_on_truck = |truck, { ahead, rightward, height }| {
+	place = truck.spot.place()
+	center = truck.spot.road_point()
+	on_ground = RoadAhead.rider_point_at(
+		truck.context.road,
+		{
+			vantage: truck.context.vantage,
+			place,
+			road_point: {
+				along: center.along.plus(ahead),
+				across: center.across.plus(rightward),
+			},
+		},
+	)
+	{
+		right: on_ground.right,
+		forward: on_ground.forward,
+		height: truck.spot.lift().plus(height).minus(EarthCurve.ground_drop(on_ground)),
+	}
+}
+```
+
+So a face is just a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
+
+```roc TruckBody.roc
+## A side of the truck `rightward` of its centre line: up the back of the
+## trailer, along its roof and the cab's, down the windshield's edge and the
+## nose, back along the cab's floor, and down to the trailer's floor.
+side : TruckShape.TruckSetting, Distance -> RiderView.FlatPolygon
+side = |truck, rightward| {
+	box = TruckShape.truck_box
+	face(
+		truck,
+		{
+			color: side_color,
+			corners: [
+				{ ahead: box.rear, rightward, height: TruckShape.trailer_bottom },
+				{ ahead: box.rear, rightward, height: TruckShape.truck_height },
+				{ ahead: box.roof_front, rightward, height: TruckShape.truck_height },
+				{ ahead: box.nose, rightward, height: TruckShape.hood_height },
+				{ ahead: box.nose, rightward, height: TruckShape.cab_bottom },
+				{ ahead: box.trailer_front, rightward, height: TruckShape.cab_bottom },
+				{ ahead: box.trailer_front, rightward, height: TruckShape.trailer_bottom },
+			],
+		},
+	)
+}
+```
+
+The back, the roof, the windshield and the nose are each a strip across the truck, so they share `TruckShape.strip_corners`. The tires are circles standing on the road.
+
+The third map happens last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then projects each one, clipping whatever is behind the camera:
+
+```roc TruckBody.roc
+## The truck's body, its farthest faces first. A face is ordered by the
+## mean of its corners' distances ahead.
+body_shapes : TruckShape.TruckSetting -> List(Shapes.Shape)
+body_shapes = |truck|
+	DepthSort.sort_by(
+		faces(truck),
+		|face| DepthSort.mean_depth(face.corners.map(|corner| corner.forward)),
+	)
+		.keep_oks(|face| Polygon.clipped_polygon(face, truck.focal_length))
+```
+
+That's a truck. Next, it moves.
+
+## The truck's motion
 
 The truck is what the rider chases. It starts 500 metres up the road, and for most of the ride the rider closes in on it, but not steadily:
 
@@ -19,7 +139,7 @@ The closest the rider gets is 50 metres, at step 6,374. After that the rider slo
 
 New in this chapter:
 
-- Modules: `Truck`, `TruckSighting`, `TruckShape`, `TruckBody`
+- Modules: `Truck`
 
 ### A tease, carried out by physics
 
@@ -69,7 +189,7 @@ NextBend : [BendAhead(ComingBend), NoBendAhead]
 
 The modules around `Truck`
 ```dot
-digraph truck {
+digraph truck_motion {
   node [shape=box, fontname="Helvetica"];
   Truck [style=bold];
   RideInstant -> Truck;
@@ -77,12 +197,6 @@ digraph truck {
   Truck -> VehicleLimits;
   Truck -> Speed;
   Truck -> Acceleration;
-  Scene -> TruckSighting;
-  TruckSighting -> LitTruck;
-  LitTruck -> Truck;
-  LitTruck -> TruckBody;
-  TruckBody -> TruckShape;
-  FrameView -> LitTruck;
 }
 ```
 
@@ -201,95 +315,6 @@ chasing_truck_at_next_step = |truck, tease| {
 		pace: NotSlowing,
 	}
 }
-```
-
-### Drawing the truck
-
-`TruckSighting` finds the truck on the road ahead. What it finds is a `LitTruck`: which of the truck's lights are on. This chapter draws the body, which is all there is with the lights off. The truck is drawn however small it stands, because the rider is always looking for it.
-
-The truck is a real box, with a back, two sides, a roof, a windshield and a nose. Each corner of it goes through three maps on its way to the screen. Its shape is written in the truck's own frame. Its placement carries that frame onto the road at the truck's spot. Its projection is the camera turning the result into a point on the screen.
-
-A point in the truck's own frame is three distances, measured from the middle of the trailer:
-
-```roc TruckShape.roc
-## A point on the truck, in the truck's own frame: how far ahead of the
-## trailer's center and how far to the right of it, each negative the other
-## way, and how high above the road under the truck.
-TruckPoint : {
-	ahead : Distance,
-	rightward : Distance,
-	height : Distance,
-}
-```
-
-A `TruckSetting` holds what a point is drawn from: the truck's spot on the road, including how far the road under it is lifted, and the camera's vantage. One function does the first two maps. It moves the point along and across the road from the truck's spot, finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it:
-
-```roc TruckShape.roc
-## Where a point on the truck lands in the rider's view, raised as far as
-## the truck is off the ground. The point is carried from the truck's frame
-## onto the road at the truck's spot. The ground curves away from the rider,
-## so the point is lowered by how far the ground has dropped beneath it.
-raised_point_on_truck : TruckShape.TruckSetting, TruckShape.TruckPoint -> RiderView.RaisedPoint
-raised_point_on_truck = |truck, { ahead, rightward, height }| {
-	place = truck.spot.place()
-	center = truck.spot.road_point()
-	on_ground = RoadAhead.rider_point_at(
-		truck.context.road,
-		{
-			vantage: truck.context.vantage,
-			place,
-			road_point: {
-				along: center.along.plus(ahead),
-				across: center.across.plus(rightward),
-			},
-		},
-	)
-	{
-		right: on_ground.right,
-		forward: on_ground.forward,
-		height: truck.spot.lift().plus(height).minus(EarthCurve.ground_drop(on_ground)),
-	}
-}
-```
-
-So a face is just a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
-
-```roc TruckBody.roc
-## A side of the truck `rightward` of its centre line: up the back of the
-## trailer, along its roof and the cab's, down the windshield's edge and the
-## nose, back along the cab's floor, and down to the trailer's floor.
-side : TruckShape.TruckSetting, Distance -> RiderView.FlatPolygon
-side = |truck, rightward| {
-	box = TruckShape.truck_box
-	face(
-		truck,
-		{
-			color: side_color,
-			corners: [
-				{ ahead: box.rear, rightward, height: TruckShape.trailer_bottom },
-				{ ahead: box.rear, rightward, height: TruckShape.truck_height },
-				{ ahead: box.roof_front, rightward, height: TruckShape.truck_height },
-				{ ahead: box.nose, rightward, height: TruckShape.hood_height },
-				{ ahead: box.nose, rightward, height: TruckShape.cab_bottom },
-				{ ahead: box.trailer_front, rightward, height: TruckShape.cab_bottom },
-				{ ahead: box.trailer_front, rightward, height: TruckShape.trailer_bottom },
-			],
-		},
-	)
-}
-```
-
-The back, the roof, the windshield and the nose are each a strip across the truck, so they share `TruckShape.strip_corners`. The tires are circles standing on the road.
-
-The third map happens last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then projects each one, clipping whatever is behind the camera:
-
-```roc TruckBody.roc
-## The truck's body, its farthest faces first. A face is ordered by the
-## mean of its corners' distances ahead.
-body_shapes : TruckShape.TruckSetting -> List(Shapes.Shape)
-body_shapes = |truck|
-	DepthSort.sort_by(faces(truck), |face| mean_forward(face.corners))
-		.keep_oks(|face| Polygon.clipped_polygon(face, truck.focal_length))
 ```
 
 That's a truck you can chase. The next chapter lights it.
