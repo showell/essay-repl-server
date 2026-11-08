@@ -254,3 +254,11 @@ Wherever the book suggests stepping back is free, say what it costs. Tour keeps 
 
 - Radio towers, about 1028: "`MidTower` is a tag on the segment". A mid tower comes from a length test, `Segment.has_mid_tower` (longer than 1000 m); only the seventh segment qualifies.
 - The ride instant: "Those three fields are the whole of what Safari Ride keeps", but `RideInstant` now has four (`encounter_start` too).
+
+## From the lens-names and motion-names lanes (2026-11-08)
+
+- The sun chapter, about 781 and 785: `Sun.sighting` is `Sun.sun_in_view`; `Sun.place` is the private `sun_on_screen` (and `Sun.Place` is `Sun.OnScreen`). Also about 1433 ("how `Sun.sighting` places a sun") and the setting sun's dot graph (1401-1408).
+- The math layer, about 2531: "`resting_focal` is a value computed from other values" is `Lens.resting_focal_length`.
+- About 1558: "The `match` on `seg.ending`" (already stale; the code reads `segment.segment_ending()`).
+- What a cat does to the rider, about 2319: "`attention` is where `Past`'s payload is used" is `Cat.cat_attention`.
+- `Rider.rider_state_at_next_step` and `Truck.truck_state_at_next_step` (1523, 1626, 1699, 1751, 2689, 2851) are stale; the names are `Truck.truck_at_next_step` and Rider's `next`.
