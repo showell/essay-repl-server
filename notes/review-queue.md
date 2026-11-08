@@ -129,6 +129,19 @@ Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrum
 
 Master's gate stopped at run.shale:198 (`clear_full_caches`). `du -sm` on the shared CACHES folder failed ("cannot access ..."), because another gate in a lane worktree was clearing it, and `tonumber` then read du's error text as a number. Two problems: the gate trusts du's output without checking its exit, and every worktree's gate shares one cache folder, which one run can clear under another (a build could break the same way). Fix: check du's exit and fail by name; and either key the cache per checkout, or clear only under a lock, or never clear while another gate holds it. A small lane, after the current ones.
 
+## Units lane (queued after frame-speed and truck-draw land; it touches TreeShapes, Geom, Truck, Throttle)
+
+From the units review (walks in /tmp/claude-1000/units-review/); decided by me:
+1. Radians to degrees has three float orders: VehicleLimits uses `turn.abs().to_degrees()`; `turn_speeds` is keyed by `whole_degrees : U32` (not float `==`), and its bare_floats line goes; `degrees_per_radian` moves beside `Trig.degree` in lib; World's test uses `to_degrees()`.
+2. `scaled_by : X, Fraction -> X` on Pixels, Distance, FarHeight and Speed (`x * f`, the same order as `times`), replacing 16 hand unwraps (TreeShapes, Sun, TruckBody, TruckShape, Truck, Mountains; Geom's too).
+3. A Speed is never negative: `metres_a_step` crashes on a negative; Throttle's dead `.max(Speed.at_rest)` and its -1.0 expect go; `Speed.portion` (tests only) goes.
+4. `Clock.to_f64` goes (a point in time isn't a length): Sun and the step and sky widgets use `clock.steps_since(Clock.start)`; CME compares with `Clock.at_step(n)`.
+8. Delete `Angle.steady_lean`, `LeanChange.abs`/`is_lte`/`radians` (tests use `degrees`), `Across.times`; cut Angle's doc sentence about "two leans give the change". roc check confirms nothing calls them through an operator.
+9. Delete the wrapper round-trip tests (Distance, Along, Across, Pixels, FarHeight, Fraction, Speed, Angle, Steps' `phase_of`), keeping the +0.0 opposite tests, Fraction's range/clamp/-0.0, Speed's exact brake, Clock, Acceleration, and the Lean sign test.
+10. `Speed.steps_to_cover : Speed, Distance -> Steps` (floors; crashes on a negative distance or a speed at rest) replaces EncounterPlan's `portion(...).to_u32_wrap()`, a silent wrap. Callers: `steady_approach_timing`, the bird and cat widgets.
+Also fold in the braking-below-zero latent bug (VehicleLimits/Throttle) here, since item 3 touches the same rule.
+Steve's calls: open-calls #18 (names `less` and `portion`) and #19 (the sun's radii as resting-lens sizes).
+
 ## Truck-drawing lane (queued after rider-follow, which touches Truck's tests)
 
 From the truck-drawing review; all decided by me (walk at /tmp/claude-1000/truck-review/walk.txt):
