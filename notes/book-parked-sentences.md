@@ -249,3 +249,7 @@ Wherever the book suggests stepping back is free, say what it costs. Tour keeps 
 - 2390: `Geom`'s row says "Road points, rider points, and how to turn one into the other", and its counts are stale. Rider points are `RiderView`'s.
 - 2409-2410, dot graph: `RoadAhead -> Geom` and `Camera -> Geom` need `RiderView` edges.
 - 2418: the family "`Geom`, `RoadAhead`, `Camera` and `Lens`" now includes `RiderView`.
+
+## From the beacons rewrite (2026-11-08)
+
+- Radio towers, about 1028: "`MidTower` is a tag on the segment". A mid tower comes from a length test, `Segment.has_mid_tower` (longer than 1000 m); only the seventh segment qualifies.
