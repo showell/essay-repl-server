@@ -2,6 +2,8 @@
 
 *2026-11-08. A thinking note, not a plan. Steve's five axes first, then what I'd add, then where I'd sharpen the lines.*
 
+**Answered (Steve, 2026-11-08):** agrees with the whole essay, the three maps (shape, placement, projection) included. The axes inform the book and the briefs to cold agents.
+
 ## Your five
 
 1. **Building shapes.** Billboards are easiest (an emoji at a size), cats hardest (traced stills, poses, a crossing), and trucks have the most moving pieces (a box, six faces, tires, beams, lamps).
