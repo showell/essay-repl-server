@@ -129,6 +129,12 @@ Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrum
 
 Master's gate stopped at run.shale:198 (`clear_full_caches`). `du -sm` on the shared CACHES folder failed ("cannot access ..."), because another gate in a lane worktree was clearing it, and `tonumber` then read du's error text as a number. Two problems: the gate trusts du's output without checking its exit, and every worktree's gate shares one cache folder, which one run can clear under another (a build could break the same way). Fix: check du's exit and fail by name; and either key the cache per checkout, or clear only under a lock, or never clear while another gate holds it. A small lane, after the current ones.
 
+## Gate scripts (2026-11-08): a lane is running (gate-scripts); left for later
+
+- Run the gate's stages in parallel on the 2-CPU box (measure first: per-tool proof build times; one combined proof binary; widget checks two at a time).
+- The pinned Roc is found in six places (run, fast via `cookbook:roc/pinned.shale` `roc_bin` without a version check, tutorial build and book, check.shale, pinned-roc.sh): `roc_bin` checks `roc version` against the pin, and the scripts call it. Touches the shale cookbook.
+- Shale-language backlog: (S1) `use` only takes mounts, so a gate can't share a library with its own checkout (ask for a checkout-relative `use`); (S2) an `exited_ok(r)` helper for the 16 copies of `r.ended ~= "exit" or get(r, "code", -1) ~= 0`; (S3) `job_start` has no CPU budget, so tiers can't run stages at once under budget; (S4) `remove_tree(p, {vanished_ok})` and a `tree_size(p)` builtin, so run.shale doesn't shell out to `rm -rf` and `du`.
+
 ## Units lane (queued after frame-speed and truck-draw land; it touches TreeShapes, Geom, Truck, Throttle)
 
 From the units review (walks in /tmp/claude-1000/units-review/); decided by me:
