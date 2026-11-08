@@ -529,7 +529,7 @@ These become one "boundary moves" lane.
 2. Open calls 3 #3: the far projection's x and y in one place (Lens, with FarHeight).
 3. Gate stage parallelism; the pinned-Roc lookup's six homes; Shale backlog S1-S4.
 4. Branch `bug-renders` is kept (no worktree).
-6. Shale's doc check (2026-11-08) has 16 findings in sibling repos, none in shale: 6 in metal-vmm QUEUE.md (`tools/browser_check.js`, `app/*.roc`), 8 in roc-webbox docs/ROC-CHAT.md (old chat_*.zig and chat/Codec.roc), 2 in roc-chat docs/code-quality.md (`docs/roc-style.md`, an ambiguous `CLAUDE.md`). One small lane.
+6. Done 2026-11-08: the doc check's 16 sibling findings (metal-vmm 190eec1, roc-webbox fc8a674, roc-chat 1177f10); not yet re-run.
 5. The book stays parked; book-parked-sentences.md has the Geom split's lines.
 
 **Rules Steve set** (beyond the queue): agent reports wait behind his thread; up to five agents, each new one about 20 minutes; new calls go in a new note; types are opaque by default; widgets are real clients; no import only a test uses; whole ride history kept; timelines build one frame.
