@@ -262,3 +262,4 @@ Wherever the book suggests stepping back is free, say what it costs. Tour keeps 
 - About 1558: "The `match` on `seg.ending`" (already stale; the code reads `segment.segment_ending()`).
 - What a cat does to the rider, about 2319: "`attention` is where `Past`'s payload is used" is `Cat.cat_attention`.
 - `Rider.rider_state_at_next_step` and `Truck.truck_state_at_next_step` (1523, 1626, 1699, 1751, 2689, 2851) are stale; the names are `Truck.truck_at_next_step` and Rider's `next`.
+- The rider's gaze, about 1769-1771: the gaze returns "a twentieth of its angle each step" and snaps home "within 0.02 degrees". The code turns back by a fixed 0.2 degrees a step, and the last step lands it straight ahead. (`eyes_at_next_step` now lives in RiderEyes.)
