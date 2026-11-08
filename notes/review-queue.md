@@ -140,7 +140,7 @@ From the units review (walks in /tmp/claude-1000/units-review/); decided by me:
 9. Delete the wrapper round-trip tests (Distance, Along, Across, Pixels, FarHeight, Fraction, Speed, Angle, Steps' `phase_of`), keeping the +0.0 opposite tests, Fraction's range/clamp/-0.0, Speed's exact brake, Clock, Acceleration, and the Lean sign test.
 10. `Speed.steps_to_cover : Speed, Distance -> Steps` (floors; crashes on a negative distance or a speed at rest) replaces EncounterPlan's `portion(...).to_u32_wrap()`, a silent wrap. Callers: `steady_approach_timing`, the bird and cat widgets.
 Also fold in the braking-below-zero latent bug (VehicleLimits/Throttle) here, since item 3 touches the same rule.
-Steve's calls: open-calls #18 (names `less` and `portion`) and #19 (the sun's radii as resting-lens sizes).
+Steve's calls: open-calls-2 #3 (names `less` and `portion`) and #7 (the sun's radii as resting-lens sizes).
 
 ## Truck-drawing lane (queued after rider-follow, which touches Truck's tests)
 
