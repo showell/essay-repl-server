@@ -1,5 +1,7 @@
 # Open calls, round 2
 
+**Answered (Steve, 2026-11-08):** "4 is a coincidence more than a general rule (pigs and cows). For everything else, go with your lean." So #4 means each herd owns its own front distance, and Geom's shared constant goes. #1-3 and #5-9 follow my leans.
+
 New calls from the latest reviews, and only those. You answered round 1 (notes/open-calls.md). None of these is urgent, and lanes work around each one. A word each is enough. My lean is after each.
 
 ## Names

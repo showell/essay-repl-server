@@ -129,6 +129,12 @@ Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrum
 
 Master's gate stopped at run.shale:198 (`clear_full_caches`). `du -sm` on the shared CACHES folder failed ("cannot access ..."), because another gate in a lane worktree was clearing it, and `tonumber` then read du's error text as a number. Two problems: the gate trusts du's output without checking its exit, and every worktree's gate shares one cache folder, which one run can clear under another (a build could break the same way). Fix: check du's exit and fail by name; and either key the cache per checkout, or clear only under a lock, or never clear while another gate holds it. A small lane, after the current ones.
 
+## Open-calls-2, answered (2026-11-08): lanes to run
+
+- **names lane** (after frame-speed, truck-draw, shell-tidy and stills-tidy land; it touches nearly everything): `cam_focal` becomes `focal_length`; `LevelPoint` becomes `RiderPointAhead` and `AheadPoint` becomes `RaisedPointAhead`; `Fraction.less` becomes `complement`; `portion` becomes `ratio_to`. A big mechanical rename, so run it when few lanes are open, like the CME split.
+- **small rules lane:** each herd (CowHerd, PigHerd) owns its own front distance, and `Geom.herd_front_distance` goes (Steve: the shared value is a coincidence); the pinhole's x rule moves into Camera (one private `x_for_slope`; Lens keeps focal lengths and `y_for_height`); `Scene.RideFacts` holds the sources `{ encounter_start, truck, clock }`; Lens gains `size_on_screen`, shared by `y_for_height` and Sun's four radii.
+- **stills data lane** (after stills-tidy): strip repeated corners from the data with a script; `Still.of` refuses a corner that repeats its neighbour; the stills widget's filter and comment go. The cat's frame is a convention: Still's and CatStills' docs say a set of poses shares one frame and may reach past it.
+
 ## Gate scripts (2026-11-08): a lane is running (gate-scripts); left for later
 
 - Run the gate's stages in parallel on the 2-CPU box (measure first: per-tool proof build times; one combined proof binary; widget checks two at a time).
