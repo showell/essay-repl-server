@@ -1,5 +1,7 @@
 # Open calls, round 6: the rider and the trees
 
+**Answered (Steve, 2026-11-08):** every lean as written, with one change. On #3, the lean rate is the rider's: "The rider governs his lean based on his riding experience and knowledge of the bike." Pass the bounds into LeanSearch from the rider if the code has a clear, minimal path for it; otherwise leave it. On the trees' level of detail: "do what's best for the code's ergonomics."
+
 *2026-11-08. Two more type audits came back: the rider's modules and the trees. I decided the clear findings, and they go to lanes as slots free up. Every one holds every pixel. These six are yours, each with my lean; a word per item is plenty.*
 
 **The rider.** The audit used the dynamics-and-decisions split from the axes note. The dynamics are equations: the bike's speed and lean, and the eyes' swivel. The decisions are search and rules: when to brake, how far to lean, where to look. These are the clear fixes I'm making:
