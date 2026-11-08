@@ -1,5 +1,7 @@
 # Open calls, round 5: the cat, the bird and the sky
 
+**Answered (Steve, 2026-11-08):** all leans, as written. On #5: "Love the astronomy breakout idea! Such a great concept that's underneath the hood." On #6, the bird keeps its current facing: "We pass it by quickly enough that it wouldn't turn around in time for us to see it."
+
 *2026-11-08. Three type audits came back: the cat, the bird, and the sky with its sun and mountains. I decided the clear findings, and three cleanup lanes are making them now, every pixel held. These seven are yours. Each has my lean; a word per item is plenty.*
 
 1. **Empty namespaces beside the real type.** Three of them:
