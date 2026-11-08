@@ -542,3 +542,10 @@ For Steve: (14) the cookie is still named `__Host-gopher_auth`; renaming signs e
 
 - Shale: `cookbook:roc/rename.shale` missed a multi-line type annotation ending in a comma (`offset : U64,` in Scatter.roc), taking it for a record field. Worth a plant.
 - Dog Park track, after the pinned-Roc lane: re-run DEPLOY.md's release build from main; then Steve deploys.
+
+## lib and widget_kit review (2026-11-08), what's left after lib-tidy
+
+- Next: run name_hunt, errors, plain_names and bare_floats over canvas_apps/lib and widget_kit too (today only unused_imports reads lib); fix what they find.
+- Next: `CanvasApp.Tone : { freq, ms }` and `fps` -> `{ hertz, milliseconds }` and `frames_a_second` (WidgetPage already says frames_a_second); touches every app, wasm export names stay.
+- Judgement, later: PlanView/VcrButtons take bare metres where widget_kit has Distance; three private `at` copies (Shapes, ConvexCut, Font); `Trig.wrap`/`degrees_per_radian` have one client (Angle); `Click.Area` and `PlanView` nominal with no reason.
+- For Steve, sometime: matching page colors (VcrButtons' 0x303030 twice, cat's panel color, sky's ink color, accent in PlanView) -- one choice or coincidence?
