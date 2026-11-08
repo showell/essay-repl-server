@@ -1,6 +1,6 @@
 # Proofread: The truck, its motion, and its lights
 
-*For Steve's read, 2026-11-08. Three chapters as the book builds them, code filled in, with today's final names: `Truck` is the truck as drawn, `TruckJourney` its motion. The widget blocks show as fences here; the first is a static picture of a blue truck from three angles. Comments welcome inline.*
+*For Steve's read, 2026-11-08. Three chapters as the book builds them, code filled in, with today's final names: `Truck` is the truck as drawn, `TruckJourney` its motion. The first diagram's edges now carry verbs. The widget blocks show as fences here; the first is a static picture of a blue truck from three angles. Comments welcome inline.*
 
 ---
 
@@ -21,10 +21,10 @@ The modules that draw the truck
 digraph truck_drawing {
   node [shape=box, fontname="Helvetica"];
   TruckBody [style=bold];
-  Scene -> TruckSighting;
-  TruckSighting -> Truck;
-  Truck -> TruckBody;
-  TruckBody -> TruckShape;
+  Scene -> TruckSighting [label="  finds it with truck_in_view"];
+  TruckSighting -> Truck [label="  sights a Truck"];
+  Truck -> TruckBody [label="  draws its body with body_shapes"];
+  TruckBody -> TruckShape [label="  places each corner with raised_point_on_truck"];
 }
 ```
 
@@ -353,7 +353,7 @@ Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands
 
 ```roc FrameView.roc, in ride_facts
 # ...
-lit_truck: Truck.at(instant.truck.pace, Sky.darkness_at(instant.clock)),
+truck: Truck.at(instant.truck.pace, Sky.darkness_at(instant.clock)),
 # ...
 ```
 
@@ -394,14 +394,14 @@ The drawing does what the lamps say, with each `match` covering both tags. The b
 ```roc Truck.roc
 ## The truck's shapes: the beams under the body, the brake lights over it.
 truck_shapes : Truck, TruckShape.TruckSetting -> List(Shapes.Shape)
-truck_shapes = |lit_truck, setting| {
+truck_shapes = |truck, setting| {
 	beams =
-		match lit_truck.headlights {
+		match truck.headlights {
 			On => TruckLights.headlight_beam_shapes(setting)
 			Off => []
 		}
 	brake_lights =
-		match lit_truck.brake_lights {
+		match truck.brake_lights {
 			On => TruckLights.brake_light_shapes(setting)
 			Off => []
 		}
