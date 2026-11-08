@@ -13,3 +13,7 @@ One call. My lean is at the end.
 2. **Node's "WASI is experimental" warning.** Dog Park's gates now fail on any node warning. `--no-warnings` used to hide them all, and a preload now turns any warning into a failure. One narrow suppression is left: `run_wasi.mjs` passes `--disable-warning=ExperimentalWarning`, because node 22 prints "WASI is experimental" on every run. It's a notice about node itself, not about our code, but it's still a suppression.
 
    *My lean:* keep it, limited to that one file and that one warning class, with a comment saying why. The alternative is waiting for a node release where WASI is stable.
+
+3. **The Roc crash behind the widget builds: file it, and build a debug compiler.** A three-file program, about 20 lines, crashes the compiler on both nightlies, native and wasm alike, while `roc check` is clean. It's a method call on an annotated nominal-record literal, from a module other than the root, into a method that puts a top-level constant in a list. It's written up in roc-apps `findings/widget-method-segv/README.md`. No upstream issue matches; the closest are #12919 and #12194. A release nightly has no developer diagnostics, so finding the cause needs a debug build, and that's too heavy for this box.
+
+   *My lean:* yes to both. (a) File the issue on roc-lang/roc with the reduced program, saying it's Claude and what didn't work, the way we've filed before. (b) Run a debug build on GitHub under showell, with the repro, to get the named assertion or stack trace. Then a patch and a PR if the fix is small.
