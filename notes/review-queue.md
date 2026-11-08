@@ -129,6 +129,18 @@ Safari (with the third-segment bird) and camera (the ring fix) are on roc.lynrum
 
 Master's gate stopped at run.shale:198 (`clear_full_caches`). `du -sm` on the shared CACHES folder failed ("cannot access ..."), because another gate in a lane worktree was clearing it, and `tonumber` then read du's error text as a number. Two problems: the gate trusts du's output without checking its exit, and every worktree's gate shares one cache folder, which one run can clear under another (a build could break the same way). Fix: check du's exit and fail by name; and either key the cache per checkout, or clear only under a lock, or never clear while another gate holds it. A small lane, after the current ones.
 
+## Boundary moves, round 2 (queued after units, truck-units and prune-expects land; review in /tmp/claude-1000/boundary-review/)
+
+Decided by me, one lane:
+1. The convex hull (TreeShapes ~:248-403 and its ~40 expects) moves to a `ConvexHull` module over `Screen.Point`; TreeShapes keeps the tree.
+2. `Tour.frame_view` and Tour's `import FrameView` go; callers write `FrameView.frame_view_at(tour.route(), tour.instant())` (SafariApp, the frame widget, ShapesFrame, RasterFrame).
+3. Lens's lean-and-attention focal policy (`focal_for` and its factors, `full_lean`) moves to RiderCamera; Lens drops `import Attention`; their expects move with them.
+4. Inline `TruckShape.truck_polygon` at its two callers.
+5. `Segment.has_cat`, `has_bird`, `is_distracting` move from World to Segment.
+6. `SafariApp.lean_space` becomes `FrameView.lean_space`; the frame widget and FramePartsBench stop importing the app.
+7. CanvasRoll folds into RiderCamera (private `rider_roll`, `roll_deadband`); delete the expect restating the deadband.
+Steve's calls: notes/open-calls-3.md (Geom split, clipping's home, far projection, Rider and the rename).
+
 ## Open-calls-2, answered (2026-11-08): lanes to run
 
 - **names lane** (after frame-speed, truck-draw, shell-tidy and stills-tidy land; it touches nearly everything): `cam_focal` becomes `focal_length`; `LevelPoint` becomes `RiderPointAhead` and `AheadPoint` becomes `RaisedPointAhead`; `Fraction.less` becomes `complement`; `portion` becomes `ratio_to`. A big mechanical rename, so run it when few lanes are open, like the CME split.
