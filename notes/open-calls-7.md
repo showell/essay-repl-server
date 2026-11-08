@@ -1,5 +1,7 @@
 # Open calls, round 7: roc-types at 11-07, and your patched Zig
 
+**Answered (Steve, 2026-11-08):** agrees with the leans. Run the experiment, and keep everything on 11-03 meanwhile.
+
 *2026-11-08. One call, with my lean at the end.*
 
 **What happened.** roc-types is the type-walking tool that roc-chat's and Safari's method hunts need, built for each Roc pin. Building it for nightly 11-07 failed on GitHub after about 18 minutes. The crash is an LLVM assertion in its debug-info code (`FrameIndexExprs.size() == 1 || ...`), and it happens while patched Zig 0.17.0+patched.2 is compiling roc-types itself.
