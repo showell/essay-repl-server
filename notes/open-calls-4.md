@@ -9,3 +9,7 @@ One call. My lean is at the end.
    Running the workflow and uploading the asset are outward steps, so they're yours to approve.
 
    *My lean:* yes. Run the workflow and publish the asset. If roc-types won't build at 11-07, I'll stop and tell you, and roc-chat and roc-apps would stop at 11-03 instead, where roc-types already exists.
+
+2. **Node's "WASI is experimental" warning.** Dog Park's gates now fail on any node warning. `--no-warnings` used to hide them all, and a preload now turns any warning into a failure. One narrow suppression is left: `run_wasi.mjs` passes `--disable-warning=ExperimentalWarning`, because node 22 prints "WASI is experimental" on every run. It's a notice about node itself, not about our code, but it's still a suppression.
+
+   *My lean:* keep it, limited to that one file and that one warning class, with a comment saying why. The alternative is waiting for a node release where WASI is stable.
