@@ -4,6 +4,12 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-08, master 5e92fc96: faster frames (release build)
+
+The ride should look exactly as before: every held frame, the page's shot and the finish (step 6746) are unchanged. What changed is how fast a frame is computed: about 40% less work per frame natively (tree cones, one shape list, the bends' trig, the skyline's columns). **The start of the ride should stutter less.** Watch the first few seconds after the loading screen in Firefox. The timing log is at http://143.244.172.148:9210/safari/?timing=1 if you'd like the numbers.
+
+Also in it, with nothing to see: the gates reorganized (gates/proof/, gates/expects/), 161 tests that couldn't fail removed, the stills' repeated corners stripped, opaque Tour, honest truck and unit types.
+
 ## 2026-11-07, master 718f7e0a: the motorcycle knows where it is
 
 The ride is unchanged: every held value matched, and the ride finishes at 6746 as before. This deploy has the rider's restructure: RiderState steps itself, Rider is only the mind, and the motorcycle now holds its place on the route (`RoutePlace`). A whole ride at normal speed is the right check, since this is the most fundamental type: anything wrong would show as the rider leaving the road or jumping at a bend.
