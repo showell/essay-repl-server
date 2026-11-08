@@ -20,6 +20,8 @@ At the climax the sun sits a little further left of the road than before. **Nigh
 
 ## 2026-11-08, master 5e92fc96: faster frames (release build)
 
+**Steve: seems less sluggish, but the start has always been a bit variable, so not conclusive.** (The `?timing=1` line would settle it.)
+
 The ride should look exactly as before: every held frame, the page's shot and the finish (step 6746) are unchanged. What changed is how fast a frame is computed: about 40% less work per frame natively (tree cones, one shape list, the bends' trig, the skyline's columns). **The start of the ride should stutter less.** Watch the first few seconds after the loading screen in Firefox. The timing log is at http://143.244.172.148:9210/safari/?timing=1 if you'd like the numbers.
 
 Also in it, with nothing to see: the gates reorganized (gates/proof/, gates/expects/), 161 tests that couldn't fail removed, the stills' repeated corners stripped, opaque Tour, honest truck and unit types.
