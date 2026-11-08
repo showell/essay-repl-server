@@ -277,6 +277,13 @@ The truck chapter's headlights section (about 1880-1921) needs a rewrite: the he
 - The bird's perch, about 2311: the function is now `BirdFlight.fifth_left_tree`, a `Try(_, [NoPerch])`, so it no longer has a tag union "written in place" for `crossing`. Lines 2315-2317 describe the old nested match in `Segment.from_choices`; Segment now calls `BirdFlight.segment_flight` and keeps one crash. The prose near 2307 (`habit_from`, `Sits`) was already stale.
 - The cat: `CatCrossing` now stores its tree's point (`tree()`), and `end_across` is a constant, the same for every cat.
 
+## From the animals, rider, herd and bend lanes (2026-11-08)
+
+- The cat: `Cat` is folded into `CatCrossing`. About 1994 and 2017 name `Cat.instant_at`, about 2015 says "`Cat` says what a cat does", about 2359-2361 say "follow this back to `Cat`" and name `is_crossing`, and the module lists and diagrams at about 204, 1992-2009, 2174-2179, 2332 and 2351-2353 still name a `Cat` module.
+- The rider: the bike integrates its own speed. About 1665's diagram ends in `allowed_speed`, which is now Motorcycle's, applied after the controls. About 1687 names `Throttle.acceleration`; it's `Throttle.next_acceleration`, and the clamp is in `Motorcycle.motorcycle_at_next_step`. About 1752: the eyes take a target, and `desired_gaze` is called in `Rider.next`.
+- The herds: about 1201 says the `match` "has three branches", which was already false.
+- The bend animals: `Wildlife` is now `BendAnimal`. About 1138 ("Modules: `Wildlife`"), about 1140 (`Wildlife.bend_critters`, already stale), and about 1144, where the `Quiet` and `DuckPond` match now lives in `Segment.segment_bend_billboards`, and `inward` isn't in that code. The prose around about 219 introduces that include as BillboardSighting's.
+
 ## From the sky and tree lanes (2026-11-08)
 
 - Mountains is now `Skyline`: about 872 ("Modules: `Mountains`"), 888 (`Mountains.mountain_shapes` is `Skyline.skyline_shapes`), and the diagrams at about 102 and 813.
