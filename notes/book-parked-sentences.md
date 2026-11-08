@@ -180,6 +180,10 @@ A sighting holds `foot : Geom.AheadPoint` in place of `right` and `forward`, and
 - :1130 `Wildlife.bend_critters` is now `bend_billboards`. The glossary (:2860, :2863) defines a billboard as "A critter that…"; Billboard.roc now says "an animal that stands in one place and always faces the camera".
 - :2043 "`Timeline` is nominal … unlike an opaque type anyone can build one", :2058 "opens the nominal type", and :2199 "wraps a record in the nominal type" are false: Timeline is opaque, built with `Timeline.of`. :433 "the rails make their `Rendered` by hand": now `Rendered.of`. Still, GroundPatch, Beacon and BendInView are opaque too.
 
+## From the small-rules lane
+
+- tutorial.md:769 "`scale` is how large the sun is drawn, because a wider view makes it look smaller": `Sun.Place` holds `cam_focal` now, and `Lens.size_on_screen` draws a resting-lens length. `Lens.x_for_turn`/`turn_at_x` moved to Camera; `Geom.herd_front_distance` is gone (each herd owns its own).
+
 ## From the shell-tidy lane
 
 - ~:1241 "the model, which is the `Tour` and a pause flag": it's `motion : [Playing, Paused]`. ~:2720 "moving four steps or one … is one helper with a function in a record field" and ~:2724 "`Tour.step_forward` and `Tour.step_back` are plain values to pass here": it's `Tour.steps_forward`/`steps_back`. Tour is opaque (`instant()`, `route()`, `past_instant_count()`); `Tour.at_next_segment` replaces SafariApp's `next_segment`.
