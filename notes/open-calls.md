@@ -1,5 +1,7 @@
 # Open calls for Steve
 
+**Answered.** Newer calls are in notes/open-calls-2.md.
+
 **Steve, 2026-11-07:** "I agree with your leans except on Rider/RiderState/Motorcycle." So items 1 and 3-10 go as my leans say. Item 2 is reopened in notes/rider-boundaries.md.
 
 Reviews today left these for you. None is urgent; the lanes work around each one. Answer any you like, in any order: a word each is enough. My lean is given after each.
@@ -24,21 +26,6 @@ Reviews today left these for you. None is urgent; the lanes work around each one
 
 8. **Does "no import only a test uses" bind widgets?** Widgets have no CrossModuleExpects of their own. Stills imports Font only to test that each name fits its cell, which is a real layout check. *My lean:* the rule binds widgets too, and their real checks move into gates/WidgetExpects.roc.
 9. **The gaze widget's table** (speeds, gazes, the phase boundaries, gawk-then-brake). It tests Rider, Gaze and Gawking rather than the widget, and the parked book quotes its numbers. *My lean:* move it to the game's tests and keep the numbers there.
-
-## From the pipeline-core review (added 2026-11-07, while you were away)
-
-11. **Where the herds' front distance lives.** `Geom.herd_front_distance` is used only by CowHerd and PigHerd. Either World, which sets each herd's layout, gives both herds the value (the same distance from the road is a route-wide rule), or each herd owns its own copy. *My lean:* World gives it.
-12. **The pinhole's x rule has two homes.** `Camera.project` maps a near point's slope to a screen x, and `Lens.x_for_turn`/`turn_at_x` do the same for a far direction (`tan(turn)`). One private `x_for_slope` in Camera would hold both, with Lens keeping only focal lengths (and `y_for_height`, per FarHeight). Against: "near points in Camera, far directions in Lens" reads well today. *My lean:* move them into Camera.
-13. **`cam_focal` becomes `focal_length`?** It's an abbreviation in about 40 signatures (Picture.Setting, RiderCamera, Pipeline…). Large churn; a real clarity gain. *My lean:* yes, after the rider lanes land.
-14. **The point names.** `RiderPoint`, `RaisedPoint`, `LevelPoint`, `AheadPoint` are a 2×2 grid ({ground, raised} × {anywhere, past the near plane}) that the names hide. A rename to `RiderPointAhead` and `RaisedPointAhead` would show it. The book teaches `RiderPoint`. *My lean:* yes; the book's rewrite will follow the code anyway.
-
-15. **`Scene.RideFacts`** repacks RideInstant: `encounter_timing` already holds the clock beside `clock`, and the truck is repacked as `{ route_position, lit_truck }`. Either Scene stores the sources (`{ encounter_start, truck, clock }`) and works out the rest itself, which gives one home for the clock but makes Scene wider (it takes on Truck and the timing rule), or it stays as it is. *My lean:* Scene takes the sources.
-
-16. **The still data repeats corners.** Every emoji polygon closes on its first corner, sometimes two or three times, and so do 13 to 17 polygons of each cat still. The stills widget works around it with a filter whose comment says "A baked still repeats some corners". The fix is a script that strips them once, plus a rule at `Still.of` that no corner repeats its neighbour; no pixel should move (a zero-length edge fills nothing), but the data diff is large and the widget's counts change. *My lean:* yes, strip them.
-17. **The cat's frame.** Still's doc promises feet at y 0, height 1, x from the middle, but the cat's stills run from x -0.78 to 1.47 and y -0.04 to 1.12, because the poses share one frame so the cat doesn't jump between stills. Is the frame a rule (normalise the cat data, which moves pixels) or a convention (say in the docs that a set of poses shares a frame and may reach past it)? *My lean:* a convention; fix the docs.
-
-18. **Two unit names that don't stand alone.** `Fraction.less` (9 callers; `trunk_height_share.less()` reads as a comparison) could be `rest_of_whole`, or `complement` if you'd like the math word. `portion : X, X -> F64` on six units (about 22 call sites; five wrap it straight into a Fraction) could be `ratio_to(whole)`. *My lean:* `complement` and `ratio_to`.
-19. **The sun's radii are resting-lens sizes, typed as Pixels.** `Sun.radius`, `glow_radius` and two more are measured through the lens at rest (FarHeight's definition), so Sun crosses units by unwrapping (`FarHeight.of(radius.to_f64())`) and redoes the at-rest-to-drawn step by hand four times. Either widen FarHeight into a resting-lens length (with a rename, since a radius isn't a height), or keep Pixels and give Lens one `size_on_screen` maker that `y_for_height` and Sun share. *My lean:* the Lens maker only; less churn, one home for the step.
 
 ## Widgets that look like debugging tools
 
