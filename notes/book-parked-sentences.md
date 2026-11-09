@@ -2,6 +2,10 @@
 
 *Started 2026-11-07, while the book is parked. A worklist for when it unparks. Line numbers are `tutorial.md`'s at the time and will drift, so search by the words. The `book_names` gate holds 35 stale backticked names on top of these (The cat 21, The bird 12, What a cat does to the rider 1, Appendix 1); run it to list them.*
 
+**Checked off by batch (MISSION.md, I2):**
+- Batch 1, Introduction through The world, 2026-11-10: the items that point there are fixed.
+- Batch 2, Shapes through Grass, 2026-11-10 (master 3564f87f): every item that points there is fixed. `book_names` now holds stale names at 0, which rules out the retired names these items cite (`SceneShapes`, `Backdrop`, `tall_sighting_of`, `TreeAhead`, `U16`), and the batch's rewrite and cold read fixed the rest (the `Spot` row, the sighting tests, `tree_outline`'s call, the diagrams).
+
 ## The cat and the bird
 
 - About 158-164: the table gives `pose` and `lift` as `CatSighting`'s fields. They now sit under `kind`.
