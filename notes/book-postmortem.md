@@ -25,6 +25,8 @@ MISSION already says to write a clean draft every time. When the structure chang
 
 **4. Pulled-in parts aren't re-fitted.** The flipbook readout, the route widget's plan readout and the 960 by 700 embed were all made for the old book. Each one looked fine, so I never asked whether it fit this page. H6 now covers this, but it's the same habit as 1: something reused without being re-read in its new place.
 
+**5. I ran a narrower gate than the change touched.** When I removed the frame widget's panel, I ran that widget's own check and tests, not `part=widgets`. A gate test, `WidgetExpects`, still looked for "Added: The moving things", so I pushed a red master (d5269d4c). The widgets agent found and fixed it. The rule I broke is in memory already ("a green is a claim": read what ran). The fix is mechanical: a change under a widget runs `part=widgets` before the push.
+
 **What the habits share:** I treat the draft as a set of paragraphs to keep correct, not as a path for a reader to walk. That's also the flow problem.
 
 ## Flow, the stumper
