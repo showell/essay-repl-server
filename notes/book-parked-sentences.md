@@ -293,3 +293,11 @@ The truck chapter's headlights section (about 1880-1921) needs a rewrite: the he
 - Mountains is now `Skyline`: about 872 ("Modules: `Mountains`"), 888 (`Mountains.mountain_shapes` is `Skyline.skyline_shapes`), and the diagrams at about 102 and 813.
 - The sun's height comes from the new `SunPath`, about 1432 ("how `Sun.sighting` places a sun"). About 1400-1430 already named `Sun.height_px`, `Sun.place` and `Sun.sighting`, none of which exist. About 784: `turn_from_view` and `visible_turn_limit` are gone; the quarter-turn check is in `Lens.far_point`.
 - The trees: about 412 and 460 give the context as `{ nearer_tree_count : U16 }`, which is now `TreeShapes.Detail` with a U64. About 457's table names `TreeShapes.TreeOutline`, which is now `Camera.Upright`. About 595: `TierInputs` is built by `tier_inputs_of`. The quoted error under `{{fails conifer_without_context}}` now prints `Picture.Setting(TreeShapes.Detail)`.
+
+## The Introduction's promise, "each new Roc idea where the code first needs it" (2026-11-09)
+
+The promise check on the Introduction found Roc ideas used before they're explained. Each chapter pays its own when its clean draft comes up.
+
+- Shapes: the `|a, b|` function syntax (`triangle = |{...}, color|`) is never explained. A later chapter says "Its bars take the setting apart" as if the reader knows.
+- The sun: `turn.abs() >= quarter_turn` uses an operator on `Turn`s; operators as method calls wait until "The clock".
+- The world: `.plus(` appears long before "The clock" explains it.
