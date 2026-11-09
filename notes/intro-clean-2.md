@@ -18,7 +18,7 @@ A rider on a motorcycle follows a long road through open country. Trees line the
 
 Nobody steers and nothing keeps score, so Safari Ride isn't a game. It has a game's hard parts, though: terrain, a camera, physics, and things that react to the rider.
 
-Safari Ride stays simple because of one design. Each step of the ride carries four things: the rider, the truck, the clock and the plan for the encounter ahead. Everything else is derived from those four. The sky's color, the sun's height, the trees in view and the cat's pose are all calculated fresh, every frame. The same four things always give the same picture. The types hold the design together: each one describes only the values that make sense.
+Safari Ride stays simple because of one design, and it starts with those four small things. They are the rider, the truck, the clock and the plan for the encounter ahead. Each step of the ride carries those four to the next, and everything else is derived from them. The sky's color, the sun's height, the trees in view and the cat's pose are all calculated fresh, every frame. The same four things always give the same picture. The types hold the design together: each one describes only the values that make sense.
 
 Most of the code is plain Roc: records, tags and functions. That's a feature.
 
