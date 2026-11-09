@@ -24,13 +24,13 @@ Safari Ride is running in the page below. Give it a moment to load, and the ride
 
 *[the ride widget: the ride, running as you read. Click it to give it the keyboard: Space pauses it, and the arrow keys step it.]*
 
-Watch it for a minute. A motorcycle carries its rider down a long country road. Cows and pigs graze in the fields, and trees crowd the roadside. A truck runs on ahead. A cat waits by the road for its moment to cross, and a bird takes off as the rider comes near. As the sun sets behind the mountains, the truck turns on its headlights. At the end of the road the rider stops, and the ride starts over.
+Watch it all the way through. A motorcycle carries its rider down a long country road. Cows and pigs graze in the fields, and trees crowd the roadside. A truck runs on ahead. A cat waits by the road for its moment to cross, and a bird takes off as the rider comes near. As the sun sets behind the mountains, the truck turns on its headlights. At the end of the road the rider stops, and the ride starts over.
 
 All of that comes from four small things: the rider, the truck, the clock and the plan for the encounter ahead. Safari Ride carries those four from one step to the next. It works out everything else from them, every frame. The book shows how that one design keeps a busy program simple.
 
-The book shows a lot of Roc, and all of it is the real code behind something on the screen. We start with the problem Safari Ride solves. Then we hold one frame still and draw everything in it, from a single triangle up to a herd of cows. Then we let the clock run, and the rider, the truck and the cat start to move. At the end we step back and look at the whole program again.
+The book shows a lot of Roc, and all of it is the real code behind something on the screen. We start with the problem Safari Ride solves. Then we hold one frame still and draw the world in it, from a single triangle up to the trees, the sky, the road and a herd of cows. Then we let the clock run, and things start to move. The rider rides on, the truck drives ahead, and the cat and the bird make their moves. At the end we look at the math under it all, how we prove the program right, and the platform it runs on. Then we step back and look at the whole program again.
 
-Roc is fun to read, and this book gives you plenty of it. If you're brand new to Roc, the official Roc tutorial makes a quick first stop. The book explains each new Roc idea where the code first needs it.
+Roc is fun to read, and this book gives you plenty of it. If you're brand new to Roc, the [official Roc tutorial](https://www.roc-lang.org/tutorial) makes a quick first stop. The book explains each new Roc idea where the code first needs it.
 
 ---
 
