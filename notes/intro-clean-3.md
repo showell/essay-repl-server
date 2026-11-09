@@ -30,7 +30,7 @@ All of that comes from four small things: the rider, the truck, the clock and th
 
 The book shows a lot of Roc, and all of it is the real code behind something on the screen. We start with the problem Safari Ride solves. Then we hold one frame still and draw everything in it, from a single triangle up to a herd of cows. Then we let the clock run, and the rider, the truck and the cat start to move. At the end we step back and look at the whole program again.
 
-You'll need to read a little Roc. If you're new to it, the official Roc tutorial is the place to start. The book explains each new Roc idea where the code first needs it.
+Roc is fun to read, and this book gives you plenty of it. If you're brand new to Roc, the official Roc tutorial makes a quick first stop. The book explains each new Roc idea where the code first needs it.
 
 ---
 
