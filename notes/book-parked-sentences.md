@@ -301,3 +301,10 @@ The promise check on the Introduction found Roc ideas used before they're explai
 - Shapes: the `|a, b|` function syntax (`triangle = |{...}, color|`) is never explained. A later chapter says "Its bars take the setting apart" as if the reader knows.
 - The sun: `turn.abs() >= quarter_turn` uses an operator on `Turn`s; operators as method calls wait until "The clock".
 - The world: `.plus(` appears long before "The clock" explains it.
+
+## From The problem's clean draft (2026-11-09)
+
+The problem now only poses the problem. Its step order, "Carried and derived" table and "Three sorts of thing" table are gone, and each needs a home where the book first pays it off.
+
+- About tutorial.md:2700, "These two functions cover two of the three sorts of thing from the problem chapter": the problem chapter no longer has them.
+- The modules, about tutorial.md:200: "'The problem' said we need machinery to work out what the rider sees" still holds, but the word "sighting" is no longer introduced there.
