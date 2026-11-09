@@ -58,7 +58,7 @@ I picked these axes so that each one fails in its own way, and catching each fai
   - "the way from X to Y is…";
   - "and that's the point of this chapter";
   - "worth saying again";
-  - a "this" that points at nothing named;
+  - a "this" or "that" where a name belongs. After the cat's code, "This is why the cat waits" makes the reader hunt for what "this" is. "`plan_crossing` is why the cat waits" names it;
   - aphorisms, "not X but Y" drumbeats, or a closing moral.
 - **D8.** Explain a type precisely rather than apologizing for its name.
 
