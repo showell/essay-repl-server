@@ -40,6 +40,22 @@ digraph regions {
 
 **What it reverses.** Last night we made `Triangle` a tag. Your objection then was that the book said "a triangle is a `Poly`" and explained it away. Under this proposal a triangle is plainly a shape: `Shapes.triangle` gives back a `Shape`. What it no longer has is a tag of its own. If you want the tag kept for its by-construction record, **Proposal 1b** keeps `Triangle` and folds only `Rectangle` into `Shapes.box`.
 
+## Decided: Triangle, Quad, Disc and Polygon
+
+*Added after the adversarial review. It ranked your suggestion first, ahead of keeping today's design with fixes, then Proposal 1, then 1b. You approved the direction: no poly/polygon repetition, and no three-deep hierarchy.*
+
+- **`Triangle`** stays: three named corners.
+- **`Quad`** is new: four named corners. It's four corners by construction, but not convex: a traced bird quad is even crossed, and a native painter still cuts concave ones. It covers 591 of today's polygons: tower legs, rails, truck faces, and lines.
+- **`Shapes.rectangle({ top_left, width, height, fill })`** makes an upright `Quad`, and the `Rectangle` tag goes. That also fixes a real bug: native drew rectangles through raylib's integer call, so a trunk 2.6 px wide came out 2 px.
+- **`Disc`** stays: the one curve.
+- **`Polygon`** keeps its name, for outlines of five or more corners: traced stills, mountains, cone hulls, tires, the road. That's about 520 of 2,121 shapes, no longer the main region. ("Outline" collided with strokes and with `TreeShapes`' `outline`.)
+- Producers that work through a list pick the tag by its length: `[a, b, c]` is a `Triangle`, `[a, b, c, d]` is a `Quad`, and anything longer is a `Polygon`. A clipped quad can come out with 3, 4 or 5 corners, and this handles all three without a crash.
+- **One home for corners:** `Shapes.region_corners` replaces six copies of the same corner-gathering match in the widgets and tests.
+- Two crashes that won back a lost count ("a leg is a quad", "a rod is a quad") go away.
+- Tower keeps its `rod_quad`, which handles a rod seen end-on. (`Shapes.line` would crash on it.)
+
+The Shapes chapter opens by saying the shape types come from what the ride draws. The step-1,529 table becomes informative again: about 868 triangles, about 727 quads, about 518 polygons and 8 discs.
+
 ## Proposal 2: the cleanup that needs no decision
 
 These are the committee's fingerprints. I'd fix them under "fix cruft, don't ask", one agent, in green steps:
