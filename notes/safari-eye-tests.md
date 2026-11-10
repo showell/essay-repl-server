@@ -4,6 +4,24 @@ The dev page always shows master after a green gate: **http://143.244.172.148:92
 
 The newest entry is at the top. Each one says what should look different, and where. Anything else that looks different is a regression, so tell me.
 
+## 2026-11-10, master b0746a35: dusk over everything, and a setting sun
+
+**This one changes what you see.** Until now only the sky, the rock and the snow got dark. Now the grass, the road, the pond, the trees, the truck, the rails, the towers and every animal dim with the sky, down to half their light at full night. The headlights, the brake lights and the beacons stay at full brightness. The sun's disc and glow redden as it nears the horizon, and the glow now *adds* light instead of painting over the sky, so the beige ring around it is gone. At noon the glow is dimmer, so it stays a soft glare.
+
+| step | what to watch |
+|---|---|
+| 0 | midday: unchanged, except the sun's glare is softer if it's in view |
+| 1529 | a faint dimming; the cat frozen in the road |
+| 3000 | late afternoon: the ground starting to dim |
+| **3500–3698** | **sunset:** the warm glow behind the mountains, and a redder disc |
+| 4000–4250 | dusk: the whole world going down with the sky |
+| 5700 | full night: the headlights on a darker road |
+| 6250 | the brake lights against the dark |
+
+The call I'd most like your eye on: **is half the light at full night dark enough?** The constant is `Sky.night_dim`, one number. At dusk the grass is darker but still clearly green.
+
+Also new under the hood: the shapes are now `Triangle`, `Quad`, `Disc` and `Polygon` (no pixel moved from that), and native draws boxes at float precision.
+
 ## 2026-11-08, master 116576ab: the sun on a real arc (release build)
 
 **Steve: the sun looks good.**
