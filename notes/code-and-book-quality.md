@@ -12,53 +12,16 @@ So the code leans on judges, and the book leans on readers.
 
 ## Side by side
 
-<table>
-  <thead>
-    <tr><th></th><th>The code</th><th>The book</th></tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><b>What "correct" means</b></td>
-      <td>It does what it says: the tests pass, and the pictures match pixel for pixel.</td>
-      <td>It's true to the code, and a reader who has read only what's above can follow it.</td>
-    </tr>
-    <tr>
-      <td><b>Who judges</b></td>
-      <td>Machines first: the compiler, 966 expects, 16 widgets, the pixel proofs and the lints.</td>
-      <td>Readers first: the author's read, cold readers, nitpickers, and you.</td>
-    </tr>
-    <tr>
-      <td><b>How a failure shows</b></td>
-      <td>Red, with a line number, before anything ships.</td>
-      <td>Silent. The page builds green and still confuses someone.</td>
-    </tr>
-    <tr>
-      <td><b>What a judge can see</b></td>
-      <td>Everything it's told to look at, every time.</td>
-      <td>Only what's on its mind. Three cold readers missed the bull.</td>
-    </tr>
-    <tr>
-      <td><b>The unit of review</b></td>
-      <td>A function, a module, a diff.</td>
-      <td>A path through a chapter, read in order.</td>
-    </tr>
-    <tr>
-      <td><b>What "simple" means</b></td>
-      <td>Fewer moving parts. One home for each rule.</td>
-      <td>Fewer ideas per paragraph. One idea per sentence of the spine.</td>
-    </tr>
-    <tr>
-      <td><b>How it decays</b></td>
-      <td>Drift: a comment outlives its code, or a lint is held at a stale count.</td>
-      <td>Orphans: a structure changes, and an old sentence survives the surgery.</td>
-    </tr>
-    <tr>
-      <td><b>The worst habit</b></td>
-      <td>Explaining a smell away instead of fixing it.</td>
-      <td>Fixing a stumble by adding a clause instead of removing the cause.</td>
-    </tr>
-  </tbody>
-</table>
+| | The code | The book |
+|---|---|---|
+| **What "correct" means** | It does what it says: the tests pass, and the pictures match pixel for pixel. | It's true to the code, and a reader who has read only what's above can follow it. |
+| **Who judges** | Machines first: the compiler, 966 expects, 16 widgets, the pixel proofs and the lints. | Readers first: the author's read, cold readers, nitpickers, and you. |
+| **How a failure shows** | Red, with a line number, before anything ships. | Silent. The page builds green and still confuses someone. |
+| **What a judge can see** | Everything it's told to look at, every time. | Only what's on its mind. Three cold readers missed the bull. |
+| **The unit of review** | A function, a module, a diff. | A path through a chapter, read in order. |
+| **What "simple" means** | Fewer moving parts. One home for each rule. | Fewer ideas per paragraph. One idea per sentence of the spine. |
+| **How it decays** | Drift: a comment outlives its code, or a lint is held at a stale count. | Orphans: a structure changes, and an old sentence survives the surgery. |
+| **The worst habit** | Explaining a smell away instead of fixing it. | Fixing a stumble by adding a clause instead of removing the cause. |
 
 ## Where they meet
 
