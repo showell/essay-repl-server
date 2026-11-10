@@ -6,6 +6,8 @@ The newest entry is at the top. Each one says what should look different, and wh
 
 ## 2026-11-10, master b0746a35: dusk over everything, and a setting sun
 
+**Steve: passes. "It really feels like driving at night", and it shows off the lights and beacons in the distance.**
+
 **This one changes what you see.** Until now only the sky, the rock and the snow got dark. Now the grass, the road, the pond, the trees, the truck, the rails, the towers and every animal dim with the sky, down to half their light at full night. The headlights, the brake lights and the beacons stay at full brightness. The sun's disc and glow redden as it nears the horizon, and the glow now *adds* light instead of painting over the sky, so the beige ring around it is gone. At noon the glow is dimmer, so it stays a soft glare.
 
 | step | what to watch |
