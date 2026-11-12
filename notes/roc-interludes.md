@@ -45,8 +45,26 @@ The Annotations interlude, sketched:
 
 About 150 words and one table.
 
+## Revised after Steve's reply: Functions, not Annotations
+
+Steve: "annotations should mostly be covered under functions." So the first interlude is **Functions**. It still goes after Platforms, packages and modules, before The pieces as types, which defines its first functions (`metres = |metres| Distance.(metres)`).
+
+Its snippet is a small, whole function: annotation and body together. Its table takes both apart:
+
+| Piece | Means |
+|---|---|
+| `metres :` | the annotation: the function's name, then its type |
+| `F64 -> Distance` | it takes one `F64` and gives back a `Distance` |
+| `metres =` | the definition |
+| `\|metres\|` | the function itself starts here: what it's given goes between the bars |
+| `Distance.(metres)` | the body, whose value is what the function gives back |
+
+A second, longer annotation, `frame_view_at`, adds two arguments and a type from another module. A body made of a block of named values, and a call with `.`, wait for Things, which uses them first.
+
+The order then reads: Platforms → **Functions** → The pieces as types → **Three ways to name a type** → Things. There's a full chapter between the two interludes, so they never run back to back.
+
 ## Recommendation
 
-Pilot **Annotations** first. Write it and run it through the review rounds, then read it in place, between Platforms and The pieces as types. If the interlude format earns its place there, the other three follow the same pattern. If it reads as a detour, we've spent one short chapter finding that out.
+Pilot **Functions** first (it was Annotations before the revision above). Write it and run it through the review rounds, then read it in place, between Platforms and The pieces as types. If the interlude format earns its place there, the other three follow the same pattern. If it reads as a detour, we've spent one short chapter finding that out.
 
 The open question for you is whether the four listed are the right four, or whether some should be cut or swapped.
