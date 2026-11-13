@@ -49,6 +49,21 @@ Every new chapter got a clean draft, plus cold readers for truth and order and a
 
 The file still holds several old-draft chapters between Herds and A flip book: The modules, The world, A simple tree, A conifer, Roadside trees, and the old sun chapter. None is published. MISSION marks The modules and The world as open, and says the trees get only the far-tree chapter. When the motion half starts, my plan is to cut the three tree chapters and keep the old sun chapter's material for "The setting sun". That leaves The modules and The world as your call: they could become an interlude about the program's shape, or be cut.
 
+## Update: the motion half has begun
+
+The book now publishes **26 chapters**. The second half opens with three new chapters:
+- **A flip book**, written fresh as the opening. It drops the parts One page and Functions now cover, and describes the step widget as it really is: three figures, and a play button that also stops the ride.
+- **The clock**, which keeps a moment and a length apart, with the `clock_plus_seven` failure.
+- **The ride instant**, which reads `RideInstant.next` whole, in its order. It also has the table of carried and derived parts, and model_at_next_step's input snapshot. The step widget and `step_back` now live only in A flip book.
+
+Each got a truth and think-aloud reader, and their fixes are in. One code fix came out of it: `Steps.roc`'s doc comment said two clocks subtract, but `steps_since` is the only way to get the steps between them.
+
+**Housekeeping:** the old draft's chapters are parked, unpublished, just before the appendices: The modules, The world, A simple tree, A conifer, Roadside trees, and the old sun. `book_negatives` used to stop reading at "The modules". It now stops at the first chapter the new book hasn't reached, and that boundary moves with each new chapter.
+
+## Roc PR 12925
+
+On fork PR #3, linux-eval and static-checks passed, so the hang and the lint are fixed. linux-core failed, and the macOS build was cancelled; both were runner trouble. linux-strategy and the harness job have run more than three hours, against 58 minutes upstream, so another case may hang in the strategy runner. I'll read their logs when they finish or time out. The upstream PR stays untouched until they're green.
+
 ## Next
 
-The motion half: A flip book, The clock, The ride instant, The beacons, The setting sun …
+The beacons, The setting sun (with the old sun chapter's material), then the vehicles.
