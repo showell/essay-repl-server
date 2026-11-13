@@ -7,7 +7,7 @@ This is the second pass. The first one showed where English collides with the bo
 ## Categories
 
 I settled on three:
-- **Roc concepts**: 36 terms, from modules to `Box`.
+- **Roc concepts**: 35 terms, from modules to `Box`.
 - **Animation concepts**: 26 terms, from shapes to the flip book.
 - **Safari Ride's design**: 12 terms, in place of "Other". Every term that didn't fit the first two turned out to be one of the ride's own design ideas: carried and derived, the sighting, the kind, the chain of limits, rehearsal, the five pieces. Naming them as a category says something true about the book.
 
