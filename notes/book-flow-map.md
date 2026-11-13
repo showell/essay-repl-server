@@ -42,4 +42,12 @@ digraph book {
 }
 ```
 
-A second mapper is checking the new order for anything the moves broke.
+## The second map
+
+A second mapper read the new order. It found the order sound, with nearly every early use of a later idea now carrying a pointer. The few gaps it found are fixed:
+- The throttle still said "we'll take the pig first", but Rehearsal now comes in between.
+- `main!` appeared before the chapter that explains `!`.
+- Types used a method call before Functions explains them.
+- Things counted shape kinds before Shapes introduced them. That sentence is gone.
+- The truck's faces were cut at the near plane with no pointer to The math layer.
+- Three chapter endings pointed nowhere.
