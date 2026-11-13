@@ -64,6 +64,20 @@ Each got a truth and think-aloud reader, and their fixes are in. One code fix ca
 
 On fork PR #3, linux-eval and static-checks passed, so the hang and the lint are fixed. linux-core failed, and the macOS build was cancelled; both were runner trouble. linux-strategy and the harness job have run more than three hours, against 58 minutes upstream, so another case may hang in the strategy runner. I'll read their logs when they finish or time out. The upstream PR stays untouched until they're green.
 
+## Update: 33 chapters, through the rider
+
+The beacons → The setting sun → Stepping → The rider → The bike → The throttle → The rider's gaze.
+
+- **The setting sun** takes in the parked old sun chapter's material: the sun's `Sighting` tags, its glow and disc, and why step 1,529 shows no sun.
+- **Stepping** is the old "Stepping through the ride", rewritten short: the stepping modules, the step function, and what stepping costs.
+- **The rider** and **The bike** are clean drafts.
+- **The throttle** and **The rider's gaze** got a lighter pass. Their old drafts were sound and their numbers are pinned by expects, so I cut the "New in this chapter" lists, fixed stale chapter names, rewrote the negatives, and fixed the reader's findings. One of those: the gaze chapter quoted `Gawking.is_gawking`, which only the widget calls, so it now quotes `Gaze.noticed_pig`, which the brake really asks.
+- **The beacons have no reader pass yet.** Their cold reader was stopped by a safeguards flag, which looks like a false positive.
+
+**Memory:** at your request, `MEMORY.md` now tells cold agents to stop at a marked STOP line, right after the Roc and book entries.
+
+**Roc PR:** linux-strategy passed on the fork. The harness jobs and the Windows jobs are still running.
+
 ## Next
 
-The beacons, The setting sun (with the old sun chapter's material), then the vehicles.
+The truck, The truck's motion, The truck's lights, then the cat, the bird, Rehearsal.
