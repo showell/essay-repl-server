@@ -4,6 +4,26 @@
 
 This is a rough first draft, eight chapters long, with prose and code only. A cold agent proposed the spine. I wrote the book in one pass, and two cold reviewers read it: one as the target reader, one checking every claim against the code. I applied the truth fixes. The structural ideas are below for you to decide.
 
+## Steve's direction for draft 2
+
+- **Keep:** the practical focus. The book walks the reader through real work.
+- **Stronger:** "this is how you should work". Put the reader in a work situation, guiding an agent to write scripts, so the book stops reading like a collection of Steve's useful scripts. The voice is close.
+- **Quote code, not header comments.** Header comments help agents search for a script, and an agent reads the whole script before it runs one. A human reads the code, so the code has to be readable. Polish a recipe whose structure is poor before quoting it.
+- **Work habits come early.** The tiers and the three reading speeds now wait for chapter 8. They move up front.
+- **Done:** the left sidebar, as in the Roc book.
+
+### The one question before draft 2
+
+What is the work situation? My candidate: **a week on a small project.** The reader and their agent take over a modest codebase with a small doc beside it.
+- Monday's heredocs answer questions about the code.
+- By midweek the questions that came back are recipes.
+- Thursday a rule the reader cares about gets plants and a gate.
+- Friday the tiers run, from one edit to a release.
+
+Each chapter is a day or half a day. The reader says what they want, the agent writes the Shale, and the reader reads it at the right speed and decides what to keep. The real scripts on this box are the evidence that it works, quoted as code.
+
+The alternative is to keep the work on this box's real projects (the Roc book, the cookbook) and frame each chapter as a task the reader hands the agent. That's more authentic, but less like the reader's own work.
+
 ## The spine
 
 The ladder sets the book's order, with gates from page one:
