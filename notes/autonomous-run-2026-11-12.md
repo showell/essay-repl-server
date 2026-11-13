@@ -29,6 +29,26 @@ The book publishes 18 chapters. These are new or reworked since you left:
 
 The second fix for the hang is green where it matters on the fork's CI: linux-eval passed, which runs the dispatch-chain test that used to hang, and static-checks passed, which runs the lint. Two jobs failed on runner trouble: linux-core timed out installing valgrind from snap, and the macOS build failed early with no log. linux-strategy and the harness job are still running; the harness runs the PR's regression test for the original segfault. Once those two are green, I'll push to the PR branch and post the short comment you approved.
 
+## Update: the first half is complete
+
+The book now publishes **23 chapters**, and the first half, one frame held still, runs to its end:
+
+Things → … → Asking a kind → **Grass → The sky → Mountains → The road → Rails → Radio towers → Stills → Herds**.
+
+Every new chapter got a clean draft, plus cold readers for truth and order and an animation think-aloud. Their fixes are in. The nitpick rounds are done for Grass, The sky, Mountains and The road. Stills and Herds are with their readers now.
+
+### More calls
+
+- **The old Elephant and "corner critters" chapters are gone.** Billboard Critters already teaches their code (`BendAnimal.bend_billboards`, `species_of`, `Billboard`).
+- **The table of contents follows the new structure.** Its parts were left over from the old draft: "Man-made" sat above The road with no "Nature" before it. Now the order is "The big picture" → "One frame" (before Things), with the categories "Nature" (before Grass), "Man-made" (before The road) and "Critters that stand still" (before Stills). "Motion" now starts at A flip book.
+- **Numbers no test pins came out.** Gone are the sky's five-step color table, the stills' polygon and point counts, the road's tan(22.5°) arithmetic, and the rail's "49 quads at 45°".
+- **One more code fix:** `book_names.txt` now allows `U32.until` beside `U64.until`, since the prose names both.
+- **A flow pass on the middle chapters** (Shapes, A far tree, Asking a kind) cut what Functions now teaches, and A far tree no longer opens with Shapes' first line.
+
+### What's between the halves
+
+The file still holds several old-draft chapters between Herds and A flip book: The modules, The world, A simple tree, A conifer, Roadside trees, and the old sun chapter. None is published. MISSION marks The modules and The world as open, and says the trees get only the far-tree chapter. When the motion half starts, my plan is to cut the three tree chapters and keep the old sun chapter's material for "The setting sun". That leaves The modules and The world as your call: they could become an interlude about the program's shape, or be cut.
+
 ## Next
 
-The road, Rails, Radio towers, then Stills and the critters: the rest of the still frame.
+The motion half: A flip book, The clock, The ride instant, The beacons, The setting sun …
