@@ -81,3 +81,23 @@ The beacons → The setting sun → Stepping → The rider → The bike → The 
 ## Next
 
 The truck, The truck's motion, The truck's lights, then the cat, the bird, Rehearsal.
+
+## Update, 2026-11-13: the whole book is drafted (44 chapters)
+
+**Your new rule** ("a major code smell means a rewrite from scratch") is in MISSION G1.
+
+**Refactors, each followed by a chapter rewritten from a new spine:**
+- **Beacon:** `blink_phase` brings the phase inside one blink, and the key argument has a clearer name. The Beacons chapter is rewritten, and two readers have been through it.
+- **Encounter timing:** `EncounterPlan.Timing` is gone. One function, `stage_at`, takes a plan, the clock and a length to a stage. Bird and cat errors are renamed with `map_err` and `?`. Timelines take a frame only. The Cat and The bird are rewritten.
+- **Coast and LeanSearch:** no widget-only flag in the hot loop, no impossible `?? crash`, and one midpoint function. The ride got a little faster. Rehearsal is rewritten.
+- **RoadAhead:** the private helper that shared its name with `RiderView.rider_point_ahead` is now `rider_point_round_bends`.
+
+**New chapters:** The math layer (one point's trip from the road to the screen), Proving it (the gate's proofs), The platform (where the effects live), and Zooming back out. The old drafts' unpinned numbers and history are gone.
+
+**A near-miss the gates caught:** I tidied the beacon's angle to `2π·(p/T)`. The page gate failed, because regrouping floats changes the last bits. It's reverted, and Proving it now uses it as its example.
+
+**OUCH:** two cold readers read a stale copy of the built book, in the roc-apps checkout. Readers now always get the lane's build path. It's in memory.
+
+**Open for you (no rush):** the old chapters still parked before the appendices (The modules, The world, three tree chapters, the old sun). They're unpublished. Do we cut them, or mine them for an appendix?
+
+**Roc PR 12925:** linux-harness passed. linux-core failed on a CI-side valgrind install timeout. Windows is still running. I push only on green.
