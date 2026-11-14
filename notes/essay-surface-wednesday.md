@@ -24,7 +24,7 @@ Timing is judged by CPU per request, which a busy box can't break: the index is 
 
 ## A planted fault found a broken test
 
-The agent put a bug in the renderer on purpose, expecting a dozen tests to fail. Only three did. One of Tuesday's tests could panic, and its panic stopped every test after it from reporting. So a fault planted once, cheaply, found a test that had been hiding others. That's Thursday's argument in miniature, and why Thursday's prompt asks for one planted fault per stage.
+The agent disabled the server's file watcher on purpose, so it would hear no changes, and expected a dozen tests to fail. Only three did. (Correction, 2026-11-14: this paragraph first said the planted fault was in the renderer. It was in the watcher, as Wednesday's journal records.) One of Tuesday's tests could panic, and its panic stopped every test after it from reporting. So a fault planted once, cheaply, found a test that had been hiding others. That's Thursday's argument in miniature, and why Thursday's prompt asks for one planted fault per stage.
 
 ## Cleanups the agent made unasked
 
