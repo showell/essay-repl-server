@@ -4,7 +4,7 @@ Part One ends with a working essay surface: a Go server, a plain-JavaScript fron
 
 ## The same premise, one level up
 
-Part One's theme is building your own workflow. Part Two keeps it, and the workflow simply gets better at its own job: a note that can draw its diagram or embed a widget is a better place for an agent to explain something to you. Graphviz drawing ```dot fences at build time is already how this book works, so Part Two gives the surface the same power.
+Part One's theme is building your own workflow. Part Two keeps it, and the workflow simply gets better at its own job: a note that can draw its diagram or embed a widget is a better place for an agent to explain something to you. Graphviz drawing the book's dot code blocks at build time is already how this book works, so Part Two gives the surface the same power.
 
 It also moves the book into app territory, which is where most readers live. Part One was a small server with careful gates. Part Two is a real feature roadmap, with a design language for it.
 
