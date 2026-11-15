@@ -69,7 +69,10 @@ refuses a note whose diagram does not render; `ops/install.sh` arms it with
 - `data/comments/<collection>/<name>.md.comments.json` — notes, same
   hand-editable schema as claude-collab sidecars. Kept here rather
   than beside the essays because the essays live in git clones and
-  reader data does not belong in them.
+  reader data does not belong in them. Each note is `{para_index, author,
+  timestamp, text}`, where `para_index` counts the page's paragraphs and
+  list items from 0 (`comments.py`'s widget). So a reply on a note is in
+  that file alone: the note's markdown and git never show it.
 
 ## Security posture
 
