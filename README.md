@@ -1,5 +1,7 @@
 # essay-repl-server
 
+**Deprecated and parked (2026-11-15).** The essay surface is now [essay-surface](https://github.com/showell/essay-surface); this repo is kept only for its history and its notes.
+
 The ladder droplet's public web surface: rendered markdown essays with
 accounts and paragraph-anchored notes. The online Codex REPL will ride
 on this same server; that is milestone 2 and not started.
